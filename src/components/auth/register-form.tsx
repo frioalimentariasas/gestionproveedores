@@ -9,6 +9,7 @@ import { register } from '@/app/actions';
 import { RegisterSchema } from '@/lib/schemas';
 import { locations } from '@/lib/locations';
 import { countries } from '@/lib/countries';
+import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
