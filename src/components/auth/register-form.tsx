@@ -76,9 +76,20 @@ export function RegisterForm() {
       email: '',
       password: '',
     },
+    mode: 'onSubmit',
   });
 
-  const { setValue, watch } = form;
+  const { setValue, watch, handleSubmit } = form;
+
+  const handleFormSubmit = (data: z.infer<typeof RegisterSchema>) => {
+    const formData = new FormData();
+    for (const key of Object.keys(data)) {
+        formData.append(key, data[key as keyof typeof data]);
+    }
+    formAction(formData);
+  };
+
+
   const selectedCountryName = watch('country');
   const selectedStateName = watch('department');
   const phoneCountryCode = watch('phoneCountryCode');
@@ -155,7 +166,7 @@ export function RegisterForm() {
 
   return (
     <Form {...form}>
-      <form action={formAction} className="space-y-6">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
@@ -245,7 +256,7 @@ export function RegisterForm() {
                           key={c.isoCode}
                           variant="ghost"
                           onClick={() => {
-                            setValue('country', c.name, { shouldValidate: true });
+                            field.onChange(c.name);
                             setCountryPopoverOpen(false);
                             setCountrySearch('');
                           }}
@@ -303,7 +314,7 @@ export function RegisterForm() {
                           key={d.isoCode}
                           variant="ghost"
                           onClick={() => {
-                            setValue('department', d.name, { shouldValidate: true });
+                            field.onChange(d.name);
                             setDepartmentPopoverOpen(false);
                             setDepartmentSearch('');
                           }}
@@ -362,7 +373,7 @@ export function RegisterForm() {
                             key={c.name}
                             variant="ghost"
                             onClick={() => {
-                              setValue('city', c.name, { shouldValidate: true });
+                              field.onChange(c.name);
                               setCityPopoverOpen(false);
                               setCitySearch('');
                             }}
@@ -388,6 +399,77 @@ export function RegisterForm() {
             )}
           />
            <FormField
+            control={form.control}
+            name="phoneNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Celular</FormLabel>
+                  <div className="relative">
+                     <FormControl>
+                        <Input
+                          {...field}
+                          type="tel"
+                          placeholder={selectedCountryForPhone?.example}
+                           className="pl-36"
+                        />
+                      </FormControl>
+                    <Popover open={phonePopoverOpen} onOpenChange={setPhonePopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          role="combobox"
+                          aria-expanded={phonePopoverOpen}
+                           className="absolute left-1 top-1/2 h-8 -translate-y-1/2 w-[8.5rem] justify-start text-left font-normal"
+                        >
+                          <span className="w-full truncate flex items-center gap-2">
+                            {getFlagEmoji(selectedCountryForPhone?.code || '')} +{selectedCountryForPhone?.phone}
+                          </span>
+                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[320px] p-0">
+                         <div className="p-2">
+                           <Input 
+                              placeholder="Buscar país..."
+                              value={phoneSearch}
+                              onChange={(e) => setPhoneSearch(e.target.value)}
+                              className="h-9"
+                           />
+                         </div>
+                         <ScrollArea className="h-64">
+                           <div className="flex flex-col gap-y-1 p-1">
+                            {filteredPhoneCountries.map((country) => (
+                              <Button
+                                key={country.code}
+                                variant="ghost"
+                                onClick={() => {
+                                  setValue('phoneCountryCode', country.phone);
+                                  setPhonePopoverOpen(false);
+                                  setPhoneSearch('');
+                                }}
+                                className="w-full flex justify-start items-center gap-2 font-normal"
+                              >
+                                <span>{getFlagEmoji(country.code)}</span>
+                                <span className="flex-1 text-left truncate">{country.name}</span>
+                                <span className="text-muted-foreground text-sm">+{country.phone}</span>
+                                <Check
+                                  className={cn(
+                                    'ml-auto h-4 w-4',
+                                    phoneCountryCode === country.phone ? 'opacity-100' : 'opacity-0'
+                                  )}
+                                />
+                              </Button>
+                            ))}
+                           </div>
+                         </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
             control={form.control}
             name="address"
             render={({ field }) => (
@@ -422,77 +504,6 @@ export function RegisterForm() {
                 <FormControl>
                   <Input {...field} placeholder="••••••••" type="password" />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           <FormField
-            control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Celular</FormLabel>
-                  <div className="relative">
-                     <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          placeholder={selectedCountryForPhone?.example}
-                          className="pl-[8.5rem]"
-                        />
-                      </FormControl>
-                    <Popover open={phonePopoverOpen} onOpenChange={setPhonePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          role="combobox"
-                          aria-expanded={phonePopoverOpen}
-                          className="absolute left-1 top-1/2 h-8 -translate-y-1/2 w-32 justify-start text-left font-normal"
-                        >
-                          <span className="w-full truncate flex items-center gap-2">
-                            {getFlagEmoji(selectedCountryForPhone?.code || '')} +{selectedCountryForPhone?.phone}
-                          </span>
-                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[320px] p-0">
-                         <div className="p-2">
-                           <Input 
-                              placeholder="Buscar país..."
-                              value={phoneSearch}
-                              onChange={(e) => setPhoneSearch(e.target.value)}
-                              className="h-9"
-                           />
-                         </div>
-                         <ScrollArea className="h-64">
-                           <div className="flex flex-col gap-y-1 p-1">
-                            {filteredPhoneCountries.map((country) => (
-                              <Button
-                                key={country.code}
-                                variant="ghost"
-                                onClick={() => {
-                                  setValue('phoneCountryCode', country.phone, { shouldValidate: true });
-                                  setPhonePopoverOpen(false);
-                                  setPhoneSearch('');
-                                }}
-                                className="w-full flex justify-start items-center gap-2 font-normal"
-                              >
-                                <span>{getFlagEmoji(country.code)}</span>
-                                <span className="flex-1 text-left truncate">{country.name}</span>
-                                <span className="text-muted-foreground text-sm">+{country.phone}</span>
-                                <Check
-                                  className={cn(
-                                    'ml-auto h-4 w-4',
-                                    phoneCountryCode === country.phone ? 'opacity-100' : 'opacity-0'
-                                  )}
-                                />
-                              </Button>
-                            ))}
-                           </div>
-                         </ScrollArea>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
                 <FormMessage />
               </FormItem>
             )}
