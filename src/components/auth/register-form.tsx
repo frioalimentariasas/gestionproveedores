@@ -7,9 +7,9 @@ import { useActionState, useEffect, useState, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import { register } from '@/app/actions';
 import { RegisterSchema } from '@/lib/schemas';
-import { locations } from '@/lib/locations';
-import { countries } from '@/lib/countries';
+import { countries as phoneCountries } from '@/lib/countries';
 import { cn } from '@/lib/utils';
+import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -43,10 +43,12 @@ const getFlagEmoji = (countryCode: string) => {
 export function RegisterForm() {
   const [state, formAction] = useActionState(register, { message: '', errors: undefined });
 
-  // State for popovers and searches
-  const [departments, setDepartments] = useState<{ name: string; cities: { name: string }[] }[]>([]);
-  const [cities, setCities] = useState<{ name: string }[]>([]);
+  // State for location data
+  const [allCountries, setAllCountries] = useState<ICountry[]>([]);
+  const [allStates, setAllStates] = useState<IState[]>([]);
+  const [allCities, setAllCities] = useState<ICity[]>([]);
 
+  // State for popovers and searches
   const [phonePopoverOpen, setPhonePopoverOpen] = useState(false);
   const [phoneSearch, setPhoneSearch] = useState('');
 
@@ -77,18 +79,23 @@ export function RegisterForm() {
   });
 
   const { setValue, watch } = form;
-  const country = watch('country');
-  const department = watch('department');
+  const selectedCountryName = watch('country');
+  const selectedStateName = watch('department');
   const phoneCountryCode = watch('phoneCountryCode');
+  
+  // Load countries on mount
+  useEffect(() => {
+    setAllCountries(Country.getAllCountries());
+  }, []);
 
   // Memo for phone country selector
   const selectedCountryForPhone = useMemo(() => 
-    countries.find((c) => c.phone === phoneCountryCode) || countries.find(c => c.code === 'CO'),
+    phoneCountries.find((c) => c.phone === phoneCountryCode) || phoneCountries.find(c => c.code === 'CO'),
   [phoneCountryCode]);
 
   const filteredPhoneCountries = useMemo(() => {
-    if (!phoneSearch) return countries;
-    return countries.filter(
+    if (!phoneSearch) return phoneCountries;
+    return phoneCountries.filter(
       (country) =>
         country.name.toLowerCase().includes(phoneSearch.toLowerCase()) ||
         country.phone.includes(phoneSearch)
@@ -97,41 +104,44 @@ export function RegisterForm() {
 
   // Memos for location selectors
   const filteredCountries = useMemo(() => {
-    if (!countrySearch) return locations;
-    return locations.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
-  }, [countrySearch]);
+    if (!countrySearch) return allCountries;
+    return allCountries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
+  }, [countrySearch, allCountries]);
 
-  const filteredDepartments = useMemo(() => {
-    if (!departmentSearch) return departments;
-    return departments.filter(d => d.name.toLowerCase().includes(departmentSearch.toLowerCase()));
-  }, [departmentSearch, departments]);
+  const filteredStates = useMemo(() => {
+    if (!departmentSearch) return allStates;
+    return allStates.filter(d => d.name.toLowerCase().includes(departmentSearch.toLowerCase()));
+  }, [departmentSearch, allStates]);
 
   const filteredCities = useMemo(() => {
-    if (!citySearch) return cities;
-    return cities.filter(c => c.name.toLowerCase().includes(citySearch.toLowerCase()));
-  }, [citySearch, cities]);
+    if (!citySearch) return allCities;
+    return allCities.filter(c => c.name.toLowerCase().includes(citySearch.toLowerCase()));
+  }, [citySearch, allCities]);
 
   // Effect for cascading dropdowns
   useEffect(() => {
-    const countryData = locations.find((c) => c.name === country);
+    const countryData = allCountries.find((c) => c.name === selectedCountryName);
     if (countryData) {
-      setDepartments(countryData.departments);
+      setAllStates(State.getStatesOfCountry(countryData.isoCode));
+      setAllCities([]);
     } else {
-      setDepartments([]);
+      setAllStates([]);
+      setAllCities([]);
     }
     setValue('department', '', { shouldValidate: true });
     setValue('city', '', { shouldValidate: true });
-  }, [country, setValue]);
+  }, [selectedCountryName, allCountries, setValue]);
 
   useEffect(() => {
-    const departmentData = departments.find((d) => d.name === department);
-    if (departmentData) {
-      setCities(departmentData.cities);
+    const countryData = allCountries.find((c) => c.name === selectedCountryName);
+    const stateData = allStates.find((d) => d.name === selectedStateName);
+    if (countryData && stateData) {
+      setAllCities(City.getCitiesOfState(countryData.isoCode, stateData.isoCode));
     } else {
-      setCities([]);
+      setAllCities([]);
     }
     setValue('city', '', { shouldValidate: true });
-  }, [department, departments, setValue]);
+  }, [selectedStateName, allStates, selectedCountryName, allCountries, setValue]);
 
   useEffect(() => {
     if (state?.errors) {
@@ -214,7 +224,7 @@ export function RegisterForm() {
                         )}
                       >
                         {field.value
-                          ? locations.find(
+                          ? allCountries.find(
                               (c) => c.name === field.value
                             )?.name
                           : "Seleccione un país"}
@@ -232,7 +242,7 @@ export function RegisterForm() {
                     <ScrollArea className="h-64">
                       {filteredCountries.map((c) => (
                         <Button
-                          key={c.name}
+                          key={c.isoCode}
                           variant="ghost"
                           onClick={() => {
                             setValue('country', c.name, { shouldValidate: true });
@@ -269,7 +279,7 @@ export function RegisterForm() {
                       <Button
                         variant="outline"
                         role="combobox"
-                        disabled={!country || departments.length === 0}
+                        disabled={!selectedCountryName || allStates.length === 0}
                         className={cn(
                           "w-full justify-between",
                           !field.value && "text-muted-foreground"
@@ -288,9 +298,9 @@ export function RegisterForm() {
                       className="h-9 rounded-b-none border-x-0 border-t-0"
                     />
                     <ScrollArea className="h-64">
-                      {filteredDepartments.map((d) => (
+                      {filteredStates.map((d) => (
                         <Button
-                          key={d.name}
+                          key={d.isoCode}
                           variant="ghost"
                           onClick={() => {
                             setValue('department', d.name, { shouldValidate: true });
@@ -327,7 +337,7 @@ export function RegisterForm() {
                       <Button
                         variant="outline"
                         role="combobox"
-                        disabled={!department || cities.length === 0}
+                        disabled={!selectedStateName || allCities.length === 0}
                         className={cn(
                           "w-full justify-between",
                           !field.value && "text-muted-foreground"
@@ -346,29 +356,46 @@ export function RegisterForm() {
                       className="h-9 rounded-b-none border-x-0 border-t-0"
                     />
                     <ScrollArea className="h-64">
-                      {filteredCities.map((c) => (
-                        <Button
-                          key={c.name}
-                          variant="ghost"
-                          onClick={() => {
-                            setValue('city', c.name, { shouldValidate: true });
-                            setCityPopoverOpen(false);
-                            setCitySearch('');
-                          }}
-                          className="w-full flex justify-start items-center gap-2 font-normal"
-                        >
-                          {c.name}
-                          <Check
-                            className={cn(
-                              'ml-auto h-4 w-4',
-                              field.value === c.name ? 'opacity-100' : 'opacity-0'
-                            )}
-                          />
-                        </Button>
-                      ))}
+                      {filteredCities.length > 0 ? (
+                        filteredCities.map((c) => (
+                          <Button
+                            key={c.name}
+                            variant="ghost"
+                            onClick={() => {
+                              setValue('city', c.name, { shouldValidate: true });
+                              setCityPopoverOpen(false);
+                              setCitySearch('');
+                            }}
+                            className="w-full flex justify-start items-center gap-2 font-normal"
+                          >
+                            {c.name}
+                            <Check
+                              className={cn(
+                                'ml-auto h-4 w-4',
+                                field.value === c.name ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                          </Button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-sm text-muted-foreground">No hay ciudades disponibles.</div>
+                      )}
                     </ScrollArea>
                   </PopoverContent>
                 </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Dirección</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Calle 10 # 42-10" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -440,19 +467,6 @@ export function RegisterForm() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Dirección</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Calle 10 # 42-10" />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
