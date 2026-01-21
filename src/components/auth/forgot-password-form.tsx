@@ -3,7 +3,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { forgotPassword } from '@/app/actions';
 import { ForgotPasswordSchema } from '@/lib/schemas';
 
@@ -24,7 +25,7 @@ function SubmitButton() {
 }
 
 export function ForgotPasswordForm() {
-  const [state, formAction] = useFormState(forgotPassword, { message: '', success: false });
+  const [state, formAction] = useActionState(forgotPassword, { message: '', success: false });
   
   const form = useForm<z.infer<typeof ForgotPasswordSchema>>({
     resolver: zodResolver(ForgotPasswordSchema),
