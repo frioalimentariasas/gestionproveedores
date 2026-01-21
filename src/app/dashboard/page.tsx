@@ -1,6 +1,5 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import { LogoutButton } from '@/components/auth/logout-button';
 
 export default function DashboardPage() {
   return (
@@ -17,9 +16,7 @@ export default function DashboardPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Button asChild variant="outline">
-            <Link href="/login">Cerrar Sesión</Link>
-          </Button>
+          <LogoutButton />
         </CardFooter>
       </Card>
     </div>

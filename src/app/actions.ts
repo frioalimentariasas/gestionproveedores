@@ -2,13 +2,36 @@
 
 import { redirect } from 'next/navigation';
 import { LoginSchema, RegisterSchema, ForgotPasswordSchema, type FormState } from '@/lib/schemas';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  type AuthError,
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase/auth';
+import { db } from '@/lib/firebase/firestore';
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const adminEmails = [
-  'sistemas@frioalimentaria.com.co',
-  'asistente@frioalimentaria.com.co',
-];
+// Helper to map Firebase auth errors to user-friendly messages
+function getAuthErrorMessage(error: AuthError): string {
+  switch (error.code) {
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'El correo electrónico o la contraseña son incorrectos.';
+    case 'auth/email-already-in-use':
+      return 'Ya existe una cuenta con este correo electrónico.';
+    case 'auth/weak-password':
+      return 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+    case 'auth/invalid-email':
+        return 'El correo electrónico no es válido.';
+    default:
+      console.error('Unhandled Firebase Auth Error:', error);
+      return 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.';
+  }
+}
+
 
 // Actions
 export async function login(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -21,22 +44,16 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
     };
   }
 
-  await sleep(1000);
+  const { email, password } = parsed.data;
 
-  const { email } = parsed.data;
-
-  // Simulate user not found
-  if (email.includes('notfound')) {
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
     return {
-      message: 'El correo electrónico o la contraseña son incorrectos.',
+      message: getAuthErrorMessage(error as AuthError),
     };
   }
   
-  console.log(`User attempting to log in: ${email}`);
-  if (adminEmails.includes(email)) {
-    console.log(`Admin user detected: ${email}`);
-  }
-
   redirect('/dashboard');
 }
 
@@ -50,18 +67,24 @@ export async function register(prevState: FormState, formData: FormData): Promis
     };
   }
   
-  await sleep(1500);
-
-  const { email } = parsed.data;
+  const { email, password, ...providerData } = parsed.data;
   
-  // Simulate existing user
-  if (email.includes('exists')) {
-      return {
-          message: 'Ya existe una cuenta con este correo electrónico.',
-      }
-  }
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-  console.log('New provider registered:', parsed.data);
+    // Save provider data to Firestore, using user's UID as document ID
+    await setDoc(doc(db, 'providers', user.uid), {
+      ...providerData,
+      email: user.email, // Ensure email from auth is the one stored
+      createdAt: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    return {
+      message: getAuthErrorMessage(error as AuthError),
+    };
+  }
 
   redirect('/dashboard');
 }
@@ -76,12 +99,19 @@ export async function forgotPassword(prevState: FormState, formData: FormData): 
     };
   }
   
-  await sleep(1000);
-  
-  console.log('Password recovery requested for:', parsed.data.email);
+  const { email } = parsed.data;
 
-  return {
-    message: `Si existe una cuenta con ${parsed.data.email}, le hemos enviado un enlace para recuperar su contraseña.`,
-    success: true,
-  };
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return {
+      message: `Si existe una cuenta con ${email}, le hemos enviado un enlace para recuperar su contraseña.`,
+      success: true,
+    };
+  } catch (error) {
+    // For security, don't reveal if the user exists. Return success message regardless.
+     return {
+       message: `Si existe una cuenta con ${email}, le hemos enviado un enlace para recuperar su contraseña.`,
+       success: true,
+    };
+  }
 }
