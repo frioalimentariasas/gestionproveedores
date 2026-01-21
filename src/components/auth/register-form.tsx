@@ -42,10 +42,22 @@ const getFlagEmoji = (countryCode: string) => {
 
 export function RegisterForm() {
   const [state, formAction] = useActionState(register, { message: '', errors: undefined });
+
+  // State for popovers and searches
   const [departments, setDepartments] = useState<{ name: string; cities: { name: string }[] }[]>([]);
   const [cities, setCities] = useState<{ name: string }[]>([]);
+
   const [phonePopoverOpen, setPhonePopoverOpen] = useState(false);
   const [phoneSearch, setPhoneSearch] = useState('');
+
+  const [countryPopoverOpen, setCountryPopoverOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+
+  const [departmentPopoverOpen, setDepartmentPopoverOpen] = useState(false);
+  const [departmentSearch, setDepartmentSearch] = useState('');
+
+  const [cityPopoverOpen, setCityPopoverOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
 
   const form = useForm<z.infer<typeof RegisterSchema>>({
     resolver: zodResolver(RegisterSchema),
@@ -69,11 +81,12 @@ export function RegisterForm() {
   const department = watch('department');
   const phoneCountryCode = watch('phoneCountryCode');
 
+  // Memo for phone country selector
   const selectedCountryForPhone = useMemo(() => 
     countries.find((c) => c.phone === phoneCountryCode) || countries.find(c => c.code === 'CO'),
   [phoneCountryCode]);
 
-  const filteredCountries = useMemo(() => {
+  const filteredPhoneCountries = useMemo(() => {
     if (!phoneSearch) return countries;
     return countries.filter(
       (country) =>
@@ -82,6 +95,23 @@ export function RegisterForm() {
     );
   }, [phoneSearch]);
 
+  // Memos for location selectors
+  const filteredCountries = useMemo(() => {
+    if (!countrySearch) return locations;
+    return locations.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
+  }, [countrySearch]);
+
+  const filteredDepartments = useMemo(() => {
+    if (!departmentSearch) return departments;
+    return departments.filter(d => d.name.toLowerCase().includes(departmentSearch.toLowerCase()));
+  }, [departmentSearch, departments]);
+
+  const filteredCities = useMemo(() => {
+    if (!citySearch) return cities;
+    return cities.filter(c => c.name.toLowerCase().includes(citySearch.toLowerCase()));
+  }, [citySearch, cities]);
+
+  // Effect for cascading dropdowns
   useEffect(() => {
     const countryData = locations.find((c) => c.name === country);
     if (countryData) {
@@ -89,8 +119,8 @@ export function RegisterForm() {
     } else {
       setDepartments([]);
     }
-    setValue('department', '');
-    setValue('city', '');
+    setValue('department', '', { shouldValidate: true });
+    setValue('city', '', { shouldValidate: true });
   }, [country, setValue]);
 
   useEffect(() => {
@@ -100,9 +130,8 @@ export function RegisterForm() {
     } else {
       setCities([]);
     }
-    setValue('city', '');
+    setValue('city', '', { shouldValidate: true });
   }, [department, departments, setValue]);
-
 
   useEffect(() => {
     if (state?.errors) {
@@ -167,26 +196,63 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
-          <FormField
+           <FormField
             control={form.control}
             name="country"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>País</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un país" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {locations.map((c) => (
-                      <SelectItem key={c.name} value={c.name}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={countryPopoverOpen} onOpenChange={setCountryPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value
+                          ? locations.find(
+                              (c) => c.name === field.value
+                            )?.name
+                          : "Seleccione un país"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Input
+                        placeholder="Buscar país..."
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        className="h-9 rounded-b-none border-x-0 border-t-0"
+                      />
+                    <ScrollArea className="h-64">
+                      {filteredCountries.map((c) => (
+                        <Button
+                          key={c.name}
+                          variant="ghost"
+                          onClick={() => {
+                            setValue('country', c.name, { shouldValidate: true });
+                            setCountryPopoverOpen(false);
+                            setCountrySearch('');
+                          }}
+                          className="w-full flex justify-start items-center gap-2 font-normal"
+                        >
+                          {c.name}
+                          <Check
+                            className={cn(
+                              'ml-auto h-4 w-4',
+                              field.value === c.name ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                        </Button>
+                      ))}
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -195,26 +261,56 @@ export function RegisterForm() {
             control={form.control}
             name="department"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Departamento</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={!country}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un departamento" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {departments.map((d) => (
-                      <SelectItem key={d.name} value={d.name}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={departmentPopoverOpen} onOpenChange={setDepartmentPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        disabled={!country || departments.length === 0}
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value || "Seleccione un departamento"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Input
+                      placeholder="Buscar departamento..."
+                      value={departmentSearch}
+                      onChange={(e) => setDepartmentSearch(e.target.value)}
+                      className="h-9 rounded-b-none border-x-0 border-t-0"
+                    />
+                    <ScrollArea className="h-64">
+                      {filteredDepartments.map((d) => (
+                        <Button
+                          key={d.name}
+                          variant="ghost"
+                          onClick={() => {
+                            setValue('department', d.name, { shouldValidate: true });
+                            setDepartmentPopoverOpen(false);
+                            setDepartmentSearch('');
+                          }}
+                          className="w-full flex justify-start items-center gap-2 font-normal"
+                        >
+                          {d.name}
+                          <Check
+                            className={cn(
+                              'ml-auto h-4 w-4',
+                              field.value === d.name ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                        </Button>
+                      ))}
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -223,26 +319,56 @@ export function RegisterForm() {
             control={form.control}
             name="city"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Ciudad</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={!department}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione una ciudad" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {cities.map((c) => (
-                      <SelectItem key={c.name} value={c.name}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={cityPopoverOpen} onOpenChange={setCityPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        disabled={!department || cities.length === 0}
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value || "Seleccione una ciudad"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Input
+                      placeholder="Buscar ciudad..."
+                      value={citySearch}
+                      onChange={(e) => setCitySearch(e.target.value)}
+                      className="h-9 rounded-b-none border-x-0 border-t-0"
+                    />
+                    <ScrollArea className="h-64">
+                      {filteredCities.map((c) => (
+                        <Button
+                          key={c.name}
+                          variant="ghost"
+                          onClick={() => {
+                            setValue('city', c.name, { shouldValidate: true });
+                            setCityPopoverOpen(false);
+                            setCitySearch('');
+                          }}
+                          className="w-full flex justify-start items-center gap-2 font-normal"
+                        >
+                          {c.name}
+                          <Check
+                            className={cn(
+                              'ml-auto h-4 w-4',
+                              field.value === c.name ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                        </Button>
+                      ))}
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -259,7 +385,7 @@ export function RegisterForm() {
                           {...field}
                           type="tel"
                           placeholder={selectedCountryForPhone?.example}
-                          className="pl-32"
+                          className="pl-[8.5rem]"
                         />
                       </FormControl>
                     <Popover open={phonePopoverOpen} onOpenChange={setPhonePopoverOpen}>
@@ -268,7 +394,7 @@ export function RegisterForm() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={phonePopoverOpen}
-                          className="absolute left-1 top-1/2 h-8 -translate-y-1/2 w-28 justify-start text-left font-normal"
+                          className="absolute left-1 top-1/2 h-8 -translate-y-1/2 w-32 justify-start text-left font-normal"
                         >
                           <span className="w-full truncate flex items-center gap-2">
                             {getFlagEmoji(selectedCountryForPhone?.code || '')} +{selectedCountryForPhone?.phone}
@@ -287,7 +413,7 @@ export function RegisterForm() {
                          </div>
                          <ScrollArea className="h-64">
                            <div className="flex flex-col gap-y-1 p-1">
-                            {filteredCountries.map((country) => (
+                            {filteredPhoneCountries.map((country) => (
                               <Button
                                 key={country.code}
                                 variant="ghost"
