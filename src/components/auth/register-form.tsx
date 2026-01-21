@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { register } from '@/app/actions';
 import { RegisterSchema } from '@/lib/schemas';
@@ -41,8 +41,17 @@ export function RegisterForm() {
       email: '',
       password: '',
     },
-    errors: state.errors ? state.errors : undefined,
   });
+
+  useEffect(() => {
+    if (state?.errors) {
+      state.errors.forEach((error) => {
+        form.setError(error.path[0] as keyof z.infer<typeof RegisterSchema>, {
+          message: error.message,
+        });
+      });
+    }
+  }, [state, form]);
 
   return (
     <Form {...form}>

@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { login } from '@/app/actions';
 import { LoginSchema } from '@/lib/schemas';
@@ -33,9 +33,17 @@ export function LoginForm() {
       email: '',
       password: '',
     },
-    // Pass the server-side error message to the form
-    errors: state.errors ? { root: { message: state.message } } : {},
   });
+
+  useEffect(() => {
+    if (state?.errors) {
+      state.errors.forEach((error) => {
+        form.setError(error.path[0] as 'email' | 'password', {
+          message: error.message,
+        });
+      });
+    }
+  }, [state, form]);
 
   return (
     <Form {...form}>
