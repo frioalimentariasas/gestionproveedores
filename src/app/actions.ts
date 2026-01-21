@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { LoginSchema, RegisterSchema, ForgotPasswordSchema, type FormState } from '@/lib/schemas';
+import { LoginSchema, RegisterSchema, AdminRegisterSchema, ForgotPasswordSchema, type FormState } from '@/lib/schemas';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -88,6 +88,51 @@ export async function register(prevState: FormState, formData: FormData): Promis
 
   redirect('/dashboard');
 }
+
+export async function registerAdmin(prevState: FormState, formData: FormData): Promise<FormState> {
+  const parsed = AdminRegisterSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!parsed.success) {
+    return {
+      message: 'Formato de datos inválido. Por favor, corrija los campos.',
+      errors: parsed.error.issues,
+    };
+  }
+
+  const { name, email, password } = parsed.data;
+
+  const allowedAdminEmails = [
+    'sistemas@frioalimentaria.com.co',
+    'asistente@frioalimentaria.com.co',
+  ];
+
+  if (!allowedAdminEmails.includes(email)) {
+    return {
+      message: 'Este correo electrónico no está autorizado para registrarse como administrador.',
+    };
+  }
+  
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Save admin data to a separate 'admins' collection
+    await setDoc(doc(db, 'admins', user.uid), {
+      name,
+      email: user.email,
+      role: 'admin',
+      createdAt: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    return {
+      message: getAuthErrorMessage(error as AuthError),
+    };
+  }
+
+  redirect('/dashboard');
+}
+
 
 export async function forgotPassword(prevState: FormState, formData: FormData): Promise<FormState> {
   const parsed = ForgotPasswordSchema.safeParse(Object.fromEntries(formData.entries()));

@@ -18,6 +18,12 @@ export const RegisterSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
 });
 
+export const AdminRegisterSchema = z.object({
+  name: z.string().min(2, 'El nombre es requerido.'),
+  email: z.string().email({ message: 'Por favor ingrese un correo válido.' }),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
+});
+
 export const ForgotPasswordSchema = z.object({
   email: z.string().email({ message: 'Por favor ingrese un correo válido.' }),
 });
