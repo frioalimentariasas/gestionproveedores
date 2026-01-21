@@ -21,26 +21,32 @@ export function useUserData() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setLoading(true);
-        
-        let userDoc = await getDoc(doc(db, "admins", currentUser.uid));
-        if (userDoc.exists()) {
+      try {
+        setUser(currentUser);
+        if (currentUser) {
+          // Check for admin first
+          let userDoc = await getDoc(doc(db, 'admins', currentUser.uid));
+          if (userDoc.exists()) {
             setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
-        } else {
-            userDoc = await getDoc(doc(db, "providers", currentUser.uid));
+          } else {
+            // If not admin, check for provider
+            userDoc = await getDoc(doc(db, 'providers', currentUser.uid));
             if (userDoc.exists()) {
-                setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+              setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
             } else {
-                // This can happen if user is created in Auth but not in Firestore yet
-                setUserData(null);
+              console.warn("User exists in Auth but their data is not in 'admins' or 'providers' collections.");
+              setUserData(null);
             }
+          }
+        } else {
+          // No user is logged in
+          setUserData(null);
         }
-        setLoading(false);
-      } else {
-        setUser(null);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
         setUserData(null);
+      } finally {
+        // Set loading to false only after all checks are complete
         setLoading(false);
       }
     });
