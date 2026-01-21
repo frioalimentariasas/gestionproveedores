@@ -128,8 +128,8 @@ export function RegisterForm() {
       setAllStates([]);
       setAllCities([]);
     }
-    setValue('department', '', { shouldValidate: true });
-    setValue('city', '', { shouldValidate: true });
+    setValue('department', '');
+    setValue('city', '');
   }, [selectedCountryName, allCountries, setValue]);
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export function RegisterForm() {
     } else {
       setAllCities([]);
     }
-    setValue('city', '', { shouldValidate: true });
+    setValue('city', '');
   }, [selectedStateName, allStates, selectedCountryName, allCountries, setValue]);
 
   useEffect(() => {
@@ -402,9 +402,35 @@ export function RegisterForm() {
           />
           <FormField
             control={form.control}
-            name="phoneNumber"
+            name="email"
             render={({ field }) => (
               <FormItem>
+                <FormLabel>Correo electrónico</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="nombre@ejemplo.com" type="email" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contraseña</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="••••••••" type="password" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="phoneNumber"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
                 <FormLabel>Celular</FormLabel>
                   <div className="relative">
                      <FormControl>
@@ -467,32 +493,6 @@ export function RegisterForm() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Correo electrónico</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="nombre@ejemplo.com" type="email" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contraseña</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="••••••••" type="password" />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
