@@ -74,7 +74,7 @@ export async function register(prevState: FormState, formData: FormData): Promis
     };
   }
   
-  const { email, password, ...providerData } = parsed.data;
+  const { email, password, phoneCountryCode, phoneNumber, ...providerData } = parsed.data;
   
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -83,6 +83,7 @@ export async function register(prevState: FormState, formData: FormData): Promis
     // Save provider data to Firestore, using user's UID as document ID
     await setDoc(doc(db, 'providers', user.uid), {
       ...providerData,
+      phoneNumber: `+${phoneCountryCode}${phoneNumber}`,
       email: user.email, // Ensure email from auth is the one stored
       createdAt: new Date().toISOString(),
     });
