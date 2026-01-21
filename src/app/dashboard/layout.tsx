@@ -11,7 +11,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Do nothing until the loading of user auth state is complete.
+    if (loading) {
+      return;
+    }
+    // If loading is finished and there is no user, redirect to login.
+    if (!user) {
       router.push('/login');
     }
   }, [loading, user, router]);
