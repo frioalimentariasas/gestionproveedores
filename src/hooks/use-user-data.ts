@@ -24,23 +24,18 @@ export function useUserData() {
       setUser(currentUser);
       if (currentUser) {
         setLoading(true);
-        let userDoc;
         
-        userDoc = await getDoc(doc(db, "admins", currentUser.uid));
+        let userDoc = await getDoc(doc(db, "admins", currentUser.uid));
         if (userDoc.exists()) {
             setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
-            setLoading(false);
-            return;
-        }
-
-        userDoc = await getDoc(doc(db, "providers", currentUser.uid));
-        if (userDoc.exists()) {
-            setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
         } else {
-            // This might happen if user is created in Auth but not in Firestore yet
-            // or if the user is an admin. We already checked for admin.
-            // Let's assume for a brief moment the user is not found.
-            setUserData(null);
+            userDoc = await getDoc(doc(db, "providers", currentUser.uid));
+            if (userDoc.exists()) {
+                setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+            } else {
+                // This can happen if user is created in Auth but not in Firestore yet
+                setUserData(null);
+            }
         }
         setLoading(false);
       } else {
