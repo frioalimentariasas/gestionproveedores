@@ -13,6 +13,11 @@ import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
 
 
+// Helper to check if an error is a Firebase AuthError
+function isAuthError(error: unknown): error is AuthError {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
 // Helper to map Firebase auth errors to user-friendly messages
 function getAuthErrorMessage(error: AuthError): string {
   switch (error.code) {
@@ -28,7 +33,7 @@ function getAuthErrorMessage(error: AuthError): string {
         return 'El correo electrónico no es válido.';
     default:
       console.error('Unhandled Firebase Auth Error:', error);
-      return 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.';
+      return 'Ocurrió un error inesperado durante la autenticación. Por favor, inténtelo de nuevo.';
   }
 }
 
@@ -49,9 +54,11 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
-    return {
-      message: getAuthErrorMessage(error as AuthError),
-    };
+    if (isAuthError(error)) {
+        return { message: getAuthErrorMessage(error) };
+    }
+    console.error('Login Error:', error);
+    return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
   
   redirect('/dashboard');
@@ -81,8 +88,12 @@ export async function register(prevState: FormState, formData: FormData): Promis
     });
 
   } catch (error) {
+    if (isAuthError(error)) {
+        return { message: getAuthErrorMessage(error) };
+    }
+    console.error('Firestore Error during provider registration:', error);
     return {
-      message: getAuthErrorMessage(error as AuthError),
+        message: 'El usuario se ha creado, pero ha ocurrido un error al guardar los datos. Revise las reglas de seguridad de Firestore.',
     };
   }
 
@@ -125,8 +136,12 @@ export async function registerAdmin(prevState: FormState, formData: FormData): P
     });
 
   } catch (error) {
+    if (isAuthError(error)) {
+        return { message: getAuthErrorMessage(error) };
+    }
+    console.error('Firestore Error during admin registration:', error);
     return {
-      message: getAuthErrorMessage(error as AuthError),
+        message: 'El usuario administrador se ha creado, pero ha ocurrido un error al guardar los datos. Revise las reglas de seguridad de Firestore.',
     };
   }
 
