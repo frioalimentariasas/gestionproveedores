@@ -247,11 +247,24 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
+           <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Dirección</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Calle 10 # 42-10" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="phoneNumber"
             render={({ field }) => (
-              <FormItem className="md:col-span-2">
+              <FormItem>
                 <FormLabel>Celular</FormLabel>
                   <div className="relative">
                      <FormControl>
@@ -259,7 +272,7 @@ export function RegisterForm() {
                           {...field}
                           type="tel"
                           placeholder={selectedCountryForPhone?.example}
-                          className="pl-28" // Make space for the trigger
+                          className="pl-32"
                         />
                       </FormControl>
                     <Popover open={phonePopoverOpen} onOpenChange={setPhonePopoverOpen}>
@@ -268,7 +281,7 @@ export function RegisterForm() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={phonePopoverOpen}
-                          className="absolute left-1 top-1/2 h-8 -translate-y-1/2 w-24 justify-start text-left font-normal"
+                          className="absolute left-1 top-1/2 h-8 -translate-y-1/2 w-28 justify-start text-left font-normal"
                         >
                           <span className="w-full truncate flex items-center gap-2">
                             {getFlagEmoji(selectedCountryForPhone?.code || '')} +{selectedCountryForPhone?.phone}
@@ -314,19 +327,6 @@ export function RegisterForm() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dirección</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Calle 10 # 42-10" />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
