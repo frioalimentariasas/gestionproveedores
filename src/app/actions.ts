@@ -86,6 +86,8 @@ export async function register(prevState: FormState, formData: FormData): Promis
       phoneNumber: `+${phoneCountryCode}${phoneNumber}`,
       email: user.email, // Ensure email from auth is the one stored
       createdAt: new Date().toISOString(),
+      status: 'pending',
+      role: 'provider',
     });
 
   } catch (error) {
