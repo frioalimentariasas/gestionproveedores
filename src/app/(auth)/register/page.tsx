@@ -8,7 +8,7 @@ export default function RegisterPage() {
     <Card className="w-full max-w-2xl my-8">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4">
-          <Logo className="h-12 w-12 text-primary" />
+          <Logo className="w-48" />
         </div>
         <CardTitle className="font-headline text-2xl font-bold">Registro de Proveedor</CardTitle>
         <CardDescription>Cree su cuenta para empezar a gestionar sus servicios.</CardDescription>

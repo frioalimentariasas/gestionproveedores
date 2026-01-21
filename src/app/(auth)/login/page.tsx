@@ -8,7 +8,7 @@ export default function LoginPage() {
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4">
-          <Logo className="h-12 w-12 text-primary" />
+          <Logo className="w-48" />
         </div>
         <CardTitle className="font-headline text-2xl font-bold">Iniciar Sesión</CardTitle>
         <CardDescription>Bienvenido de nuevo. Ingrese sus credenciales.</CardDescription>
