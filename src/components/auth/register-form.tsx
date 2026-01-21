@@ -247,19 +247,6 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
-           <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dirección</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Calle 10 # 42-10" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="phoneNumber"
@@ -327,6 +314,19 @@ export function RegisterForm() {
                       </PopoverContent>
                     </Popover>
                   </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Dirección</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Calle 10 # 42-10" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
