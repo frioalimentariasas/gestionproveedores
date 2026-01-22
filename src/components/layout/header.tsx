@@ -14,12 +14,9 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-24 items-center justify-start">
+      <div className="container flex items-center justify-start py-4">
         <Link href="/" className="mr-12">
-          <div className="flex flex-col items-start">
-            <Image src="/logo.png" alt="Frio Alimentaria Logo" width={140} height={40} />
-            <span className="mt-1 text-sm font-semibold">Gestión de Proveedores</span>
-          </div>
+          <Image src="/logo.png" alt="Frio Alimentaria Logo" width={140} height={40} />
         </Link>
         <nav className="flex items-center gap-4 text-sm font-medium">
           {navLinks.map((link) => (
