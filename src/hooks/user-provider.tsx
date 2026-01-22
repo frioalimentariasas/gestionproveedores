@@ -31,37 +31,29 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
             if (user) {
-                // User is signed in, let's fetch their data from Firestore.
-                // We check 'admins' first, then 'providers'.
-                try {
-                    const adminDocRef = doc(db, 'admins', user.uid);
-                    const adminDoc = await getDoc(adminDocRef);
+                // User is authenticated, now fetch their data.
+                const adminDocRef = doc(db, 'admins', user.uid);
+                const adminDoc = await getDoc(adminDocRef);
 
-                    if (adminDoc.exists()) {
-                        setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
+                if (adminDoc.exists()) {
+                    setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
+                } else {
+                    const providerDocRef = doc(db, 'providers', user.uid);
+                    const providerDoc = await getDoc(providerDocRef);
+                    
+                    if (providerDoc.exists()) {
+                        setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
                     } else {
-                        // If not an admin, check if they are a provider.
-                        const providerDocRef = doc(db, 'providers', user.uid);
-                        const providerDoc = await getDoc(providerDocRef);
-                        
-                        if (providerDoc.exists()) {
-                            setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
-                        } else {
-                            // User is authenticated in Firebase, but has no data in our DB.
-                            // This is an invalid state, so we treat them as logged out.
-                            console.error("User document not found in 'admins' or 'providers' collection.");
-                            setUserData(null);
-                            await auth.signOut(); // Sign them out to prevent inconsistent states.
-                        }
+                        // User exists in Auth but not in our DB. An invalid state.
+                        console.error("Authenticated user has no document in 'admins' or 'providers'. Signing out.");
+                        setUserData(null);
+                        await auth.signOut(); // Sign out to prevent being stuck.
                     }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
-                    setUserData(null);
-                } finally {
-                    setLoading(false);
                 }
+                // Only set loading to false after all async DB checks are complete for an authenticated user.
+                setLoading(false);
             } else {
-                // No user is signed in.
+                // User is not authenticated. This is a final state.
                 setUserData(null);
                 setLoading(false);
             }

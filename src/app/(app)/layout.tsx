@@ -11,12 +11,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Only perform the check once loading is complete.
     if (!loading && !userData) {
       router.push('/auth/login');
     }
   }, [loading, userData, router]);
   
-  if (loading || !userData) {
+  // If we are still loading the user data, always show the spinner.
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-muted/40">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -24,6 +26,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // If loading is finished, but there's no user, the useEffect above will trigger a redirect.
+  // We show the loader to prevent a flash of an empty/broken page before the redirect happens.
+  if (!userData) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center bg-muted/40">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If we reach here, it means loading is false and userData is valid. Render the dashboard.
   return (
     <div className="flex min-h-screen">
       <Sidebar userRole={userData.role} />
