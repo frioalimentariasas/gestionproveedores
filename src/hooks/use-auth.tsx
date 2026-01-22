@@ -3,7 +3,8 @@
 import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
-import { type DocumentData } from 'firebase/firestore';
+import { doc, getDoc, type DocumentData } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firestore';
 
 // Define la forma del perfil de usuario, acomodando tanto admin como proveedor
 export interface UserProfile extends DocumentData {
@@ -34,22 +35,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
-                // Cualquier usuario autenticado en Firebase tendrá acceso.
-                // La verificación de roles en la base de datos se omite por completo.
-                setUser({
-                    uid: firebaseUser.uid,
-                    email: firebaseUser.email,
-                    // Se asignan valores por defecto para que la UI funcione correctamente.
-                    role: 'admin',
-                    name: firebaseUser.displayName || firebaseUser.email,
-                    companyName: firebaseUser.displayName || firebaseUser.email,
-                    status: 'approved',
-                });
+                // Si hay un usuario de Firebase, busca su perfil en la base de datos
+                const adminRef = doc(db, 'admins', firebaseUser.uid);
+                const adminSnap = await getDoc(adminRef);
+
+                if (adminSnap.exists()) {
+                    setUser({
+                        ...adminSnap.data(),
+                        uid: firebaseUser.uid,
+                        role: 'admin',
+                    } as UserProfile);
+                } else {
+                    const providerRef = doc(db, 'providers', firebaseUser.uid);
+                    const providerSnap = await getDoc(providerRef);
+                    if (providerSnap.exists()) {
+                         setUser({
+                            ...providerSnap.data(),
+                            uid: firebaseUser.uid,
+                            role: 'provider',
+                        } as UserProfile);
+                    } else {
+                        // El usuario está en Auth pero no en la BD (caso de error o registro incompleto)
+                        setUser(null); 
+                    }
+                }
             } else {
+                // No hay usuario de Firebase
                 setUser(null);
             }
+            // La carga termina solo después de todas las comprobaciones
             setLoading(false);
         });
 

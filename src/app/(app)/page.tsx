@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">¡Bienvenido, {user.companyName || user.name}!</CardTitle>
+          <CardTitle className="font-headline text-3xl">¡Bienvenido, {user.companyName || user.name || user.email}!</CardTitle>
           <CardDescription>Ha accedido a la plataforma de gestión de proveedores.</CardDescription>
         </CardHeader>
         <CardContent>

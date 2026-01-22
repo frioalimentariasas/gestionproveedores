@@ -5,6 +5,17 @@ import { useAuth } from '@/hooks/use-auth';
 import { Sidebar } from '@/components/layout/sidebar';
 import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { UserProfile } from '@/hooks/use-auth';
+
+// Define un usuario por defecto para el rol de la barra lateral,
+// ya que por ahora todos tienen acceso completo.
+const defaultUser: UserProfile = {
+  uid: '',
+  email: '',
+  role: 'admin',
+  status: 'approved',
+};
+
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
