@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
@@ -28,46 +28,43 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     const [userData, setUserData] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchUserDocument = useCallback(async (user: User) => {
-        try {
-            // 1. Check for admin document
-            const adminDocRef = doc(db, 'admins', user.uid);
-            const adminDoc = await getDoc(adminDocRef);
-            if (adminDoc.exists()) {
-                setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
-                return;
-            }
-
-            // 2. If not admin, check for provider document
-            const providerDocRef = doc(db, 'providers', user.uid);
-            const providerDoc = await getDoc(providerDocRef);
-            if (providerDoc.exists()) {
-                setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
-                return;
-            }
-
-            // 3. If user exists in Auth but not in our DB, it's an invalid state.
-            console.error("Authenticated user has no document in 'admins' or 'providers'. Signing out.");
-            await auth.signOut();
-            setUserData(null);
-
-        } catch (error) {
-            console.error("Error fetching user document:", error);
-            setUserData(null);
-        } finally {
-            // This now runs only after all async logic inside the try/catch is complete.
-            setLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        setLoading(true); // Always start in a loading state.
-        const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is detected, trigger the separate document fetching logic.
-                fetchUserDocument(user);
+                try {
+                    // 1. Check for admin document first.
+                    const adminDocRef = doc(db, 'admins', user.uid);
+                    const adminDoc = await getDoc(adminDocRef);
+                    if (adminDoc.exists()) {
+                        setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
+                        setLoading(false);
+                        return;
+                    }
+
+                    // 2. If not an admin, check for a provider document.
+                    const providerDocRef = doc(db, 'providers', user.uid);
+                    const providerDoc = await getDoc(providerDocRef);
+                    if (providerDoc.exists()) {
+                        setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
+                        setLoading(false);
+                        return;
+                    }
+
+                    // 3. If user is in Auth but not in our DB (neither admin nor provider),
+                    // it's an invalid state. Log them out.
+                    console.error("Authenticated user has no document in 'admins' or 'providers'. Signing out.");
+                    await auth.signOut();
+                    setUserData(null);
+                    setLoading(false);
+
+                } catch (error) {
+                    // Handle any errors during Firestore document fetching
+                    console.error("Error fetching user document:", error);
+                    setUserData(null);
+                    setLoading(false);
+                }
             } else {
-                // No user is signed in. Final state.
+                // No user is signed in. Final state is not loading and no user.
                 setUserData(null);
                 setLoading(false);
             }
@@ -75,7 +72,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
         // Cleanup subscription on unmount
         return () => unsubscribe();
-    }, [fetchUserDocument]);
+    }, []); // The empty dependency array ensures this effect runs only once on mount.
 
     return (
         <UserDataContext.Provider value={{ userData, loading }}>
