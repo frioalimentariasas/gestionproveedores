@@ -18,18 +18,18 @@ export default function LoginPage() {
       </CardContent>
       <CardFooter className="flex-col items-center justify-center gap-4">
         <div className="text-sm">
-          <Link href="/forgot-password" passHref className="text-primary hover:underline">
+          <Link href="/auth/forgot-password" passHref className="text-primary hover:underline">
             ¿Olvidó su contraseña?
           </Link>
         </div>
         <div className="text-sm text-muted-foreground">
           ¿No tiene una cuenta?{' '}
-          <Link href="/register" passHref className="font-semibold text-primary hover:underline">
+          <Link href="/auth/register" passHref className="font-semibold text-primary hover:underline">
             Regístrese
           </Link>
         </div>
         <div className="mt-4 w-full text-center text-sm">
-          <Link href="/" passHref className="font-semibold text-primary hover:underline">
+          <Link href="/auth" passHref className="font-semibold text-primary hover:underline">
             Volver a la selección de portal
           </Link>
         </div>

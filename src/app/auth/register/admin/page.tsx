@@ -19,7 +19,7 @@ export default function AdminRegisterPage() {
       <CardFooter>
         <div className="w-full text-center text-sm text-muted-foreground">
           ¿Ya tiene una cuenta?{' '}
-          <Link href="/login/admin" passHref className="font-semibold text-primary hover:underline">
+          <Link href="/auth/login/admin" passHref className="font-semibold text-primary hover:underline">
             Inicie Sesión
           </Link>
         </div>

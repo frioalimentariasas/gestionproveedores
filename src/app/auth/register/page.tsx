@@ -19,7 +19,7 @@ export default function RegisterPage() {
       <CardFooter>
         <div className="w-full text-center text-sm text-muted-foreground">
           ¿Ya tiene una cuenta?{' '}
-          <Link href="/login" passHref className="font-semibold text-primary hover:underline">
+          <Link href="/auth/login" passHref className="font-semibold text-primary hover:underline">
             Inicie Sesión
           </Link>
         </div>
