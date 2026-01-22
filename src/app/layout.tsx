@@ -4,6 +4,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import Header from '@/components/layout/header';
+import { FirebaseClientProvider, initializeFirebase } from '@/firebase';
+import { FirebaseErrorListener } from '@/components/firebase/error-listener';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -14,6 +16,8 @@ export const metadata: Metadata = {
   title: 'Gestión de Proveedores',
   description: 'Plataforma de gestión de proveedores para Frio Alimentaria.',
 };
+
+const firebaseApp = initializeFirebase();
 
 export default function RootLayout({
   children,
@@ -28,9 +32,12 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <Header />
-        <main>{children}</main>
-        <Toaster />
+        <FirebaseClientProvider firebaseApp={firebaseApp}>
+          <Header />
+          <main>{children}</main>
+          <Toaster />
+          <FirebaseErrorListener />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
