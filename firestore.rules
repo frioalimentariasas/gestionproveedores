@@ -57,11 +57,14 @@ service cloud.firestore {
     }
 
     /**
-     * Checks if the user has an admin role by verifying the existence of their
-     * UID in the `roles_admin` collection.
+     * Checks if the user has an admin role by verifying their UID in the `roles_admin`
+     * collection OR if their email is in the hardcoded list of admin emails.
      */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
+        request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co']
+      );
     }
 
     /**
@@ -125,7 +128,7 @@ service cloud.firestore {
      * @principle Secures role management by making the collection read-only for assignment from client applications. Role assignments must be managed by a trusted backend or through the console.
      */
     match /roles_admin/{adminId} {
-      allow get: if isOwner(adminId);
+      allow get: if isOwner(adminId) || isAdmin();
       allow list: if false;
       allow create: if false;
       allow update: if false;
