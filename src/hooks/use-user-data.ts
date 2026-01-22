@@ -21,24 +21,25 @@ export function useUserData() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setLoading(true); // Set loading at the beginning of every auth state check.
       if (currentUser) {
-        setUser(currentUser); // Set the Firebase user object immediately.
-        // Now, fetch the user's profile from Firestore to determine their role and data.
+        setUser(currentUser);
         try {
+          // Check if the user is an admin
           const adminDocRef = doc(db, 'admins', currentUser.uid);
           const adminDoc = await getDoc(adminDocRef);
 
           if (adminDoc.exists()) {
-            setUserData({ ...adminDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
+            setUserData({ uid: currentUser.uid, role: 'admin', ...adminDoc.data() } as UserProfile);
           } else {
+            // If not an admin, check if they are a provider
             const providerDocRef = doc(db, 'providers', currentUser.uid);
             const providerDoc = await getDoc(providerDocRef);
+            
             if (providerDoc.exists()) {
-              setUserData({ ...providerDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+              setUserData({ uid: currentUser.uid, role: 'provider', ...providerDoc.data() } as UserProfile);
             } else {
-              // Authenticated user has no profile in 'admins' or 'providers'.
-              console.warn("User document not found.");
+              // User is authenticated but has no profile document in either collection
+              console.warn("Authenticated user has no profile document.");
               setUserData(null);
             }
           }
@@ -46,11 +47,11 @@ export function useUserData() {
           console.error("Error fetching user data:", error);
           setUserData(null);
         } finally {
-          // After all async operations are done, set loading to false.
+          // Loading is finished only after all checks are done
           setLoading(false);
         }
       } else {
-        // No user is signed in.
+        // No user is logged in, this is a definitive state.
         setUser(null);
         setUserData(null);
         setLoading(false);
