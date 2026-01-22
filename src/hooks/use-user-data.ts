@@ -31,28 +31,24 @@ export function useUserData() {
             if (adminDoc.exists()) {
                 // User is an admin
                 setUserData({ ...adminDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
-                setUser(currentUser);
             } else {
                 // Not an admin, check if they are a provider
                 const providerDoc = await getDoc(providerDocRef);
                 if (providerDoc.exists()) {
                     // User is a provider
                     setUserData({ ...providerDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
-                    setUser(currentUser);
                 } else {
                     // User is authenticated but has no data in either collection.
                     // This is an invalid state, so treat them as logged out.
                     console.warn("User record not found in 'admins' or 'providers'.");
                     setUserData(null);
-                    setUser(null);
                 }
             }
         } catch (error) {
             console.error("Error fetching user data:", error);
             setUserData(null);
-            setUser(null);
         } finally {
-            // We have a definitive state now, so stop loading.
+            setUser(currentUser);
             setLoading(false);
         }
       } else {
