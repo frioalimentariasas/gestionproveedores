@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 export default function Header() {
   const pathname = usePathname();
   const navLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/', label: 'Dashboard' },
     { href: '/providers', label: 'Gestión de Proveedores' },
   ];
 
