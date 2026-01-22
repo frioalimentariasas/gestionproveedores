@@ -95,7 +95,7 @@ service cloud.firestore {
 
     /**
      * @description Rules for the `providers` collection. A provider can manage their own
-     *              document, and administrators have read-only access to all documents.
+     *              document, and administrators have have read-only access to all documents.
      * @path /providers/{providerId}
      * @allow (get) A provider (uid: 'provider123') reading their own document at `/providers/provider123`.
      * @allow (create) A new provider (uid: 'provider456') creating their document at `/providers/provider456`.
@@ -117,14 +117,15 @@ service cloud.firestore {
      * @description Defines admin user roles. The existence of a document grants admin privileges.
      *              This collection is read-only from the client to prevent privilege escalation.
      * @path /roles_admin/{adminId}
+     * @allow (get) An admin (uid: 'admin123') checking for their own document at `/roles_admin/admin123`.
      * @allow (internal exists()) An internal rule like `isAdmin()` checking for a document's existence.
-     * @deny (get) Any user, including an admin, trying to directly read a document from `/roles_admin`.
+     * @deny (get) A non-admin trying to directly read a document from `/roles_admin`.
      * @deny (create) Any user attempting to create a document to grant themselves admin rights.
      * @deny (delete) Any user attempting to delete a document to revoke admin rights.
-     * @principle Secures role management by making the collection read-only from client applications. Role assignments must be managed by a trusted backend or through the console.
+     * @principle Secures role management by making the collection read-only for assignment from client applications. Role assignments must be managed by a trusted backend or through the console.
      */
     match /roles_admin/{adminId} {
-      allow get: if false;
+      allow get: if isOwner(adminId);
       allow list: if false;
       allow create: if false;
       allow update: if false;
