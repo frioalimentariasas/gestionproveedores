@@ -8,7 +8,15 @@ import { useAuth, useUser } from '@/firebase';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '../ui/skeleton';
 
 export default function Header() {
   const pathname = usePathname();
@@ -31,6 +39,7 @@ export default function Header() {
         description: 'Vuelve pronto.',
       });
       router.push('/auth/login');
+      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -52,7 +61,7 @@ export default function Header() {
               height={40}
             />
           </Link>
-          <nav className="flex items-center gap-4 text-sm font-medium">
+          <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -70,17 +79,35 @@ export default function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          {!loading &&
-            (user ? (
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-              </Button>
-            ) : (
-              <Button asChild variant="default" size="sm">
-                <Link href="/auth/login">Iniciar Sesión</Link>
-              </Button>
-            ))}
+          {loading ? (
+            <Skeleton className="h-9 w-28" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  {user.displayName || user.email}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/account">
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Mi Cuenta</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild variant="default" size="sm">
+              <Link href="/auth/login">Iniciar Sesión</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
