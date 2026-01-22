@@ -2,54 +2,22 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
 
-    // El layout principal ya gestiona el estado de carga principal y la redirección.
-    // Solo necesitamos manejar el renderizado inicial donde el usuario podría no estar disponible aún.
-    if (loading || !user) {
-        return (
-             <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-3/4" />
-                    </CardHeader>
-                    <CardContent>
-                         <Skeleton className="h-4 w-full" />
-                    </CardContent>
-                </Card>
-            </div>
-        )
+    // The layout component now fully handles the loading and redirection logic.
+    // If this component renders, we can safely assume `user` is available.
+    // We add a fallback just in case to prevent rendering errors, but it should not be reached.
+    if (!user) {
+        return null; 
     }
-
-    const isPending = user.role === 'provider' && user.status === 'pending';
-    const isRejected = user.role === 'provider' && user.status === 'rejected';
 
   return (
     <div className="flex flex-col gap-4">
-        {(isPending || isRejected) && (
-            <Alert variant={isRejected ? 'destructive' : 'default'}>
-                <ShieldAlert className="h-4 w-4" />
-                <AlertTitle>
-                    {isPending ? '¡Cuenta pendiente de aprobación!' : '¡Cuenta Rechazada!'}
-                </AlertTitle>
-                <AlertDescription>
-                    {isPending
-                        ? 'Su registro ha sido recibido. Un administrador lo revisará pronto. Recibirá una notificación por correo electrónico una vez que su cuenta sea aprobada.'
-                        : 'Su cuenta ha sido rechazada. Por favor, póngase en contacto con el soporte para más información.'
-                    }
-                </AlertDescription>
-            </Alert>
-        )}
-
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">¡Bienvenido, {user.companyName || user.name || user.email}!</CardTitle>
+          <CardTitle className="font-headline text-3xl">¡Bienvenido, {user.name || user.email}!</CardTitle>
           <CardDescription>Ha accedido a la plataforma de gestión de proveedores.</CardDescription>
         </CardHeader>
         <CardContent>

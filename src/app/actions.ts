@@ -9,10 +9,7 @@ import {
   signOut,
   type AuthError,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth } from '@/lib/firebase/auth';
-import { db } from '@/lib/firebase/firestore';
-
 
 // Helper to check if an error is a Firebase AuthError
 function isAuthError(error: unknown): error is AuthError {
@@ -51,7 +48,6 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
   const { email, password } = parsed.data;
 
   try {
-    // Solo intenta iniciar sesión. Si las credenciales son incorrectas, lanzará un error.
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     if (isAuthError(error)) {
@@ -61,7 +57,6 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
     return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
 
-  // Si el inicio de sesión es exitoso, redirige a la página principal.
   redirect('/');
 }
 
@@ -76,22 +71,10 @@ export async function register(prevState: FormState, formData: FormData): Promis
     };
   }
   
-  const { email, password, ...providerData } = parsed.data;
+  const { email, password } = parsed.data;
   
   try {
-    // Solo crea el usuario en Firebase Auth.
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    // Crea el documento del proveedor en Firestore.
-    await setDoc(doc(db, 'providers', user.uid), {
-        ...providerData,
-        email: user.email, // Asegurarse de que el email esté en los datos
-        uid: user.uid,
-        status: 'pending', // Estado inicial
-        createdAt: serverTimestamp(),
-    });
-
+    await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
     if (isAuthError(error)) {
         return { message: getAuthErrorMessage(error) };
@@ -115,7 +98,7 @@ export async function registerAdmin(prevState: FormState, formData: FormData): P
     };
   }
 
-  const { email, password, name } = parsed.data;
+  const { email, password } = parsed.data;
 
   const allowedAdminEmails = [
     'sistemas@frioalimentaria.com.co',
@@ -129,18 +112,7 @@ export async function registerAdmin(prevState: FormState, formData: FormData): P
   }
   
   try {
-    // Crea el usuario en Firebase Auth.
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    // Crea el documento del admin en Firestore
-    await setDoc(doc(db, 'admins', user.uid), {
-      name,
-      email: user.email,
-      uid: user.uid,
-      createdAt: serverTimestamp(),
-    });
-    
+    await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
     if (isAuthError(error)) {
         return { message: getAuthErrorMessage(error) };
@@ -174,8 +146,7 @@ export async function forgotPassword(prevState: FormState, formData: FormData): 
       success: true,
     };
   } catch (error) {
-    // For security, don't reveal if the user exists. Return success message regardless.
-     return {
+    return {
        message: `Si existe una cuenta con ${email}, le hemos enviado un enlace para recuperar su contraseña.`,
        success: true,
     };

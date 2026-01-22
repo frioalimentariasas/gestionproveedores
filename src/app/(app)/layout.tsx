@@ -5,32 +5,20 @@ import { useAuth } from '@/hooks/use-auth';
 import { Sidebar } from '@/components/layout/sidebar';
 import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { UserProfile } from '@/hooks/use-auth';
-
-// Define un usuario por defecto para el rol de la barra lateral,
-// ya que por ahora todos tienen acceso completo.
-const defaultUser: UserProfile = {
-  uid: '',
-  email: '',
-  role: 'admin',
-  status: 'approved',
-};
-
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Este efecto se ejecutará cada vez que cambie el estado de carga o de usuario.
+    // Only check for redirection once the loading state is resolved.
     if (!loading && !user) {
-      // Si la carga ha finalizado y no hay usuario, redirige al login.
       router.push('/auth/login');
     }
   }, [user, loading, router]);
   
-  // Mientras se carga, o si aún no hay usuario (antes de que el efecto de redirección se ejecute),
-  // muestra un cargador a pantalla completa. Esto evita parpadeos de contenido.
+  // Keep showing the loader while the auth state is being determined,
+  // or if there's no user (because the redirection will happen shortly).
   if (loading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-muted/40">
@@ -39,8 +27,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // Si llegamos aquí, significa que la carga ha terminado y existe un usuario.
-  // Podemos renderizar de forma segura el layout del dashboard.
+  // If we reach this point, it means loading is false and a user object exists.
+  // We can safely render the dashboard layout.
   return (
     <div className="flex min-h-screen">
       <Sidebar userRole={user.role} />
