@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
@@ -28,32 +28,46 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     const [userData, setUserData] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
-            if (user) {
-                // User is authenticated, now fetch their data.
-                const adminDocRef = doc(db, 'admins', user.uid);
-                const adminDoc = await getDoc(adminDocRef);
+    const fetchUserDocument = useCallback(async (user: User) => {
+        try {
+            // 1. Check for admin document
+            const adminDocRef = doc(db, 'admins', user.uid);
+            const adminDoc = await getDoc(adminDocRef);
+            if (adminDoc.exists()) {
+                setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
+                return;
+            }
 
-                if (adminDoc.exists()) {
-                    setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
-                } else {
-                    const providerDocRef = doc(db, 'providers', user.uid);
-                    const providerDoc = await getDoc(providerDocRef);
-                    
-                    if (providerDoc.exists()) {
-                        setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
-                    } else {
-                        // User exists in Auth but not in our DB. An invalid state.
-                        console.error("Authenticated user has no document in 'admins' or 'providers'. Signing out.");
-                        setUserData(null);
-                        await auth.signOut(); // Sign out to prevent being stuck.
-                    }
-                }
-                // Only set loading to false after all async DB checks are complete for an authenticated user.
-                setLoading(false);
+            // 2. If not admin, check for provider document
+            const providerDocRef = doc(db, 'providers', user.uid);
+            const providerDoc = await getDoc(providerDocRef);
+            if (providerDoc.exists()) {
+                setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
+                return;
+            }
+
+            // 3. If user exists in Auth but not in our DB, it's an invalid state.
+            console.error("Authenticated user has no document in 'admins' or 'providers'. Signing out.");
+            await auth.signOut();
+            setUserData(null);
+
+        } catch (error) {
+            console.error("Error fetching user document:", error);
+            setUserData(null);
+        } finally {
+            // This now runs only after all async logic inside the try/catch is complete.
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        setLoading(true); // Always start in a loading state.
+        const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+            if (user) {
+                // User is detected, trigger the separate document fetching logic.
+                fetchUserDocument(user);
             } else {
-                // User is not authenticated. This is a final state.
+                // No user is signed in. Final state.
                 setUserData(null);
                 setLoading(false);
             }
@@ -61,7 +75,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
         // Cleanup subscription on unmount
         return () => unsubscribe();
-    }, []);
+    }, [fetchUserDocument]);
 
     return (
         <UserDataContext.Provider value={{ userData, loading }}>
