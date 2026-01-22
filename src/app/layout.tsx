@@ -1,53 +1,36 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useUserData } from '@/hooks/use-user-data';
-import { Sidebar } from '@/components/layout/sidebar';
-import { ReactNode, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Toaster } from '@/components/ui/toaster';
 import { UserDataProvider } from '@/hooks/user-provider';
+import { cn } from '@/lib/utils';
 
-function DashboardGate({ children }: { children: ReactNode }) {
-  const { userData, loading } = useUserData();
-  const router = useRouter();
+const fontSans = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
-  useEffect(() => {
-    if (!loading && !userData) {
-      router.push('/auth');
-    }
-  }, [loading, userData, router]);
+export const metadata: Metadata = {
+  title: 'Gestión de Proveedores',
+  description: 'Plataforma de gestión de proveedores para Frio Alimentaria.',
+};
 
-  if (loading || !userData) {
-    return (
-      <div className="flex min-h-screen w-full">
-        <div className="hidden md:flex flex-col w-64 border-r p-4 gap-4 bg-background">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full mt-auto" />
-        </div>
-        <div className="flex-1 p-8 bg-muted/40">
-          <Skeleton className="h-48 w-full" />
-        </div>
-      </div>
-    );
-  }
-
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <div className="flex min-h-screen">
-      <Sidebar userRole={userData.role} />
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-muted/40">
-        {children}
-      </main>
-    </div>
-  );
-}
-
-
-export default function AppLayout({ children }: { children: ReactNode }) {
-  return (
-    <UserDataProvider>
-      <DashboardGate>{children}</DashboardGate>
-    </UserDataProvider>
+    <html lang="es" suppressHydrationWarning>
+      <body
+        className={cn(
+          'min-h-screen bg-background font-sans antialiased',
+          fontSans.variable
+        )}
+      >
+        <UserDataProvider>{children}</UserDataProvider>
+        <Toaster />
+      </body>
+    </html>
   );
 }
