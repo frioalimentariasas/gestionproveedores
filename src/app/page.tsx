@@ -28,10 +28,11 @@ export default function HomePage() {
     <AuthGuard>
       <div className="container mx-auto p-4">
         <h1 className="my-8 text-center text-4xl font-bold tracking-tight">
-          Dashboard
+          Dashboard Administrativo
         </h1>
         <p className="text-center text-muted-foreground">
-          Aquí se mostrarán los resúmenes de informes.
+          Bienvenido al panel de administración. Desde aquí podrás ver
+          resúmenes de actividad y gestionar los proveedores.
         </p>
       </div>
     </AuthGuard>
