@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
                 // Desvío temporal para el usuario de sistemas
-                if (firebaseUser.email === 'sistemas@frioalimentaria.com') {
+                if (firebaseUser.email === 'sistemas@frioalimentaria.com.co') {
                     setUser({
                         uid: firebaseUser.uid,
                         role: 'admin',
