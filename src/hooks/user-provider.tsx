@@ -29,6 +29,24 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // --- TEMPORARY CHANGE: Bypassing login for debugging ---
+        // To re-enable login, set the following variable to false
+        const bypassLogin = true;
+
+        if (bypassLogin) {
+            console.warn("Login is currently bypassed for debugging. A mock admin user is being used.");
+            setUserData({
+                uid: 'mock-admin-uid',
+                role: 'admin',
+                name: 'Admin de Depuración',
+                companyName: 'Sistema (Modo Depuración)',
+            });
+            setLoading(false);
+            return; // Skip real authentication
+        }
+        // --- END TEMPORARY CHANGE ---
+
+
         const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
             if (user) {
                 try {
@@ -38,6 +56,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
                     if (adminDoc.exists()) {
                         setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
+                        setLoading(false); // Set loading false after data is fetched
                     } else {
                         // If not admin, check for provider role
                         const providerDocRef = doc(db, 'providers', user.uid);
@@ -45,18 +64,17 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
                         
                         if (providerDoc.exists()) {
                             setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
+                            setLoading(false); // Set loading false after data is fetched
                         } else {
                             // User is authenticated in Firebase, but has no data in our DB
                             console.error("User document not found in 'admins' or 'providers' collection.");
                             setUserData(null);
+                            setLoading(false);
                         }
                     }
                 } catch (error) {
                     console.error("Error fetching user data:", error);
                     setUserData(null);
-                } finally {
-                    // This is the correct place to set loading to false: 
-                    // only after all async operations for a logged-in user are complete.
                     setLoading(false);
                 }
             } else {
