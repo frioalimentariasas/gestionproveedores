@@ -6,9 +6,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  signOut,
   type AuthError,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
 
@@ -37,9 +38,7 @@ function getAuthErrorMessage(error: AuthError): string {
   }
 }
 
-
-// Actions
-export async function login(prevState: FormState, formData: FormData): Promise<FormState> {
+async function handleLogin(formData: FormData, role: 'admin' | 'provider'): Promise<FormState> {
   const parsed = LoginSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!parsed.success) {
@@ -52,17 +51,43 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
   const { email, password } = parsed.data;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Verify role after sign-in
+    const collectionName = role === 'admin' ? 'admins' : 'providers';
+    const docRef = doc(db, collectionName, user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      // If the user document doesn't exist in the specified collection,
+      // sign them out and return an error.
+      await signOut(auth);
+      const errorMessage = role === 'admin' 
+        ? 'No tiene permisos de administrador.'
+        : 'Esta cuenta no está registrada como proveedor.';
+      return { message: errorMessage };
+    }
+
   } catch (error) {
     if (isAuthError(error)) {
         return { message: getAuthErrorMessage(error) };
     }
-    console.error('Login Error:', error);
+    console.error(`${role} Login Error:`, error);
     return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
   
   redirect('/dashboard');
 }
+
+export async function providerLogin(prevState: FormState, formData: FormData): Promise<FormState> {
+    return handleLogin(formData, 'provider');
+}
+
+export async function adminLogin(prevState: FormState, formData: FormData): Promise<FormState> {
+    return handleLogin(formData, 'admin');
+}
+
 
 export async function register(prevState: FormState, formData: FormData): Promise<FormState> {
   const parsed = RegisterSchema.safeParse(Object.fromEntries(formData.entries()));

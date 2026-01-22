@@ -10,9 +10,8 @@ export default function LoginPage() {
         <div className="mx-auto mb-4">
           <Logo className="w-48" />
         </div>
-        <CardTitle className="font-headline text-2xl font-bold">Gestión de Proveedores</CardTitle>
-        <CardTitle className="font-headline text-2xl font-bold">Iniciar Sesión</CardTitle>
-        <CardDescription>Bienvenido de nuevo. Ingrese sus credenciales.</CardDescription>
+        <CardTitle className="font-headline text-2xl font-bold">Portal de Proveedores</CardTitle>
+        <CardDescription>Bienvenido. Ingrese sus credenciales de proveedor.</CardDescription>
       </CardHeader>
       <CardContent>
         <LoginForm />
@@ -27,6 +26,11 @@ export default function LoginPage() {
           ¿No tiene una cuenta?{' '}
           <Link href="/register" passHref className="font-semibold text-primary hover:underline">
             Regístrese
+          </Link>
+        </div>
+        <div className="mt-4 w-full text-center text-sm">
+          <Link href="/" passHref className="font-semibold text-primary hover:underline">
+            Volver a la selección de portal
           </Link>
         </div>
       </CardFooter>

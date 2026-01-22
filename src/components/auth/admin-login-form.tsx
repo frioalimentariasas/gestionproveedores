@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { providerLogin } from '@/app/actions';
+import { adminLogin } from '@/app/actions';
 import { LoginSchema } from '@/lib/schemas';
 
 import { Button } from '@/components/ui/button';
@@ -19,13 +19,13 @@ function SubmitButton() {
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Iniciar Sesión
+      Iniciar Sesión como Administrador
     </Button>
   );
 }
 
-export function LoginForm() {
-  const [state, formAction] = useActionState(providerLogin, { message: '' });
+export function AdminLoginForm() {
+  const [state, formAction] = useActionState(adminLogin, { message: '' });
   
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
@@ -58,7 +58,7 @@ export function LoginForm() {
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input {...field} placeholder="nombre@ejemplo.com" type="email" className="pl-10" />
+                    <Input {...field} placeholder="admin@ejemplo.com" type="email" className="pl-10" />
                   </div>
                 </FormControl>
                 <FormMessage />
