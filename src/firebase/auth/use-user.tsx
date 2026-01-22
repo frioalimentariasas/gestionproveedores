@@ -19,26 +19,36 @@ const INITIAL_STATE: State = {
   error: null,
 };
 
+// This is a global store. It's safe for SSR because:
+// 1. It's only written to on the client (inside useEffect).
+// 2. On the server, we always return INITIAL_STATE via getServerSnapshot.
 let state: State = INITIAL_STATE;
 const listeners = new Set<() => void>();
 
+function onStateChange(newState: State) {
+  state = newState;
+  listeners.forEach((l) => l());
+}
+
 function useAuthStore(auth: Auth | null) {
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+      // If there's no auth provider, we're not loading.
+      onStateChange({ user: null, loading: false, error: null });
+      return;
+    }
 
-    // We set the initial state here to ensure that the server-side rendering
-    // and client-side rendering are consistent.
-    state = INITIAL_STATE;
+    // When the component mounts or auth object changes, we are in a loading state
+    // until onAuthStateChanged fires.
+    onStateChange(INITIAL_STATE);
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        state = { ...state, user, loading: false };
-        listeners.forEach((l) => l());
+        onStateChange({ user, loading: false, error: null });
       },
       (error) => {
-        state = { ...state, error, loading: false };
-        listeners.forEach((l) => l());
+        onStateChange({ user: null, loading: false, error });
       }
     );
 
@@ -56,7 +66,13 @@ function useAuthStore(auth: Auth | null) {
     []
   );
 
-  return useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // getServerSnapshot is essential for SSR. It provides the initial state on the server.
+  // On the server, we don't know the user's auth state, so we always return the loading state.
+  const getServerSnapshot = () => {
+    return INITIAL_STATE;
+  };
+
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, getServerSnapshot);
 }
 
 // This hook provides the current user's authentication state.

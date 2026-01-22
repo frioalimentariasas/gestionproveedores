@@ -1,6 +1,6 @@
 'use client';
 
-import type { FirebaseApp } from 'firebase/app';
+import { initializeFirebase } from '@/firebase';
 import { FirebaseProvider } from './provider';
 
 // This is a client-side only provider that ensures that the Firebase app
@@ -8,10 +8,9 @@ import { FirebaseProvider } from './provider';
 // It is useful for preventing the "Firebase app already initialized" error.
 export function FirebaseClientProvider({
   children,
-  firebaseApp,
 }: {
   children: React.ReactNode;
-  firebaseApp: FirebaseApp;
 }) {
+  const firebaseApp = initializeFirebase();
   return <FirebaseProvider firebaseApp={firebaseApp}>{children}</FirebaseProvider>;
 }
