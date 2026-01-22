@@ -11,15 +11,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Si la carga ha finalizado y no hay usuario, redirigir al login.
+    // Solo tomar una decisión de redirección cuando la carga haya finalizado.
     if (!loading && !user) {
       router.push('/login');
     }
   }, [loading, user, router]);
 
-  // Mientras se carga el estado de autenticación, o si el usuario no tiene datos (aún),
-  // mostrar un esqueleto de carga. Esto previene redirecciones prematuras.
-  if (loading || !userData) {
+  // 1. Mostrar siempre el esqueleto de carga mientras el hook `useUserData` está trabajando.
+  if (loading) {
     return (
         <div className="flex min-h-screen w-full">
             <div className="hidden md:flex flex-col w-64 border-r p-4 gap-4 bg-background">
@@ -34,8 +33,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+  
+  // 2. Si la carga terminó pero no hay datos de usuario, el useEffect se encargará de la redirección.
+  //    Mientras tanto, mostramos el esqueleto para evitar un parpadeo de contenido o errores.
+  if (!userData) {
+     return (
+        <div className="flex min-h-screen w-full">
+            <div className="hidden md:flex flex-col w-64 border-r p-4 gap-4 bg-background">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                 <Skeleton className="h-8 w-full mt-auto" />
+            </div>
+            <div className="flex-1 p-8 bg-muted/40">
+                <Skeleton className="h-48 w-full" />
+            </div>
+      </div>
+    );
+  }
 
-  // Si la carga ha finalizado y tenemos tanto el usuario como sus datos, mostrar el dashboard.
+
+  // 3. Si la carga ha finalizado y tenemos datos del usuario, mostramos el dashboard.
   return (
     <div className="flex min-h-screen">
       <Sidebar userRole={userData.role} />
