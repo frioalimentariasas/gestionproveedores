@@ -1,1 +1,45 @@
-// Archivo vaciado como parte del reinicio de la aplicación.
+export const colombiaDepartments = [
+  'Amazonas',
+  'Antioquia',
+  'Arauca',
+  'Atlántico',
+  'Bolívar',
+  'Boyacá',
+  'Caldas',
+  'Caquetá',
+  'Casanare',
+  'Cauca',
+  'Cesar',
+  'Chocó',
+  'Córdoba',
+  'Cundinamarca',
+  'Guainía',
+  'Guaviare',
+  'Huila',
+  'La Guajira',
+  'Magdalena',
+  'Meta',
+  'Nariño',
+  'Norte de Santander',
+  'Putumayo',
+  'Quindío',
+  'Risaralda',
+  'San Andrés y Providencia',
+  'Santander',
+  'Sucre',
+  'Tolima',
+  'Valle del Cauca',
+  'Vaupés',
+  'Vichada',
+  'Bogotá D.C.',
+];
+
+// This is a small subset for demonstration purposes.
+// A real application would use a more comprehensive list or an API.
+export const colombiaCities: { [key: string]: string[] } = {
+  Antioquia: ['Medellín', 'Bello', 'Itagüí'],
+  Cundinamarca: ['Soacha', 'Fusagasugá', 'Girardot'],
+  'Valle del Cauca': ['Cali', 'Buenaventura', 'Palmira'],
+  Atlántico: ['Barranquilla', 'Soledad', 'Malambo'],
+  'Bogotá D.C.': ['Bogotá'],
+};

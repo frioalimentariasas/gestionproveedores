@@ -14,45 +14,46 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { loginSchema } from '@/lib/schemas';
+import { registerSchema } from '@/lib/schemas';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-export function LoginForm() {
+export function RegisterForm() {
   const { toast } = useToast();
   const auth = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       email: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
+  async function onSubmit(values: z.infer<typeof registerSchema>) {
     if (!auth) return;
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
       toast({
-        title: '¡Bienvenido!',
-        description: 'Has iniciado sesión correctamente.',
+        title: '¡Registro exitoso!',
+        description: 'Ahora puedes completar tu perfil de proveedor.',
       });
-      router.push('/');
+      router.push('/providers/form');
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Error al iniciar sesión',
+        title: 'Error en el registro',
         description:
-          error.code === 'auth/invalid-credential'
-            ? 'Las credenciales son incorrectas.'
+          error.code === 'auth/email-already-in-use'
+            ? 'El correo electrónico ya está en uso.'
             : 'Ha ocurrido un error inesperado.',
       });
     } finally {
@@ -92,8 +93,21 @@ export function LoginForm() {
                   placeholder="********"
                   {...field}
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirmar Contraseña</FormLabel>
+              <FormControl>
+                <Input placeholder="********" {...field} type="password" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -103,14 +117,13 @@ export function LoginForm() {
           {isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            'Ingresar'
+            'Registrarse'
           )}
         </Button>
-
         <div className="text-center text-sm">
-          ¿No tienes una cuenta?{' '}
+          ¿Ya tienes una cuenta?{' '}
           <Button variant="link" asChild className="p-0 h-auto">
-            <Link href="/auth/register">Regístrate como proveedor</Link>
+            <Link href="/auth/login">Inicia Sesión</Link>
           </Button>
         </div>
       </form>

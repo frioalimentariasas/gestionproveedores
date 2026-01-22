@@ -17,18 +17,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
+import { useRole } from '@/hooks/use-role';
+
+const adminNavLinks = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/providers', label: 'Gestión de Proveedores' },
+];
+
+const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
+  const { isAdmin, isLoading: roleLoading } = useRole();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const navLinks = [
-    { href: '/', label: 'Dashboard' },
-    { href: '/providers', label: 'Gestión de Proveedores' },
-  ];
+  const loading = userLoading || roleLoading;
+  const navLinks = isAdmin ? adminNavLinks : providerNavLinks;
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -60,22 +67,24 @@ export default function Header() {
               height={40}
             />
           </Link>
-          <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'rounded-lg px-4 py-2 transition-all duration-300',
-                  pathname === link.href
-                    ? 'bg-primary text-primary-foreground shadow-lg'
-                    : 'text-foreground/80 hover:bg-primary/10'
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          {user && !loading && (
+            <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    'rounded-lg px-4 py-2 transition-all duration-300',
+                    pathname === link.href
+                      ? 'bg-primary text-primary-foreground shadow-lg'
+                      : 'text-foreground/80 hover:bg-primary/10'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </div>
         <div className="flex items-center gap-4">
           {loading ? (
