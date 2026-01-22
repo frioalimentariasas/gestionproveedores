@@ -59,22 +59,19 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
     const adminDocSnap = await getDoc(adminDocRef);
 
     if (adminDocSnap.exists()) {
-      // User is an admin
-      redirect('/');
+      // User is an admin, fall through to redirect
+    } else {
+      const providerDocRef = doc(db, 'providers', user.uid);
+      const providerDocSnap = await getDoc(providerDocRef);
+
+      if (providerDocSnap.exists()) {
+        // User is a provider, fall through to redirect
+      } else {
+        // If user document doesn't exist in either collection, sign out and show error.
+        await signOut(auth);
+        return { message: 'Esta cuenta no tiene un rol asignado. Póngase en contacto con el soporte.' };
+      }
     }
-
-    const providerDocRef = doc(db, 'providers', user.uid);
-    const providerDocSnap = await getDoc(providerDocRef);
-
-    if (providerDocSnap.exists()) {
-      // User is a provider
-      redirect('/');
-    }
-    
-    // If user document doesn't exist in either collection, sign out and show error.
-    await signOut(auth);
-    return { message: 'Esta cuenta no tiene un rol asignado. Póngase en contacto con el soporte.' };
-
   } catch (error) {
     if (isAuthError(error)) {
         return { message: getAuthErrorMessage(error) };
@@ -82,6 +79,9 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
     console.error('Login Error:', error);
     return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
+
+  // Redirect MUST be outside of the try/catch block.
+  redirect('/');
 }
 
 
