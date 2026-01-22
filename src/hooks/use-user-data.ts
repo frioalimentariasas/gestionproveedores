@@ -21,32 +21,33 @@ export function useUserData() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      try {
-        setUser(currentUser);
-        if (currentUser) {
-          // Check for admin first
-          let userDoc = await getDoc(doc(db, 'admins', currentUser.uid));
-          if (userDoc.exists()) {
-            setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
-          } else {
-            // If not admin, check for provider
-            userDoc = await getDoc(doc(db, 'providers', currentUser.uid));
+      setUser(currentUser);
+      if (currentUser) {
+        // User is logged in, now fetch their data.
+        // `loading` remains true until we have the data.
+        try {
+            let userDoc = await getDoc(doc(db, 'admins', currentUser.uid));
             if (userDoc.exists()) {
-              setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+                setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
             } else {
-              console.warn("User exists in Auth but their data is not in 'admins' or 'providers' collections.");
-              setUserData(null);
+                userDoc = await getDoc(doc(db, 'providers', currentUser.uid));
+                if (userDoc.exists()) {
+                setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+                } else {
+                console.warn("User exists in Auth but their data is not in 'admins' or 'providers' collections.");
+                setUserData(null);
+                }
             }
-          }
-        } else {
-          // No user is logged in
-          setUserData(null);
+        } catch(error) {
+            console.error('Error fetching user data:', error);
+            setUserData(null);
+        } finally {
+            // Now that we have tried fetching data, we can set loading to false.
+            setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
+      } else {
+        // No user is logged in. Auth state is resolved.
         setUserData(null);
-      } finally {
-        // Set loading to false only after all checks are complete
         setLoading(false);
       }
     });
