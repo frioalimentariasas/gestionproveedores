@@ -50,13 +50,16 @@ const initializeAuthListener = (auth: Auth) => {
   );
 };
 
+// This is the snapshot for the server. It's a constant to avoid re-renders.
+const serverSnapshot: AuthStore = {
+  user: null,
+  loading: true,
+  error: null,
+};
+
 // On the server, we always return the initial loading state.
 const getServerSnapshot = () => {
-  return {
-    user: null,
-    loading: true,
-    error: null,
-  };
+  return serverSnapshot;
 };
 
 export function useUser() {
