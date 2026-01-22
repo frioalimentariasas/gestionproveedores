@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { doc } from 'firebase/firestore';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 
 /**
  * Hook to determine if the current user is an administrator.
@@ -14,7 +14,7 @@ export function useRole() {
   const firestore = useFirestore();
 
   // Memoize the document reference to prevent re-renders
-  const adminRoleDocRef = useMemo(() => {
+  const adminRoleDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'roles_admin', user.uid);
   }, [user, firestore]);
