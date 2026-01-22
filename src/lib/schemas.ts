@@ -10,6 +10,8 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
+    businessName: z.string().min(1, 'La razón social es requerida.'),
+    documentNumber: z.string().min(1, 'El NIT es requerido.'),
     email: z
       .string()
       .min(1, 'El email es requerido.')

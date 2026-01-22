@@ -15,8 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { registerSchema } from '@/lib/schemas';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -25,12 +26,15 @@ import Link from 'next/link';
 export function RegisterForm() {
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      businessName: '',
+      documentNumber: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -38,10 +42,29 @@ export function RegisterForm() {
   });
 
   async function onSubmit(values: z.infer<typeof registerSchema>) {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     setIsSubmitting(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+      const user = userCredential.user;
+
+      // Create a partial provider profile in Firestore
+      await setDoc(
+        doc(firestore, 'providers', user.uid),
+        {
+          id: user.uid,
+          email: values.email,
+          businessName: values.businessName,
+          documentNumber: values.documentNumber,
+          documentType: 'NIT', // Default to NIT as it's requested in the form
+        },
+        { merge: true }
+      );
+
       toast({
         title: '¡Registro exitoso!',
         description: 'Ahora puedes completar tu perfil de proveedor.',
@@ -64,6 +87,32 @@ export function RegisterForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="businessName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Razón Social / Nombre</FormLabel>
+              <FormControl>
+                <Input placeholder="Nombre de tu empresa" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="documentNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>NIT</FormLabel>
+              <FormControl>
+                <Input placeholder="Tu número de NIT" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="email"
