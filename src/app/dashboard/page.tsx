@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function DashboardPage() {
     const { userData, loading } = useUserData();
 
-    if (loading) {
+    if (loading || !userData) {
         return (
              <div className="flex flex-col gap-4">
                 <Card>
@@ -25,8 +25,8 @@ export default function DashboardPage() {
         )
     }
 
-    const isPending = userData?.role === 'provider' && userData?.status === 'pending';
-    const isRejected = userData?.role === 'provider' && userData?.status === 'rejected';
+    const isPending = userData.role === 'provider' && userData.status === 'pending';
+    const isRejected = userData.role === 'provider' && userData.status === 'rejected';
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">¡Bienvenido, {userData?.companyName || userData?.name}!</CardTitle>
+          <CardTitle className="font-headline text-3xl">¡Bienvenido, {userData.companyName || userData.name}!</CardTitle>
           <CardDescription>Ha accedido a la plataforma de gestión de proveedores.</CardDescription>
         </CardHeader>
         <CardContent>
