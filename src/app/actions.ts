@@ -30,12 +30,13 @@ function getAuthErrorMessage(error: AuthError): string {
     case 'auth/invalid-email':
         return 'El correo electrónico no es válido.';
     default:
-      console.error('Unhandled Firebase Auth Error:', error);
+      console.error('[SERVER ACTION ERROR] Unhandled Firebase Auth Error:', error);
       return 'Ocurrió un error inesperado durante la autenticación. Por favor, inténtelo de nuevo.';
   }
 }
 
 export async function login(prevState: FormState, formData: FormData): Promise<FormState> {
+  console.log('[SERVER ACTION] login: Iniciando acción de login.');
   const parsed = LoginSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!parsed.success) {
@@ -48,15 +49,19 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
   const { email, password } = parsed.data;
 
   try {
+    console.log(`[SERVER ACTION] login: Intentando iniciar sesión para ${email}.`);
     await signInWithEmailAndPassword(auth, email, password);
+    console.log(`[SERVER ACTION] login: Éxito en signInWithEmailAndPassword para ${email}.`);
   } catch (error) {
     if (isAuthError(error)) {
+        console.error('[SERVER ACTION] login: Error de autenticación de Firebase:', error.code);
         return { message: getAuthErrorMessage(error) };
     }
-    console.error('Login Error:', error);
+    console.error('[SERVER ACTION] login: Error inesperado:', error);
     return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
 
+  console.log('[SERVER ACTION] login: Autenticación exitosa. Redirigiendo a /.');
   redirect('/');
 }
 
@@ -99,17 +104,6 @@ export async function registerAdmin(prevState: FormState, formData: FormData): P
   }
 
   const { email, password } = parsed.data;
-
-  const allowedAdminEmails = [
-    'sistemas@frioalimentaria.com.co',
-    'asistente@frioalimentaria.com.co',
-  ];
-
-  if (!allowedAdminEmails.includes(email)) {
-    return {
-      message: 'Este correo electrónico no está autorizado para registrarse como administrador.',
-    };
-  }
   
   try {
     await createUserWithEmailAndPassword(auth, email, password);
