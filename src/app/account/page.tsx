@@ -3,7 +3,6 @@
 import AuthGuard from '@/components/auth/auth-guard';
 import { UpdateNameForm } from '@/components/account/update-name-form';
 import { UpdatePasswordForm } from '@/components/account/update-password-form';
-import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AccountPage() {
