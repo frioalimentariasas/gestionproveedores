@@ -18,7 +18,7 @@ import { updateNameSchema } from '@/lib/schemas';
 import { useAuth, useUser } from '@/firebase';
 import { updateProfile } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export function UpdateNameForm() {
@@ -31,12 +31,15 @@ export function UpdateNameForm() {
   const form = useForm<z.infer<typeof updateNameSchema>>({
     resolver: zodResolver(updateNameSchema),
     defaultValues: {
-      displayName: user?.displayName || '',
-    },
-    values: {
-      displayName: user?.displayName || '',
+      displayName: '',
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({ displayName: user.displayName || '' });
+    }
+  }, [user, form]);
 
   async function onSubmit(values: z.infer<typeof updateNameSchema>) {
     if (!auth?.currentUser) return;
