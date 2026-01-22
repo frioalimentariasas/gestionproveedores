@@ -38,17 +38,13 @@ function useAuthStore(auth: Auth | null) {
       return;
     }
 
-    // When the component mounts or auth object changes, we are in a loading state
-    // until onAuthStateChanged fires.
-    onStateChange(INITIAL_STATE);
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
         onStateChange({ user, loading: false, error: null });
       },
       (error) => {
-        onStateChange({ user: null, loading: false, error });
+        onStateChange({ user: null, loading: false, error: null });
       }
     );
 
