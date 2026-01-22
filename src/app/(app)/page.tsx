@@ -1,15 +1,17 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUserData } from '@/hooks/use-user-data';
+import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
-    const { userData, loading } = useUserData();
+    const { user, loading } = useAuth();
 
-    if (loading || !userData) {
+    // El layout principal ya gestiona el estado de carga principal y la redirección.
+    // Solo necesitamos manejar el renderizado inicial donde el usuario podría no estar disponible aún.
+    if (loading || !user) {
         return (
              <div className="flex flex-col gap-4">
                 <Card>
@@ -25,8 +27,8 @@ export default function DashboardPage() {
         )
     }
 
-    const isPending = userData.role === 'provider' && userData.status === 'pending';
-    const isRejected = userData.role === 'provider' && userData.status === 'rejected';
+    const isPending = user.role === 'provider' && user.status === 'pending';
+    const isRejected = user.role === 'provider' && user.status === 'rejected';
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,7 +49,7 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">¡Bienvenido, {userData.companyName || userData.name}!</CardTitle>
+          <CardTitle className="font-headline text-3xl">¡Bienvenido, {user.companyName || user.name}!</CardTitle>
           <CardDescription>Ha accedido a la plataforma de gestión de proveedores.</CardDescription>
         </CardHeader>
         <CardContent>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { UserDataProvider } from '@/hooks/user-provider';
+import { AuthProvider } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 
 const fontSans = Inter({
@@ -28,7 +28,9 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <UserDataProvider>{children}</UserDataProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

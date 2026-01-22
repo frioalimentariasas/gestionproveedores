@@ -1,6 +1,6 @@
 'use client';
 
-import { useUserData } from "@/hooks/use-user-data";
+import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase/firestore";
@@ -21,7 +21,7 @@ interface Provider {
 }
 
 export default function ProvidersPage() {
-    const { userData, loading: userLoading } = useUserData();
+    const { user, loading: userLoading } = useAuth();
     const router = useRouter();
     const [providers, setProviders] = useState<Provider[]>([]);
     const [loading, setLoading] = useState(true);
@@ -37,12 +37,12 @@ export default function ProvidersPage() {
     };
 
     useEffect(() => {
-        if (!userLoading && userData?.role !== 'admin') {
+        if (!userLoading && user?.role !== 'admin') {
             router.push('/');
-        } else if (userData?.role === 'admin') {
+        } else if (user?.role === 'admin') {
             fetchProviders();
         }
-    }, [userData, userLoading, router]);
+    }, [user, userLoading, router]);
 
     const handleUpdateStatus = async (providerId: string, status: Provider['status']) => {
         try {
@@ -70,7 +70,7 @@ export default function ProvidersPage() {
     };
 
 
-    if (userLoading || !userData || userData.role !== 'admin') {
+    if (userLoading || !user || user.role !== 'admin') {
         return <div className="flex items-center justify-center h-full">Cargando...</div>;
     }
   
