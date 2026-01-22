@@ -11,16 +11,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Do nothing until the loading of user auth state is complete.
-    if (loading) {
-      return;
-    }
-    // If loading is finished and there is no user, redirect to login.
-    if (!user) {
+    // Si la carga ha finalizado y no hay usuario, redirigir al login.
+    if (!loading && !user) {
       router.push('/login');
     }
   }, [loading, user, router]);
 
+  // Mientras se carga el estado de autenticación, o si el usuario no tiene datos (aún),
+  // mostrar un esqueleto de carga. Esto previene redirecciones prematuras.
   if (loading || !userData) {
     return (
         <div className="flex min-h-screen w-full">
@@ -37,6 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // Si la carga ha finalizado y tenemos tanto el usuario como sus datos, mostrar el dashboard.
   return (
     <div className="flex min-h-screen">
       <Sidebar userRole={userData.role} />
