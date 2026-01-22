@@ -77,7 +77,7 @@ async function handleLogin(formData: FormData, role: 'admin' | 'provider'): Prom
     return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
   
-  redirect('/dashboard');
+  redirect('/');
 }
 
 export async function providerLogin(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -125,7 +125,7 @@ export async function register(prevState: FormState, formData: FormData): Promis
     };
   }
 
-  redirect('/dashboard');
+  redirect('/');
 }
 
 export async function registerAdmin(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -173,7 +173,7 @@ export async function registerAdmin(prevState: FormState, formData: FormData): P
     };
   }
 
-  redirect('/dashboard');
+  redirect('/');
 }
 
 

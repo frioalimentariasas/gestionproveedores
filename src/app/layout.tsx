@@ -1,31 +1,53 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Gestión de Proveedores',
-  description: 'Plataforma para la gestión de proveedores',
-};
+import { useRouter } from 'next/navigation';
+import { useUserData } from '@/hooks/use-user-data';
+import { Sidebar } from '@/components/layout/sidebar';
+import { ReactNode, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { UserDataProvider } from '@/hooks/user-provider';
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+function DashboardGate({ children }: { children: ReactNode }) {
+  const { userData, loading } = useUserData();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !userData) {
+      router.push('/auth');
+    }
+  }, [loading, userData, router]);
+
+  if (loading || !userData) {
+    return (
+      <div className="flex min-h-screen w-full">
+        <div className="hidden md:flex flex-col w-64 border-r p-4 gap-4 bg-background">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full mt-auto" />
+        </div>
+        <div className="flex-1 p-8 bg-muted/40">
+          <Skeleton className="h-48 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <html lang="es">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-body antialiased">
+    <div className="flex min-h-screen">
+      <Sidebar userRole={userData.role} />
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-muted/40">
         {children}
-        <Toaster />
-      </body>
-    </html>
+      </main>
+    </div>
+  );
+}
+
+
+export default function AppLayout({ children }: { children: ReactNode }) {
+  return (
+    <UserDataProvider>
+      <DashboardGate>{children}</DashboardGate>
+    </UserDataProvider>
   );
 }

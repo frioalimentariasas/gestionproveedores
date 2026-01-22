@@ -34,17 +34,17 @@ export function Sidebar({ userRole }: SidebarProps) {
     <aside className="hidden w-64 flex-col border-r bg-background md:flex">
         <div className="flex h-full max-h-screen flex-col gap-2">
             <div className="flex h-16 items-center border-b px-6">
-                 <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                 <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Logo className="w-32" />
                 </Link>
             </div>
             <div className="flex-1 overflow-auto py-2">
                 <nav className="grid items-start px-4 text-sm font-medium">
-                    <NavLink href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
+                    <NavLink href="/" icon={<LayoutDashboard className="h-4 w-4" />}>
                         Dashboard
                     </NavLink>
                     {userRole === 'admin' && (
-                        <NavLink href="/dashboard/providers" icon={<Users className="h-4 w-4" />}>
+                        <NavLink href="/providers" icon={<Users className="h-4 w-4" />}>
                             Gestionar Proveedores
                         </NavLink>
                     )}
