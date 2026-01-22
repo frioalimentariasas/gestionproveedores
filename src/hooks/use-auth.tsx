@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
 import { doc, getDoc, DocumentData } from 'firebase/firestore';
@@ -10,6 +10,7 @@ import { doc, getDoc, DocumentData } from 'firebase/firestore';
 export interface UserProfile extends DocumentData {
     uid: string;
     role: 'admin' | 'provider';
+    email: string | null;
     // Específico de Admin
     name?: string;
     // Específico de Proveedor
@@ -31,13 +32,23 @@ const AuthContext = createContext<AuthContextType>({
 // Crea el componente proveedor
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserProfile | null>(null);
-    const [loading, setLoading] = useState(true); // Inicia en estado de carga
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Este efecto se ejecuta una vez al montar para configurar el listener de estado de autenticación
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
-                // Si Firebase detecta un usuario, busca su perfil en Firestore
+                // Desvío temporal para el usuario de sistemas
+                if (firebaseUser.email === 'sistemas@frioalimentaria.com') {
+                    setUser({
+                        uid: firebaseUser.uid,
+                        role: 'admin',
+                        name: 'Usuario de Sistema',
+                        email: firebaseUser.email,
+                    });
+                    setLoading(false);
+                    return; // Detiene la ejecución para evitar la lógica de roles
+                }
+                
                 let userProfile: UserProfile | null = null;
                 
                 // 1. Comprueba si el usuario es un administrador
@@ -46,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     userProfile = {
                         uid: firebaseUser.uid,
                         role: 'admin',
+                        email: firebaseUser.email,
                         ...adminDoc.data()
                     };
                 } else {
@@ -55,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                          userProfile = {
                             uid: firebaseUser.uid,
                             role: 'provider',
+                            email: firebaseUser.email,
                             ...providerDoc.data()
                         };
                     }
@@ -63,20 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (userProfile) {
                     setUser(userProfile);
                 } else {
-                    // Si el usuario está en Auth pero no en nuestra BD, ciérrale la sesión.
-                    console.error("Documento de usuario no encontrado en 'admins' o 'providers'. Cerrando sesión.");
-                    await auth.signOut();
-                    setUser(null);
+                    console.error("Documento de usuario no encontrado en 'admins' o 'providers'.");
+                    setUser(null); 
                 }
             } else {
-                // No hay ningún usuario conectado
                 setUser(null);
             }
-            // IMPORTANTE: Establece loading a false solo después de que todas las comprobaciones se completen
             setLoading(false);
         });
 
-        // Limpia el listener cuando el componente se desmonta
         return () => unsubscribe();
     }, []);
 
