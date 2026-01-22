@@ -69,7 +69,29 @@ export default function ProviderForm() {
 
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerFormSchema),
-    defaultValues: {},
+    defaultValues: {
+      businessName: '',
+      documentType: '',
+      documentNumber: '',
+      address: '',
+      department: '',
+      city: '',
+      phone: '',
+      email: '',
+      personType: '',
+      taxRegime: '',
+      isIcaAgent: '',
+      icaTariff: '',
+      isIncomeTaxAgent: '',
+      contactName: '',
+      contactPhone: '',
+      contactEmail: '',
+      bankName: '',
+      accountType: '',
+      accountNumber: '',
+      beneficiaryName: '',
+      sarlaftAccepted: false,
+    },
   });
 
   useEffect(() => {
@@ -92,7 +114,7 @@ export default function ProviderForm() {
   };
 
   async function onSubmit(values: ProviderFormValues) {
-    if (!user) {
+    if (!user || !providerDocRef) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -192,7 +214,7 @@ export default function ProviderForm() {
             />
             <FormField control={form.control} name="documentType" render={({ field }) => (
                 <FormItem><FormLabel>Tipo de Documento</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                     <SelectContent>{documentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -209,7 +231,7 @@ export default function ProviderForm() {
             />
             <FormField control={form.control} name="department" render={({ field }) => (
                 <FormItem><FormLabel>Departamento</FormLabel>
-                  <Select onValueChange={(value) => { field.onChange(value); setSelectedDepartment(value); form.setValue('city', ''); }} defaultValue={field.value}>
+                  <Select onValueChange={(value) => { field.onChange(value); setSelectedDepartment(value); form.setValue('city', ''); }} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                     <SelectContent>{colombiaDepartments.map(dep => <SelectItem key={dep} value={dep}>{dep}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -218,7 +240,7 @@ export default function ProviderForm() {
             />
             <FormField control={form.control} name="city" render={({ field }) => (
                 <FormItem><FormLabel>Ciudad</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedDepartment}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un departamento primero..." /></SelectTrigger></FormControl>
                     <SelectContent>{(colombiaCities[selectedDepartment] || []).map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -244,7 +266,7 @@ export default function ProviderForm() {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField control={form.control} name="personType" render={({ field }) => (
                 <FormItem><FormLabel>Tipo de Persona</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                     <SelectContent>{personTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -253,7 +275,7 @@ export default function ProviderForm() {
             />
             <FormField control={form.control} name="taxRegime" render={({ field }) => (
                 <FormItem><FormLabel>Régimen de IVA</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                     <SelectContent>{taxRegimes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -262,7 +284,7 @@ export default function ProviderForm() {
             />
             <FormField control={form.control} name="isIcaAgent" render={({ field }) => (
                 <FormItem><FormLabel>¿Agente Retenedor de ICA?</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                     <SelectContent>{yesNoOptions.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -275,7 +297,7 @@ export default function ProviderForm() {
             />
              <FormField control={form.control} name="isIncomeTaxAgent" render={({ field }) => (
                 <FormItem><FormLabel>¿Agente Retenedor de Renta?</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                     <SelectContent>{yesNoOptions.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
@@ -310,7 +332,7 @@ export default function ProviderForm() {
                 )}/>
                 <FormField control={form.control} name="accountType" render={({ field }) => (
                     <FormItem><FormLabel>Tipo de Cuenta</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                         <SelectContent>{accountTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                     </Select><FormMessage />
@@ -342,12 +364,13 @@ export default function ProviderForm() {
                     certificacionBancariaFile: 'Certificación Bancaria',
                 };
                 const urlField = `${fieldName}Url` as keyof ProviderFormValues;
+                const fileUrl = providerData?.[urlField];
                 return (
                     <FormField key={fieldName} control={form.control} name={fieldName} render={({ field }) => (
                         <FormItem>
                             <FormLabel>{labels[fieldName]}</FormLabel>
                             <FormControl><Input type="file" accept="application/pdf" {...form.register(fieldName)} /></FormControl>
-                            {providerData?.[urlField] && <FormDescription><a href={providerData[urlField]} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline">Ver documento actual</a></FormDescription>}
+                            {fileUrl && typeof fileUrl === 'string' && <FormDescription><a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline">Ver documento actual</a></FormDescription>}
                             <FormMessage />
                         </FormItem>
                     )}
