@@ -39,7 +39,6 @@ export default function Header() {
         description: 'Vuelve pronto.',
       });
       router.push('/auth/login');
-      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -78,7 +77,7 @@ export default function Header() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 pr-4">
           {loading ? (
             <Skeleton className="h-9 w-28" />
           ) : user ? (
