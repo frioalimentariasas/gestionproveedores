@@ -120,4 +120,8 @@ export class FirestorePermissionError extends Error {
     this.name = 'FirebaseError';
     this.request = requestObject;
   }
+
+  public toObject(): SecurityRuleRequest {
+    return this.request;
+  }
 }
