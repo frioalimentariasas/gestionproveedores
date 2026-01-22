@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "Provider": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Provider",
+      "type": "object",
+      "description": "Represents a provider in the system, storing their core registration and profile information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Provider entity."
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Type of document used for identification (e.g., NIT, CC)."
+        },
+        "documentNumber": {
+          "type": "string",
+          "description": "The provider's document number."
+        },
+        "businessName": {
+          "type": "string",
+          "description": "The legal business name or individual name of the provider."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the provider is located."
+        },
+        "department": {
+          "type": "string",
+          "description": "The department or state where the provider is located."
+        },
+        "country": {
+          "type": "string",
+          "description": "The country where the provider is located."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the provider."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the provider, used for login and communication.",
+          "format": "email"
+        },
+        "rutFileUrl": {
+          "type": "string",
+          "description": "URL of the RUT file stored in cloud storage.",
+          "format": "uri"
+        },
+        "camaraComercioFileUrl": {
+          "type": "string",
+          "description": "URL of the Camara de Comercio (Chamber of Commerce) file stored in cloud storage.",
+          "format": "uri"
+        },
+        "estadosFinancierosFileUrl": {
+          "type": "string",
+          "description": "URL of the Estados Financieros (Financial Statements) file stored in cloud storage.",
+          "format": "uri"
+        },
+        "declaracionRentaFileUrl": {
+          "type": "string",
+          "description": "URL of the Declaracion de Renta (Income Tax Return) file stored in cloud storage.",
+          "format": "uri"
+        },
+        "cedulaRepresentanteLegalFileUrl": {
+          "type": "string",
+          "description": "URL of the Cedula (ID) of the legal representative file stored in cloud storage.",
+          "format": "uri"
+        },
+        "certificacionBancariaFileUrl": {
+          "type": "string",
+          "description": "URL of the Certificacion Bancaria (Bank Certification) file stored in cloud storage.",
+          "format": "uri"
+        },
+        "sarlaftAccepted": {
+          "type": "boolean",
+          "description": "Indicates whether the provider has accepted the SARLAFT terms and conditions."
+        }
+      },
+      "required": [
+        "id",
+        "documentType",
+        "documentNumber",
+        "businessName",
+        "city",
+        "department",
+        "country",
+        "address",
+        "email",
+        "rutFileUrl",
+        "camaraComercioFileUrl",
+        "estadosFinancierosFileUrl",
+        "declaracionRentaFileUrl",
+        "cedulaRepresentanteLegalFileUrl",
+        "certificacionBancariaFileUrl",
+        "sarlaftAccepted"
+      ]
+    },
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents an administrator user account.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AdminUser entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the admin user.  Used for login.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "providers/{providerId}",
+        "definition": {
+          "entityName": "Provider",
+          "schema": {
+            "$ref": "#/backend/entities/Provider"
+          },
+          "description": "Stores information for each provider. Provider can only access their own document.  The {providerId} MUST match the authenticated user's UID. No denormalization required as access control is based on path and UID.",
+          "params": [
+            {
+              "name": "providerId",
+              "description": "The UID of the provider, matching the authenticated user's ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "roles_admin/{adminId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Stores the IDs of admin users. Existence of a document at this path grants admin privileges. No data other than the document ID is required.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The UID of an administrator user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This design prioritizes security and scalability for the Gestión de Proveedores application, focusing on Authorization Independence and clear data segregation.  The core entities are `Provider` and `AdminUser`. Providers will self-register and manage their information, while admins will have read-only access to provider data.\n\n**Authorization Independence:**  The `providers/{providerId}` collection relies on the `request.auth.uid` being equal to the `{providerId}` to ensure providers can only access their own data. No `get()` calls are needed in security rules, enabling atomic operations.\n\n**QAPs (Rules are not Filters):**\n*   Secure `list` operations are supported because the structure segregates provider data into individual documents (`providers/{providerId}`).  Listing providers requires admin privileges enforced by the `roles_admin/{uid}` collection. Normal users cannot list providers, preventing data leakage.\n*   The `roles_admin/{uid}` collection uses \"existence over content\", simply checking if a document exists to grant admin privileges. This is a secure and scalable approach.\n\n**Invariants:**\n*   Ownership:  The `providers/{providerId}` path ensures that each provider can only manage their own data, determined by their `uid`.\n*   Data Integrity:  The schema defines the required fields for a provider, ensuring consistent data across all provider profiles.\n\n**Denormalization:** No explicit denormalization is required in this structure, as Authorization Independence is achieved through the path-based ownership of provider documents. If, in the future, admin users needed to update provider data, a `lastUpdatedBy` field could be added to the `Provider` schema to track who made the update, though this is not a current requirement."
+  }
+}

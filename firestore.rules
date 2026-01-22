@@ -1,0 +1,134 @@
+/**
+ * Core Philosophy: This ruleset enforces a hybrid security model. It combines a strict
+ * user-ownership pattern for provider data with a role-based access control system
+ * for administrators. Providers are completely isolated and can only manage their own
+ * information, ensuring data privacy. Administrators are granted read-only access to all
+ * provider data for oversight and management purposes, preventing accidental modification.
+ *
+ * Data Structure: The data is organized into two distinct, top-level collections:
+ * 1. /providers/{providerId}: Contains individual documents for each provider, where the
+ *    document ID `{providerId}` directly corresponds to the provider's authentication UID.
+ * 2. /roles_admin/{adminId}: A collection that defines who is an administrator. The mere
+ *    existence of a document with a user's UID grants them admin privileges.
+ *
+ * Key Security Decisions:
+ * - Provider Isolation: A provider can only create, read, update, or delete their own
+ *   document. They cannot list or access any other provider's data.
+ * - Admin Read-Only Access: Administrators can read and list all provider documents but are
+ *   explicitly forbidden from writing, updating, or deleting them. This creates a clear
+ *   separation of concerns where providers own their data, and admins can view it.
+ * - Locked-Down Roles: The /roles_admin collection is not writable by any client. This is a
+ *   critical security measure, as role assignments must only be handled through a trusted
+ *   backend process or the Firebase Console.
+ * - Denylisting List Operations: By default, users cannot list documents in the /providers
+ *   collection. This permission is explicitly granted only to administrators, preventing
+ *   unauthorized enumeration of all registered providers.
+ *
+ * Denormalization for Authorization: This structure is already highly optimized for security
+ * rules. The document ID in `/providers/{providerId}` serves as the denormalized `ownerId`,
+ * allowing for fast, simple ownership checks without needing to read the document's content.
+ * The `/roles_admin` collection is a standard, performant pattern for managing roles that
+ * avoids slow queries or lookups.
+ *
+ * Structural Segregation: The system uses separate top-level collections to segregate
+ * provider data from administrative role data, which is a clean and secure pattern.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the user has an admin role by verifying the existence of their
+     * UID in the `roles_admin` collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Ensures an operation is for an existing document and is performed by the owner.
+     * Crucial for preventing writes to non-existent paths.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that a user is creating their own provider document and that the
+     * internal `id` field matches the document's path ID for relational integrity.
+     */
+    function isCreatingOwnProviderProfile(providerId) {
+      return isOwner(providerId) && request.resource.data.id == providerId;
+    }
+
+    /**
+     * Validates that the provider's unique ID field remains unchanged during an update.
+     * This prevents re-assigning a provider profile to a different user.
+     */
+    function hasImmutableProviderId() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Rules for the `providers` collection. A provider can manage their own
+     *              document, and administrators have read-only access to all documents.
+     * @path /providers/{providerId}
+     * @allow (get) A provider (uid: 'provider123') reading their own document at `/providers/provider123`.
+     * @allow (create) A new provider (uid: 'provider456') creating their document at `/providers/provider456`.
+     * @allow (list) An admin listing all documents in the `/providers` collection.
+     * @deny (list) A provider attempting to list the `/providers` collection.
+     * @deny (update) An admin attempting to update a document at `/providers/provider123`.
+     * @deny (create) A provider (uid: 'provider123') trying to create a document for another user at `/providers/other456`.
+     * @principle Enforces a strict ownership model for writes and provides role-based read access for admins.
+     */
+    match /providers/{providerId} {
+      allow get: if isOwner(providerId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isCreatingOwnProviderProfile(providerId);
+      allow update: if isExistingOwner(providerId) && hasImmutableProviderId();
+      allow delete: if isExistingOwner(providerId);
+    }
+
+    /**
+     * @description Defines admin user roles. The existence of a document grants admin privileges.
+     *              This collection is read-only from the client to prevent privilege escalation.
+     * @path /roles_admin/{adminId}
+     * @allow (internal exists()) An internal rule like `isAdmin()` checking for a document's existence.
+     * @deny (get) Any user, including an admin, trying to directly read a document from `/roles_admin`.
+     * @deny (create) Any user attempting to create a document to grant themselves admin rights.
+     * @deny (delete) Any user attempting to delete a document to revoke admin rights.
+     * @principle Secures role management by making the collection read-only from client applications. Role assignments must be managed by a trusted backend or through the console.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
