@@ -14,7 +14,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-20 items-center justify-start">
+      <div className="container flex h-24 items-center justify-start">
         <Link href="/" className="mr-12">
           <div className="flex flex-col items-start">
             <Image src="/logo.png" alt="Frio Alimentaria Logo" width={140} height={40} />
