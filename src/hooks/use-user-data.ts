@@ -21,32 +21,43 @@ export function useUserData() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       if (currentUser) {
-        // User is logged in, now fetch their data.
-        // `loading` remains true until we have the data.
+        // User is authenticated, now determine their role and get data.
+        const adminDocRef = doc(db, 'admins', currentUser.uid);
+        const providerDocRef = doc(db, 'providers', currentUser.uid);
+
         try {
-            let userDoc = await getDoc(doc(db, 'admins', currentUser.uid));
-            if (userDoc.exists()) {
-                setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
+            const adminDoc = await getDoc(adminDocRef);
+            if (adminDoc.exists()) {
+                // User is an admin
+                setUserData({ ...adminDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
+                setUser(currentUser);
             } else {
-                userDoc = await getDoc(doc(db, 'providers', currentUser.uid));
-                if (userDoc.exists()) {
-                setUserData({ ...userDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+                // Not an admin, check if they are a provider
+                const providerDoc = await getDoc(providerDocRef);
+                if (providerDoc.exists()) {
+                    // User is a provider
+                    setUserData({ ...providerDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
+                    setUser(currentUser);
                 } else {
-                console.warn("User exists in Auth but their data is not in 'admins' or 'providers' collections.");
-                setUserData(null);
+                    // User is authenticated but has no data in either collection.
+                    // This is an invalid state, so treat them as logged out.
+                    console.warn("User record not found in 'admins' or 'providers'.");
+                    setUserData(null);
+                    setUser(null);
                 }
             }
-        } catch(error) {
-            console.error('Error fetching user data:', error);
+        } catch (error) {
+            console.error("Error fetching user data:", error);
             setUserData(null);
+            setUser(null);
         } finally {
-            // Now that we have tried fetching data, we can set loading to false.
+            // We have a definitive state now, so stop loading.
             setLoading(false);
         }
       } else {
-        // No user is logged in. Auth state is resolved.
+        // User is not authenticated.
+        setUser(null);
         setUserData(null);
         setLoading(false);
       }
