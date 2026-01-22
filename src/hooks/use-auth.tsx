@@ -3,8 +3,7 @@
 import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
-import { db } from '@/lib/firebase/firestore';
-import { doc, getDoc, DocumentData } from 'firebase/firestore';
+import { type DocumentData } from 'firebase/firestore';
 
 // Define la forma del perfil de usuario, acomodando tanto admin como proveedor
 export interface UserProfile extends DocumentData {
@@ -35,50 +34,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
-                // Desvío temporal para el usuario de sistemas
-                if (firebaseUser.email === 'sistemas@frioalimentaria.com.co') {
-                    setUser({
-                        uid: firebaseUser.uid,
-                        role: 'admin',
-                        name: 'Usuario de Sistema',
-                        email: firebaseUser.email,
-                    });
-                    setLoading(false);
-                    return; // Detiene la ejecución para evitar la lógica de roles
-                }
-                
-                let userProfile: UserProfile | null = null;
-                
-                // 1. Comprueba si el usuario es un administrador
-                const adminDoc = await getDoc(doc(db, 'admins', firebaseUser.uid));
-                if (adminDoc.exists()) {
-                    userProfile = {
-                        uid: firebaseUser.uid,
-                        role: 'admin',
-                        email: firebaseUser.email,
-                        ...adminDoc.data()
-                    };
-                } else {
-                    // 2. Si no es un admin, comprueba si es un proveedor
-                    const providerDoc = await getDoc(doc(db, 'providers', firebaseUser.uid));
-                    if (providerDoc.exists()) {
-                         userProfile = {
-                            uid: firebaseUser.uid,
-                            role: 'provider',
-                            email: firebaseUser.email,
-                            ...providerDoc.data()
-                        };
-                    }
-                }
-
-                if (userProfile) {
-                    setUser(userProfile);
-                } else {
-                    console.error("Documento de usuario no encontrado en 'admins' o 'providers'.");
-                    setUser(null); 
-                }
+                // Cualquier usuario autenticado en Firebase tendrá acceso.
+                // La verificación de roles en la base de datos se omite por completo.
+                setUser({
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email,
+                    // Se asignan valores por defecto para que la UI funcione correctamente.
+                    role: 'admin',
+                    name: firebaseUser.displayName || firebaseUser.email,
+                    companyName: firebaseUser.displayName || firebaseUser.email,
+                    status: 'approved',
+                });
             } else {
                 setUser(null);
             }
