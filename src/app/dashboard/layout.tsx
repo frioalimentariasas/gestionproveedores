@@ -11,13 +11,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Solo tomar una decisión de redirección cuando la carga haya finalizado.
+    // This effect's only job is to redirect if the user is definitively logged out.
     if (!loading && !user) {
       router.push('/login');
     }
   }, [loading, user, router]);
 
-  // 1. Mostrar siempre el esqueleto de carga mientras el hook `useUserData` está trabajando.
+  // 1. If authentication state is being determined, always show a skeleton.
+  //    This is the primary guard against race conditions.
   if (loading) {
     return (
         <div className="flex min-h-screen w-full">
@@ -33,33 +34,33 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  
-  // 2. Si la carga terminó pero no hay datos de usuario, el useEffect se encargará de la redirección.
-  //    Mientras tanto, mostramos el esqueleto para evitar un parpadeo de contenido o errores.
-  if (!userData) {
-     return (
-        <div className="flex min-h-screen w-full">
-            <div className="hidden md:flex flex-col w-64 border-r p-4 gap-4 bg-background">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                 <Skeleton className="h-8 w-full mt-auto" />
-            </div>
-            <div className="flex-1 p-8 bg-muted/40">
-                <Skeleton className="h-48 w-full" />
-            </div>
+
+  // 2. After loading, if we have user data, we can safely render the dashboard.
+  if (userData) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar userRole={userData.role} />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-muted/40">
+          {children}
+        </main>
       </div>
     );
   }
 
-
-  // 3. Si la carga ha finalizado y tenemos datos del usuario, mostramos el dashboard.
+  // 3. If loading is finished, but there's no user (and thus no userData), the useEffect
+  //    will handle the redirect. While that happens, render a skeleton to avoid content flashes.
+  //    This also safely handles any error state where a user is authenticated but has no profile data.
   return (
-    <div className="flex min-h-screen">
-      <Sidebar userRole={userData.role} />
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-muted/40">
-        {children}
-      </main>
+    <div className="flex min-h-screen w-full">
+        <div className="hidden md:flex flex-col w-64 border-r p-4 gap-4 bg-background">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full mt-auto" />
+        </div>
+        <div className="flex-1 p-8 bg-muted/40">
+            <Skeleton className="h-48 w-full" />
+        </div>
     </div>
   );
 }

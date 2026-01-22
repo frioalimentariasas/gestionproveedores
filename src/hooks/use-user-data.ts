@@ -21,38 +21,36 @@ export function useUserData() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true); // Set loading at the beginning of every auth state check.
       if (currentUser) {
-        // User is authenticated, now determine their role and get data.
-        const adminDocRef = doc(db, 'admins', currentUser.uid);
-        const providerDocRef = doc(db, 'providers', currentUser.uid);
-
+        setUser(currentUser); // Set the Firebase user object immediately.
+        // Now, fetch the user's profile from Firestore to determine their role and data.
         try {
-            const adminDoc = await getDoc(adminDocRef);
-            if (adminDoc.exists()) {
-                // User is an admin
-                setUserData({ ...adminDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
+          const adminDocRef = doc(db, 'admins', currentUser.uid);
+          const adminDoc = await getDoc(adminDocRef);
+
+          if (adminDoc.exists()) {
+            setUserData({ ...adminDoc.data(), uid: currentUser.uid, role: 'admin' } as UserProfile);
+          } else {
+            const providerDocRef = doc(db, 'providers', currentUser.uid);
+            const providerDoc = await getDoc(providerDocRef);
+            if (providerDoc.exists()) {
+              setUserData({ ...providerDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
             } else {
-                // Not an admin, check if they are a provider
-                const providerDoc = await getDoc(providerDocRef);
-                if (providerDoc.exists()) {
-                    // User is a provider
-                    setUserData({ ...providerDoc.data(), uid: currentUser.uid, role: 'provider' } as UserProfile);
-                } else {
-                    // User is authenticated but has no data in either collection.
-                    // This is an invalid state, so treat them as logged out.
-                    console.warn("User record not found in 'admins' or 'providers'.");
-                    setUserData(null);
-                }
+              // Authenticated user has no profile in 'admins' or 'providers'.
+              console.warn("User document not found.");
+              setUserData(null);
             }
+          }
         } catch (error) {
-            console.error("Error fetching user data:", error);
-            setUserData(null);
+          console.error("Error fetching user data:", error);
+          setUserData(null);
         } finally {
-            setUser(currentUser);
-            setLoading(false);
+          // After all async operations are done, set loading to false.
+          setLoading(false);
         }
       } else {
-        // User is not authenticated.
+        // No user is signed in.
         setUser(null);
         setUserData(null);
         setLoading(false);
