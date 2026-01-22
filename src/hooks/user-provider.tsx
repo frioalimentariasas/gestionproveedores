@@ -29,52 +29,35 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // --- TEMPORARY CHANGE: Bypassing login for debugging ---
-        // To re-enable login, set the following variable to false
-        const bypassLogin = true;
-
-        if (bypassLogin) {
-            console.warn("Login is currently bypassed for debugging. A mock admin user is being used.");
-            setUserData({
-                uid: 'mock-admin-uid',
-                role: 'admin',
-                name: 'Admin de Depuración',
-                companyName: 'Sistema (Modo Depuración)',
-            });
-            setLoading(false);
-            return; // Skip real authentication
-        }
-        // --- END TEMPORARY CHANGE ---
-
-
         const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
             if (user) {
+                // User is signed in, let's fetch their data from Firestore.
+                // We check 'admins' first, then 'providers'.
                 try {
-                    // Check for admin role first
                     const adminDocRef = doc(db, 'admins', user.uid);
                     const adminDoc = await getDoc(adminDocRef);
 
                     if (adminDoc.exists()) {
                         setUserData({ uid: user.uid, role: 'admin', ...adminDoc.data() });
-                        setLoading(false); // Set loading false after data is fetched
                     } else {
-                        // If not admin, check for provider role
+                        // If not an admin, check if they are a provider.
                         const providerDocRef = doc(db, 'providers', user.uid);
                         const providerDoc = await getDoc(providerDocRef);
                         
                         if (providerDoc.exists()) {
                             setUserData({ uid: user.uid, role: 'provider', ...providerDoc.data() });
-                            setLoading(false); // Set loading false after data is fetched
                         } else {
-                            // User is authenticated in Firebase, but has no data in our DB
+                            // User is authenticated in Firebase, but has no data in our DB.
+                            // This is an invalid state, so we treat them as logged out.
                             console.error("User document not found in 'admins' or 'providers' collection.");
                             setUserData(null);
-                            setLoading(false);
+                            await auth.signOut(); // Sign them out to prevent inconsistent states.
                         }
                     }
                 } catch (error) {
                     console.error("Error fetching user data:", error);
                     setUserData(null);
+                } finally {
                     setLoading(false);
                 }
             } else {

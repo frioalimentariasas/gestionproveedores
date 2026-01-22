@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { providerLogin } from '@/app/actions';
+import { login } from '@/app/actions';
 import { LoginSchema } from '@/lib/schemas';
 
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useActionState(providerLogin, { message: '' });
+  const [state, formAction] = useActionState(login, { message: '' });
   
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),

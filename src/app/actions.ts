@@ -38,7 +38,7 @@ function getAuthErrorMessage(error: AuthError): string {
   }
 }
 
-async function handleLogin(formData: FormData, role: 'admin' | 'provider'): Promise<FormState> {
+export async function login(prevState: FormState, formData: FormData): Promise<FormState> {
   const parsed = LoginSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!parsed.success) {
@@ -54,38 +54,34 @@ async function handleLogin(formData: FormData, role: 'admin' | 'provider'): Prom
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Verify role after sign-in
-    const collectionName = role === 'admin' ? 'admins' : 'providers';
-    const docRef = doc(db, collectionName, user.uid);
-    const docSnap = await getDoc(docRef);
+    // After sign-in, verify user exists in either 'admins' or 'providers'
+    const adminDocRef = doc(db, 'admins', user.uid);
+    const adminDocSnap = await getDoc(adminDocRef);
 
-    if (!docSnap.exists()) {
-      // If the user document doesn't exist in the specified collection,
-      // sign them out and return an error.
-      await signOut(auth);
-      const errorMessage = role === 'admin' 
-        ? 'No tiene permisos de administrador.'
-        : 'Esta cuenta no está registrada como proveedor.';
-      return { message: errorMessage };
+    if (adminDocSnap.exists()) {
+      // User is an admin
+      redirect('/');
     }
+
+    const providerDocRef = doc(db, 'providers', user.uid);
+    const providerDocSnap = await getDoc(providerDocRef);
+
+    if (providerDocSnap.exists()) {
+      // User is a provider
+      redirect('/');
+    }
+    
+    // If user document doesn't exist in either collection, sign out and show error.
+    await signOut(auth);
+    return { message: 'Esta cuenta no tiene un rol asignado. Póngase en contacto con el soporte.' };
 
   } catch (error) {
     if (isAuthError(error)) {
         return { message: getAuthErrorMessage(error) };
     }
-    console.error(`${role} Login Error:`, error);
+    console.error('Login Error:', error);
     return { message: 'Ocurrió un error inesperado. Por favor, inténtelo de nuevo.' };
   }
-  
-  redirect('/');
-}
-
-export async function providerLogin(prevState: FormState, formData: FormData): Promise<FormState> {
-    return handleLogin(formData, 'provider');
-}
-
-export async function adminLogin(prevState: FormState, formData: FormData): Promise<FormState> {
-    return handleLogin(formData, 'admin');
 }
 
 

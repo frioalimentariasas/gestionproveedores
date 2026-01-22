@@ -14,7 +14,7 @@ export function LogoutButton() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/auth');
+      router.push('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);
       toast({

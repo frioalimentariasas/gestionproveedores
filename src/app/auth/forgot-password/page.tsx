@@ -18,8 +18,8 @@ export default function ForgotPasswordPage() {
       </CardContent>
       <CardFooter>
         <div className="w-full text-center text-sm">
-          <Link href="/auth" passHref className="font-semibold text-primary hover:underline">
-            Volver a la selección de portal
+          <Link href="/auth/login" passHref className="font-semibold text-primary hover:underline">
+            Volver a Iniciar Sesión
           </Link>
         </div>
       </CardFooter>
