@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Sidebar } from '@/components/layout/sidebar';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -12,10 +12,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   console.log('[APP LAYOUT] Render: Estado recibido de useAuth ->', { loading, user: user ? { uid: user.uid, email: user.email } : null });
 
-  // 1. Si estamos en proceso de verificación, SIEMPRE mostramos el loader.
-  //    Esto es crucial para esperar a que Firebase inicialice.
-  if (loading) {
-    console.log('[APP LAYOUT] Render: Mostrando Loader porque `loading` es true.');
+  // The redirection logic MUST be in a `useEffect` to prevent rendering errors.
+  useEffect(() => {
+    // This effect runs when `loading` or `user` change.
+    if (!loading && !user) {
+      console.log("[APP LAYOUT] useEffect: CONDICIÓN CUMPLIDA (!loading && !user). Redirigiendo a /auth/login.");
+      router.push('/auth/login');
+    }
+  }, [loading, user, router]);
+
+  // While loading, or if there is no user (and we are about to redirect),
+  // we must show a loader. This prevents a flash of protected content and
+  // ensures we don't try to render content that depends on a non-existent user.
+  if (loading || !user) {
+    console.log('[APP LAYOUT] Render: Mostrando Loader porque `loading` es true o no hay usuario.');
     return (
       <div className="flex h-screen w-full items-center justify-center bg-muted/40">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -23,20 +33,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // 2. Si la carga ha terminado y NO hay usuario, redirigimos.
-  if (!user) {
-    console.log("[APP LAYOUT] Render: CONDICIÓN CUMPLIDA (!user). Redirigiendo a /auth/login.");
-    router.push('/auth/login');
-    // Es importante mostrar un loader o null para evitar que el contenido anterior
-    // se muestre brevemente durante la redirección.
-    return (
-        <div className="flex h-screen w-full items-center justify-center bg-muted/40">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-    );
-  }
-
-  // 3. Si llegamos aquí, `loading` es false y `user` existe. Es seguro renderizar.
+  // If we reach this point, `loading` is false and `user` exists. It's safe to render.
   console.log('[APP LAYOUT] Render: Renderizando el dashboard principal porque hay un usuario.');
   return (
     <div className="flex min-h-screen">
