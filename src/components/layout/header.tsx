@@ -4,7 +4,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useAuth, useUser } from '@/firebase';
+import {
+  useAuth,
+  useUser,
+  useFirestore,
+  useDoc,
+  useMemoFirebase,
+} from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -26,15 +33,29 @@ const adminNavLinks = [
 
 const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];
 
+interface ProviderData {
+  businessName?: string;
+}
+
 export default function Header() {
   const pathname = usePathname();
   const { user, loading: userLoading } = useUser();
   const { isAdmin, isLoading: roleLoading } = useRole();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
-  const loading = userLoading || roleLoading;
+  const providerDocRef = useMemoFirebase(() => {
+    if (!user || !firestore || isAdmin) return null;
+    return doc(firestore, 'providers', user.uid);
+  }, [user, firestore, isAdmin]);
+
+  const { data: providerData, isLoading: providerDataLoading } =
+    useDoc<ProviderData>(providerDocRef);
+
+  const loading =
+    userLoading || roleLoading || (!isAdmin && providerDataLoading);
   const navLinks = isAdmin ? adminNavLinks : providerNavLinks;
 
   const handleLogout = async () => {
@@ -93,18 +114,22 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  {user.displayName || user.email}
+                  {providerData?.businessName || user.displayName || user.email}
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link href="/account">
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    <span>Mi Cuenta</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/account">
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        <span>Mi Cuenta</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
