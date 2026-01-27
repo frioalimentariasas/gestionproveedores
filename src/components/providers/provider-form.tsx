@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { providerFormSchema } from '@/lib/schemas';
@@ -42,25 +43,30 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
-// Define a complete set of initial values to prevent uncontrolled components.
 const initialFormValues: ProviderFormValues = {
   serviceDescription: '',
-  businessName: '',
   documentType: '',
   documentNumber: '',
-  address: '',
-  department: '',
-  city: '',
-  phone: '',
-  email: '',
+  businessName: '',
   personType: '',
+  city: '',
+  department: '',
+  country: 'Colombia',
+  address: '',
+  fax: '',
+  phone: '',
+  website: '',
+  providerContactName: '',
+  providerContactTitle: '',
+  providerContactEmail: '',
+  paymentContactName: '',
+  paymentContactTitle: '',
+  paymentContactEmail: '',
+  email: '',
   taxRegime: '',
   isIcaAgent: '',
   icaTariff: '',
   isIncomeTaxAgent: '',
-  contactName: '',
-  contactPhone: '',
-  contactEmail: '',
   bankName: '',
   accountType: '',
   accountNumber: '',
@@ -75,12 +81,7 @@ const initialFormValues: ProviderFormValues = {
   certificacionBancariaFileUrl: '',
 };
 
-const documentTypes = [
-  'NIT',
-  'Cédula de Ciudadanía',
-  'Cédula de Extranjería',
-  'Pasaporte',
-];
+const documentTypes = ['NIT', 'CC', 'CE', 'Pasaporte'];
 const personTypes = ['Persona Natural', 'Persona Jurídica'];
 const taxRegimes = ['Responsable de IVA', 'No Responsable de IVA'];
 const yesNoOptions = ['Sí', 'No'];
@@ -111,8 +112,6 @@ export default function ProviderForm() {
 
   useEffect(() => {
     if (providerData) {
-      // Merge fetched data with default values to ensure no field is undefined.
-      // This prevents React's "uncontrolled to controlled" warning.
       const populatedValues = { ...initialFormValues, ...providerData };
       form.reset(populatedValues);
 
@@ -165,7 +164,7 @@ export default function ProviderForm() {
       };
 
       for (const field of fileFields) {
-        const fileList = values[field] as FileList | undefined;
+        const fileList = values[field as keyof typeof values] as FileList | undefined;
         if (fileList && fileList.length > 0) {
           const file = fileList[0];
           const urlField = `${field}Url` as keyof ProviderFormValues;
@@ -182,11 +181,10 @@ export default function ProviderForm() {
         ...values,
         ...updatedFileUrls,
         id: user.uid,
-        email: user.email, // Ensure email is saved
+        email: user.email, // Ensure login email is saved
         formLocked: true,
       };
 
-      // Remove file fields before saving to Firestore
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
@@ -231,7 +229,6 @@ export default function ProviderForm() {
           </Alert>
         )}
 
-        {/* Service Description Section */}
         <div>
           <div className="bg-primary text-primary-foreground font-bold text-center p-3 rounded-t-lg">
             OBLIGATORIO DILIGENCIAMIENTO POR PARTE DEL PROVEEDOR
@@ -261,66 +258,185 @@ export default function ProviderForm() {
           </Card>
         </div>
 
-        {/* Section 1 */}
         <Card>
           <CardHeader>
             <CardTitle>1. Información del Proveedor</CardTitle>
-            <CardDescription>
-              Diligencia la información básica de tu empresa o actividad
-              comercial.
-            </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="businessName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Razón Social / Nombre</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="documentType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Documento</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+              <FormField
+                control={form.control}
+                name="documentType"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Tipo de Documento</FormLabel>
                     <FormControl>
-                      <SelectTrigger disabled>
-                        <SelectValue placeholder="Selecciona..." />
-                      </SelectTrigger>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex space-x-4"
+                        disabled={isLocked}
+                      >
+                        {documentTypes.map((type) => (
+                          <FormItem
+                            key={type}
+                            className="flex items-center space-x-2 space-y-0"
+                          >
+                            <FormControl>
+                              <RadioGroupItem value={type} />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {type}
+                            </FormLabel>
+                          </FormItem>
+                        ))}
+                      </RadioGroup>
                     </FormControl>
-                    <SelectContent>
-                      {documentTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="documentNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>NIT/CC/CE/PASAPORTE</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="documentNumber"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Número</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="businessName"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Razón social o nombre</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="personType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Persona</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="space-y-1"
+                        disabled={isLocked}
+                      >
+                        {personTypes.map((type) => (
+                          <FormItem
+                            key={type}
+                            className="flex items-center space-x-2"
+                          >
+                            <FormControl>
+                              <RadioGroupItem value={type} />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {type}
+                            </FormLabel>
+                          </FormItem>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ciudad</FormLabel>
+                     <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isLocked || !selectedDepartment}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un departamento primero..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(colombiaCities[selectedDepartment] || []).map(
+                          (city) => (
+                            <SelectItem key={city} value={city}>
+                              {city}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Departamento</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedDepartment(value);
+                        form.setValue('city', '');
+                      }}
+                      value={field.value}
+                      disabled={isLocked}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {colombiaDepartments.map((dep) => (
+                          <SelectItem key={dep} value={dep}>
+                            {dep}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>País</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <FormField
               control={form.control}
               name="address"
@@ -334,90 +450,146 @@ export default function ProviderForm() {
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Teléfono(s)</FormLabel>
+                        <FormControl>
+                        <Input {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="fax"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Fax</FormLabel>
+                        <FormControl>
+                        <Input {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Pag web</FormLabel>
+                        <FormControl>
+                        <Input {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+
             <FormField
-              control={form.control}
-              name="department"
-              render={({ field }) => (
+                control={form.control}
+                name="providerContactName"
+                render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Departamento</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedDepartment(value);
-                      form.setValue('city', '');
-                    }}
-                    value={field.value}
-                    disabled={isLocked}
-                  >
+                    <FormLabel>Nombre del contacto del proveedor</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {colombiaDepartments.map((dep) => (
-                        <SelectItem key={dep} value={dep}>
-                          {dep}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ciudad</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLocked || !selectedDepartment}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un departamento primero..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {(colombiaCities[selectedDepartment] || []).map(
-                        (city) => (
-                          <SelectItem key={city} value={city}>
-                            {city}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
-                  <FormControl>
                     <Input {...field} disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
+                    </FormControl>
+                    <FormMessage />
                 </FormItem>
-              )}
+                )}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="providerContactTitle"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Cargo</FormLabel>
+                        <FormControl>
+                        <Input {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="providerContactEmail"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                        <Input type="email" {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+
             <FormField
+                control={form.control}
+                name="paymentContactName"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Nombre de la persona para notificar pago</FormLabel>
+                    <FormControl>
+                    <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="paymentContactTitle"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Cargo</FormLabel>
+                        <FormControl>
+                        <Input {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="paymentContactEmail"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email para notificación pago</FormLabel>
+                        <FormControl>
+                        <Input type="email" {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email para Facturación Electrónica</FormLabel>
+                  <FormLabel>Email de Inicio de Sesión</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isLocked} />
+                    <Input {...field} disabled />
                   </FormControl>
+                  <FormDescription>
+                    Este es el email asociado a tu cuenta y no se puede modificar.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -425,40 +597,11 @@ export default function ProviderForm() {
           </CardContent>
         </Card>
 
-        {/* Section 2 */}
         <Card>
           <CardHeader>
             <CardTitle>2. Información Tributaria</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="personType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Persona</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLocked}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {personTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="taxRegime"
@@ -559,58 +702,9 @@ export default function ProviderForm() {
           </CardContent>
         </Card>
 
-        {/* Section 3 */}
         <Card>
           <CardHeader>
-            <CardTitle>3. Información de Contacto</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="contactName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre Contacto Comercial</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="contactPhone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teléfono Contacto</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="contactEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Contacto</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Section 4 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>4. Información Financiera para Pagos</CardTitle>
+            <CardTitle>3. Información Financiera para Pagos</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
@@ -683,10 +777,9 @@ export default function ProviderForm() {
           </CardContent>
         </Card>
 
-        {/* Section 5 */}
         <Card>
           <CardHeader>
-            <CardTitle>5. Documentos</CardTitle>
+            <CardTitle>4. Documentos</CardTitle>
             <CardDescription>
               Adjunta los siguientes documentos en formato PDF (máximo 2MB cada
               uno).
@@ -750,10 +843,9 @@ export default function ProviderForm() {
           </CardContent>
         </Card>
 
-        {/* Section 6 */}
         <Card>
           <CardHeader>
-            <CardTitle>6. SARLAFT y Aceptación</CardTitle>
+            <CardTitle>5. SARLAFT y Aceptación</CardTitle>
           </CardHeader>
           <CardContent>
             <FormField

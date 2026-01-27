@@ -81,32 +81,41 @@ export const providerFormSchema = z.object({
     .string()
     .min(1, 'La descripción del bien y/o servicio es requerida.'),
   // Section 1
-  businessName: z.string().min(1, 'La razón social es requerida.'),
   documentType: z.string().min(1, 'El tipo de documento es requerido.'),
-  documentNumber: z.string().min(1, 'El número de documento es requerido.'),
-  address: z.string().min(1, 'La dirección es requerida.'),
-  department: z.string().min(1, 'El departamento es requerido.'),
-  city: z.string().min(1, 'La ciudad es requerida.'),
-  phone: z.string().min(1, 'El teléfono es requerido.'),
-  email: z.string().email('Email no válido.'),
-  // Section 2
+  documentNumber: z
+    .string()
+    .min(1, 'El número de documento es requerido.')
+    .regex(/^[0-9-]*$/, 'El número de documento solo debe contener números y guiones.'),
+  businessName: z.string().min(1, 'La razón social es requerida.'),
   personType: z.string().min(1, 'El tipo de persona es requerido.'),
+  city: z.string().min(1, 'La ciudad es requerida.'),
+  department: z.string().min(1, 'El departamento es requerido.'),
+  country: z.string().min(1, 'El país es requerido.'),
+  address: z.string().min(1, 'La dirección es requerida.'),
+  fax: z.string().optional(),
+  phone: z.string().min(1, 'El teléfono es requerido.'),
+  website: z.string().url('URL de página web no válida').optional().or(z.literal('')),
+  providerContactName: z.string().min(1, 'El nombre de contacto es requerido.'),
+  providerContactTitle: z.string().min(1, 'El cargo del contacto es requerido.'),
+  providerContactEmail: z.string().email('Email de contacto no válido.'),
+  paymentContactName: z.string().min(1, 'El nombre de la persona para notificar pago es requerido.'),
+  paymentContactTitle: z.string().min(1, 'El cargo de la persona para notificar pago es requerido.'),
+  paymentContactEmail: z.string().email('El email para notificación de pago no es válido.'),
+  email: z.string().email('Email no válido.'),
+
+  // Section 2 - Tributaria
   taxRegime: z.string().min(1, 'El régimen de IVA es requerido.'),
   isIcaAgent: z.string().min(1, 'Debe seleccionar una opción.'),
   icaTariff: z.string().optional(),
   isIncomeTaxAgent: z.string().min(1, 'Debe seleccionar una opción.'),
-  // Section 3
-  contactName: z.string().min(1, 'El nombre de contacto es requerido.'),
-  contactPhone: z.string().min(1, 'El teléfono de contacto es requerido.'),
-  contactEmail: z.string().email('Email de contacto no válido.'),
-  // Section 4
+  // Section 3 - Financiera
   bankName: z.string().min(1, 'El nombre del banco es requerido.'),
   accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
   accountNumber: z.string().min(1, 'El número de cuenta es requerido.'),
   beneficiaryName: z
     .string()
     .min(1, 'El nombre del titular es requerido.'),
-  // Section 5
+  // Section 4 - Documentos
   rutFile: fileSchemaOptional,
   camaraComercioFile: fileSchemaOptional,
   estadosFinancierosFile: fileSchemaOptional,
@@ -120,7 +129,7 @@ export const providerFormSchema = z.object({
   declaracionRentaFileUrl: z.string().optional(),
   cedulaRepresentanteLegalFileUrl: z.string().optional(),
   certificacionBancariaFileUrl: z.string().optional(),
-  // Section 6
+  // Section 5 - SARLAFT
   sarlaftAccepted: z
     .boolean()
     .refine((val) => val === true, 'Debe aceptar los términos.'),
