@@ -161,7 +161,9 @@ export const providerFormSchema = z
     camaraComercioFileUrl: z.string().optional(),
     cedulaRepresentanteLegalFileUrl: z.string().optional(),
     certificacionBancariaFileUrl: z.string().optional(),
-    // Section 7 - SARLAFT
+    // Section 7 - HSEQ
+    hseqSgsst: z.string().optional(),
+    // Section 8 - SARLAFT
     sarlaftAccepted: z
       .boolean()
       .refine((val) => val === true, 'Debe aceptar los términos.'),

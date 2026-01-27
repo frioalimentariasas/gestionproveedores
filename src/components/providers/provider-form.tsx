@@ -86,6 +86,7 @@ const initialFormValues: ProviderFormValues = {
   accountType: '',
   accountNumber: '',
   beneficiaryName: '',
+  hseqSgsst: '',
   sarlaftAccepted: false,
   formLocked: false,
   rutFileUrl: '',
@@ -1198,7 +1199,53 @@ export default function ProviderForm() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {watchedPersonType === 'Persona Jurídica' ? '7' : '6'}. SARLAFT y
+              {watchedPersonType === 'Persona Jurídica' ? '7' : '6'}.
+              INFORMACION HSEQ
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="hseqSgsst"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>
+                    Su empresa cuenta con SG-SST acorde al Decreto 1072, con
+                    resultado de evaluación de la resolución 0312/19, por encima
+                    del 60%
+                  </FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex space-x-4"
+                      disabled={isLocked}
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Sí" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Sí</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="No" />
+                        </FormControl>
+                        <FormLabel className="font-normal">No</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {watchedPersonType === 'Persona Jurídica' ? '8' : '7'}. SARLAFT y
               Aceptación
             </CardTitle>
           </CardHeader>
