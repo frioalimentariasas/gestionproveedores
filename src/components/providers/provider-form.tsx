@@ -33,8 +33,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { providerFormSchema } from '@/lib/schemas';
 import { Country, State, City, IState, ICity } from 'country-state-city';
-import { useFirestore, useUser, useDoc, useMemoFirebase, useStorage } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Info, Loader2 } from 'lucide-react';
@@ -115,7 +114,6 @@ export default function ProviderForm() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [states, setStates] = useState<IState[]>([]);
   const [cities, setCities] = useState<ICity[]>([]);
@@ -220,16 +218,30 @@ export default function ProviderForm() {
 
   const uploadFile = async (
     file: File,
+    userId: string,
     fileName: string
   ): Promise<string> => {
-    if (!user || !storage) throw new Error('Usuario no autenticado o Storage no disponible.');
-    const fileRef = ref(storage, `providers/${user.uid}/${fileName}`);
-    await uploadBytes(fileRef, file);
-    return getDownloadURL(fileRef);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('userId', userId);
+    formData.append('fileName', fileName);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload file.');
+    }
+
+    const { url } = await response.json();
+    return url;
   };
 
   async function onSubmit(values: ProviderFormValues) {
-    if (!user || !providerDocRef || !storage) {
+    if (!user || !providerDocRef) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -263,7 +275,7 @@ export default function ProviderForm() {
         if (fileList && fileList.length > 0) {
           const file = fileList[0];
           const urlField = `${field}Url` as keyof ProviderFormValues;
-          const promise = uploadFile(file, fileNames[field]).then((url) => {
+          const promise = uploadFile(file, user.uid, fileNames[field]).then((url) => {
             updatedFileUrls[urlField] = url;
           });
           fileUploadPromises.push(promise);
