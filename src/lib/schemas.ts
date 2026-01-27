@@ -124,4 +124,6 @@ export const providerFormSchema = z.object({
   sarlaftAccepted: z
     .boolean()
     .refine((val) => val === true, 'Debe aceptar los términos.'),
+  // New lock field
+  formLocked: z.boolean().optional(),
 });

@@ -76,6 +76,10 @@
         "sarlaftAccepted": {
           "type": "boolean",
           "description": "Indicates whether the provider has accepted the SARLAFT terms and conditions."
+        },
+        "formLocked": {
+          "type": "boolean",
+          "description": "If true, the provider's form is locked and cannot be edited."
         }
       },
       "required": [

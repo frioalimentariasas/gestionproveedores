@@ -1,7 +1,7 @@
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import { Loader2, MoreHorizontal } from 'lucide-react';
 import {
   Table,
@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 // Define the shape of a provider document
 interface Provider {
@@ -29,10 +30,12 @@ interface Provider {
   businessName: string;
   documentNumber: string;
   email: string;
+  formLocked?: boolean;
 }
 
 export default function ProvidersTable() {
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const providersQuery = useMemoFirebase(
     () => query(collection(firestore, 'providers')),
@@ -40,6 +43,32 @@ export default function ProvidersTable() {
   );
 
   const { data: providers, isLoading, error } = useCollection<Provider>(providersQuery);
+
+  const handleToggleLock = async (
+    providerId: string,
+    currentStatus: boolean | undefined
+  ) => {
+    if (!firestore) return;
+    const isCurrentlyLocked = currentStatus ?? false;
+    const providerRef = doc(firestore, 'providers', providerId);
+    try {
+      await updateDoc(providerRef, { formLocked: !isCurrentlyLocked });
+      toast({
+        title: 'Estado de Formulario Actualizado',
+        description: `El formulario del proveedor ha sido ${
+          !isCurrentlyLocked ? 'bloqueado' : 'habilitado para edición'
+        }.`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo actualizar el estado del formulario.',
+      });
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -73,7 +102,7 @@ export default function ProvidersTable() {
             <TableHead>Razón Social</TableHead>
             <TableHead>NIT / Documento</TableHead>
             <TableHead>Email de Contacto</TableHead>
-            <TableHead className="text-center">Estado</TableHead>
+            <TableHead className="text-center">Estado Formulario</TableHead>
             <TableHead>
               <span className="sr-only">Acciones</span>
             </TableHead>
@@ -86,7 +115,9 @@ export default function ProvidersTable() {
               <TableCell>{provider.documentNumber}</TableCell>
               <TableCell>{provider.email}</TableCell>
               <TableCell className="text-center">
-                 <Badge variant="secondary">Activo</Badge> 
+                 <Badge variant={provider.formLocked ? 'outline' : 'secondary'}>
+                  {provider.formLocked ? 'Bloqueado' : 'Habilitado'}
+                 </Badge>
               </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
@@ -99,6 +130,11 @@ export default function ProvidersTable() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                     <DropdownMenuItem>Ver Formulario</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleToggleLock(provider.id, provider.formLocked)}
+                    >
+                      {provider.formLocked ? 'Habilitar Edición' : 'Bloquear Formulario'}
+                    </DropdownMenuItem>
                     <DropdownMenuItem>Actualizar Contraseña</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">

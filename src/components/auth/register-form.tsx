@@ -76,6 +76,7 @@ export function RegisterForm() {
           businessName: values.businessName,
           documentType: values.documentType,
           documentNumber: values.documentNumber,
+          formLocked: false,
         },
         { merge: true }
       );
