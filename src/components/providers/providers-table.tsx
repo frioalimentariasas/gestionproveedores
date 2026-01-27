@@ -1,6 +1,12 @@
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+  errorEmitter,
+  FirestorePermissionError,
+} from '@/firebase';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import { Loader2, MoreHorizontal } from 'lucide-react';
 import {
@@ -44,29 +50,36 @@ export default function ProvidersTable() {
 
   const { data: providers, isLoading, error } = useCollection<Provider>(providersQuery);
 
-  const handleToggleLock = async (
+  const handleToggleLock = (
     providerId: string,
     currentStatus: boolean | undefined
   ) => {
     if (!firestore) return;
     const isCurrentlyLocked = currentStatus ?? false;
     const providerRef = doc(firestore, 'providers', providerId);
-    try {
-      await updateDoc(providerRef, { formLocked: !isCurrentlyLocked });
-      toast({
-        title: 'Estado de Formulario Actualizado',
-        description: `El formulario del proveedor ha sido ${
-          !isCurrentlyLocked ? 'bloqueado' : 'habilitado para edición'
-        }.`,
+    const dataToUpdate = { formLocked: !isCurrentlyLocked };
+
+    // Don't await. Firestore's onSnapshot listener will update the UI automatically.
+    updateDoc(providerRef, dataToUpdate)
+      .then(() => {
+        toast({
+          title: 'Estado de Formulario Actualizado',
+          description: `El formulario del proveedor ha sido ${
+            !isCurrentlyLocked ? 'bloqueado' : 'habilitado para edición'
+          }.`,
+        });
+      })
+      .catch(async (serverError) => {
+        // This will be called if the update fails on the server (e.g. permission error).
+        // The optimistic local update will be reverted by Firestore SDK automatically.
+        const permissionError = new FirestorePermissionError({
+          path: providerRef.path,
+          operation: 'update',
+          requestResourceData: dataToUpdate,
+        });
+        // This will be caught by the FirebaseErrorListener and shown in the dev overlay.
+        errorEmitter.emit('permission-error', permissionError);
       });
-    } catch (err) {
-      console.error(err);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No se pudo actualizar el estado del formulario.',
-      });
-    }
   };
 
 

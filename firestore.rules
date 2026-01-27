@@ -2,8 +2,8 @@
  * Core Philosophy: This ruleset enforces a hybrid security model. It combines a strict
  * user-ownership pattern for provider data with a role-based access control system
  * for administrators. Providers are completely isolated and can only manage their own
- * information, ensuring data privacy. Administrators are granted read-only access to all
- * provider data for oversight and management purposes, preventing accidental modification.
+ * information, ensuring data privacy. Administrators are granted read and update
+ * access to all provider data for oversight and management purposes.
  *
  * Data Structure: The data is organized into two distinct, top-level collections:
  * 1. /providers/{providerId}: Contains individual documents for each provider, where the
@@ -14,9 +14,9 @@
  * Key Security Decisions:
  * - Provider Isolation: A provider can only create, read, update, or delete their own
  *   document. They cannot list or access any other provider's data.
- * - Admin Read-Only Access: Administrators can read and list all provider documents but are
- *   explicitly forbidden from writing, updating, or deleting them. This creates a clear
- *   separation of concerns where providers own their data, and admins can view it.
+ * - Admin Write Access: Administrators can read and list all provider documents. They also
+ *   have update access to perform management tasks (e.g., locking/unlocking forms),
+ *   but are forbidden from creating or deleting provider data.
  * - Locked-Down Roles: The /roles_admin collection is not writable by any client. This is a
  *   critical security measure, as role assignments must only be handled through a trusted
  *   backend process or the Firebase Console.
@@ -76,6 +76,13 @@ service cloud.firestore {
     }
 
     /**
+     * Ensures an operation is for an existing document and is performed by an admin.
+     */
+    function isExistingAdmin() {
+      return isAdmin() && resource != null;
+    }
+
+    /**
      * Validates that a user is creating their own provider document and that the
      * internal `id` field matches the document's path ID for relational integrity.
      */
@@ -98,21 +105,21 @@ service cloud.firestore {
 
     /**
      * @description Rules for the `providers` collection. A provider can manage their own
-     *              document, and administrators have have read-only access to all documents.
+     *              document, and administrators have read and update access to all documents.
      * @path /providers/{providerId}
      * @allow (get) A provider (uid: 'provider123') reading their own document at `/providers/provider123`.
      * @allow (create) A new provider (uid: 'provider456') creating their document at `/providers/provider456`.
      * @allow (list) An admin listing all documents in the `/providers` collection.
+     * @allow (update) An admin updating a document at `/providers/provider123` (e.g. to lock/unlock the form).
      * @deny (list) A provider attempting to list the `/providers` collection.
-     * @deny (update) An admin attempting to update a document at `/providers/provider123`.
      * @deny (create) A provider (uid: 'provider123') trying to create a document for another user at `/providers/other456`.
-     * @principle Enforces a strict ownership model for writes and provides role-based read access for admins.
+     * @principle Enforces a strict ownership model for creates/deletes and provides role-based read/update access for admins.
      */
     match /providers/{providerId} {
       allow get: if isOwner(providerId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isCreatingOwnProviderProfile(providerId);
-      allow update: if isExistingOwner(providerId) && hasImmutableProviderId();
+      allow update: if (isExistingOwner(providerId) || isExistingAdmin()) && hasImmutableProviderId();
       allow delete: if isExistingOwner(providerId);
     }
 
