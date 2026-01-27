@@ -7,19 +7,24 @@ service firebase.storage {
 
     // @path /providers/{providerId}/{allPaths=**}
     // @description
-    //   - Allow providers to read and write (create, update, delete) files within their own dedicated folder.
+    //   - Allow providers to read, and write (create, update, delete) files within their own dedicated folder.
     //   - The {providerId} MUST match the UID of the authenticated user.
-    //   - Enforces a maximum file size of 2MB.
+    //   - Enforces a maximum file size of 2MB for new files.
     //   - Restricts uploads to PDF files only.
-    // @allow (read, write) An authenticated user (uid: 'user123') accessing 'providers/user123/rut.pdf'.
+    // @allow (read) An authenticated user (uid: 'user123') accessing 'providers/user123/rut.pdf'.
+    // @allow (create) An authenticated user creating a valid PDF file in their own directory.
     // @deny (read, write) An authenticated user (uid: 'user123') trying to access 'providers/user456/rut.pdf'.
-    // @deny (write) A user trying to upload a file larger than 2MB.
-    // @deny (write) A user trying to upload a file that is not a PDF.
+    // @deny (create) A user trying to upload a file larger than 2MB or a non-PDF file.
     match /providers/{providerId}/{allPaths=**} {
-      allow read, write: if request.auth != null && 
-                           request.auth.uid == providerId &&
-                           request.resource.size < 2 * 1024 * 1024 &&
-                           request.resource.contentType.matches('application/pdf');
+      // Users can read and delete their own files.
+      allow read, delete: if request.auth != null && request.auth.uid == providerId;
+      
+      // Users can create files if they are the owner and the file is a valid PDF under 2MB.
+      // This rule is specifically for uploads and correctly handles preflight checks.
+      allow create: if request.auth != null && 
+                       request.auth.uid == providerId &&
+                       request.resource.size < 2 * 1024 * 1024 &&
+                       request.resource.contentType == 'application/pdf';
     }
   }
 }
