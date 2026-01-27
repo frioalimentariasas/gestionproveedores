@@ -32,7 +32,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { providerFormSchema } from '@/lib/schemas';
-import { colombiaDepartments, colombiaCities } from '@/lib/countries';
+import { Country, State, City, IState, ICity } from 'country-state-city';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
@@ -51,7 +51,7 @@ const initialFormValues: ProviderFormValues = {
   personType: '',
   city: '',
   department: '',
-  country: 'Colombia',
+  country: '',
   address: '',
   fax: '',
   phone: '',
@@ -93,7 +93,8 @@ export default function ProviderForm() {
   const firestore = useFirestore();
   const storage = getStorage();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [states, setStates] = useState<IState[]>([]);
+  const [cities, setCities] = useState<ICity[]>([]);
 
   const providerDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -110,14 +111,25 @@ export default function ProviderForm() {
     defaultValues: initialFormValues,
   });
 
+  const watchedCountry = form.watch('country');
+  const watchedDepartment = form.watch('department');
+
+  useEffect(() => {
+    const country = Country.getAllCountries().find(c => c.name === watchedCountry);
+    setStates(country ? State.getStatesOfCountry(country.isoCode) : []);
+    setCities([]);
+  }, [watchedCountry]);
+
+  useEffect(() => {
+    const country = Country.getAllCountries().find(c => c.name === watchedCountry);
+    const state = country ? State.getStatesOfCountry(country.isoCode)?.find(s => s.name === watchedDepartment) : undefined;
+    setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []);
+  }, [watchedCountry, watchedDepartment]);
+
   useEffect(() => {
     if (providerData) {
       const populatedValues = { ...initialFormValues, ...providerData };
       form.reset(populatedValues);
-
-      if (providerData.department) {
-        setSelectedDepartment(providerData.department);
-      }
     }
   }, [providerData, form]);
 
@@ -360,15 +372,34 @@ export default function ProviderForm() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
+               <FormField
                 control={form.control}
                 name="country"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>País</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        form.setValue('department', '');
+                        form.setValue('city', '');
+                      }}
+                      value={field.value}
+                      disabled={isLocked}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un país..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Country.getAllCountries().map((country) => (
+                          <SelectItem key={country.isoCode} value={country.name}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -382,11 +413,10 @@ export default function ProviderForm() {
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
-                        setSelectedDepartment(value);
                         form.setValue('city', '');
                       }}
                       value={field.value}
-                      disabled={isLocked}
+                      disabled={isLocked || !watchedCountry}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -394,9 +424,9 @@ export default function ProviderForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {colombiaDepartments.map((dep) => (
-                          <SelectItem key={dep} value={dep}>
-                            {dep}
+                        {states.map((state) => (
+                           <SelectItem key={state.isoCode} value={state.name}>
+                            {state.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -414,18 +444,18 @@ export default function ProviderForm() {
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isLocked || !selectedDepartment}
+                      disabled={isLocked || !watchedDepartment}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un departamento primero..." />
+                          <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(colombiaCities[selectedDepartment] || []).map(
+                        {cities.map(
                           (city) => (
-                            <SelectItem key={city} value={city}>
-                              {city}
+                            <SelectItem key={city.name} value={city.name}>
+                              {city.name}
                             </SelectItem>
                           )
                         )}
