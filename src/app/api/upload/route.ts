@@ -20,7 +20,7 @@ try {
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      storageBucket: 'proveedores-fal.appspot.com',
+      storageBucket: 'proveedores-fal.firebasestorage.app',
     });
   }
 } catch (error: any) {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Explicitly get the bucket by its full name. This is more robust.
-  const bucket = admin.storage().bucket('proveedores-fal.appspot.com');
+  const bucket = admin.storage().bucket('proveedores-fal.firebasestorage.app');
 
   try {
     const formData = await request.formData();
