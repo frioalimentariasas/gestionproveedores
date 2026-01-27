@@ -33,8 +33,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { providerFormSchema } from '@/lib/schemas';
 import { Country, State, City, IState, ICity } from 'country-state-city';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useStorage } from '@/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Info, Loader2 } from 'lucide-react';
@@ -115,7 +115,7 @@ export default function ProviderForm() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const storage = getStorage();
+  const storage = useStorage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [states, setStates] = useState<IState[]>([]);
   const [cities, setCities] = useState<ICity[]>([]);
@@ -222,14 +222,14 @@ export default function ProviderForm() {
     file: File,
     fileName: string
   ): Promise<string> => {
-    if (!user) throw new Error('Usuario no autenticado');
+    if (!user || !storage) throw new Error('Usuario no autenticado o Storage no disponible.');
     const fileRef = ref(storage, `providers/${user.uid}/${fileName}`);
     await uploadBytes(fileRef, file);
     return getDownloadURL(fileRef);
   };
 
   async function onSubmit(values: ProviderFormValues) {
-    if (!user || !providerDocRef) {
+    if (!user || !providerDocRef || !storage) {
       toast({
         variant: 'destructive',
         title: 'Error',
