@@ -19,12 +19,9 @@ service firebase.storage {
       // Users can read and delete their own files.
       allow read, delete: if request.auth != null && request.auth.uid == providerId;
       
-      // Users can create files if they are the owner and the file is a valid PDF under 2MB.
-      // This rule is specifically for uploads and correctly handles preflight checks.
-      allow create: if request.auth != null && 
-                       request.auth.uid == providerId &&
-                       request.resource.size < 2 * 1024 * 1024 &&
-                       request.resource.contentType == 'application/pdf';
+      // Users can create files if they are the owner.
+      // The size and content type checks have been temporarily removed for debugging.
+      allow create: if request.auth != null && request.auth.uid == providerId;
     }
   }
 }

@@ -294,12 +294,12 @@ export default function ProviderForm() {
         description:
           'Tus datos han sido guardados y bloqueados. Contacta a un administrador para realizar cambios.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error al guardar',
-        description: 'Ha ocurrido un error inesperado al guardar tus datos.',
+        description: error.message || 'Ha ocurrido un error inesperado al guardar tus datos.',
       });
     } finally {
       setIsSubmitting(false);
