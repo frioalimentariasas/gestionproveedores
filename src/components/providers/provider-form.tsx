@@ -290,9 +290,9 @@ export default function ProviderForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Documento</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger disabled>
                         <SelectValue placeholder="Selecciona..." />
                       </SelectTrigger>
                     </FormControl>
