@@ -1245,8 +1245,9 @@ export default function ProviderForm() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {watchedPersonType === 'Persona Jurídica' ? '8' : '7'}. SARLAFT y
-              Aceptación
+              {watchedPersonType === 'Persona Jurídica' ? '8' : '7'}.
+              DECLARACION SARLAFT Y AUTORIZACION PARA EL MANEJO Y PROTECCION DE
+              DATOS
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1263,14 +1264,57 @@ export default function ProviderForm() {
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Declaración y Autorización</FormLabel>
-                    <FormDescription>
-                      Declaro que los recursos que componen mi patrimonio no
-                      provienen de lavado de activos, financiación del
-                      terrorismo, narcotráfico, captación ilegal de dineros y en
-                      general de cualquier actividad ilícita. Autorizo a Frio
-                      Alimentaria S.A.S para que verifique la información
-                      suministrada.
+                    <FormLabel>
+                      Acepto la declaración de origen de fondos y la política de
+                      tratamiento de datos
+                    </FormLabel>
+                    <FormDescription className="space-y-4 text-xs">
+                      <p>
+                        De manera voluntaria y dando certeza de que todo lo aquí
+                        consignado es cierto, realizo la siguiente declaración
+                        de origen de fondos a FRIOALIMENTARIA SAS., con el
+                        propósito de dar cumplimiento a lo señalado en el
+                        Estatuto Orgánico del Sistema Financiero (Decreto 663 de
+                        1993), ley 190 de 1995 (Estatuto Anticorrupción) y demás
+                        normas legales concordantes: 1. La actividad de la
+                        empresa es lícita y se ejerce dentro del marco legal y
+                        los recursos que posee no provienen de actividades
+                        ilícitas de las contempladas en el Código Penal
+                        Colombiano. 2. Los recursos comprometidos para el
+                        desarrollo del objeto social de la compañía provienen de
+                        fuentes lícitas. 3. Los recursos que se deriven del
+                        desarrollo de este contrato no se destinarán a la
+                        financiación del terrorismo, grupos terroristas o
+                        actividades terroristas.
+                      </p>
+                      <p>
+                        En virtud de la Ley 1581 de 2012 y sus normas
+                        reglamentarias, el titular de la información personal,
+                        declara que la entrega en forma libre y voluntaria y
+                        autoriza que la misma entre a formar parte de las bases
+                        de datos de la empresa FRIOALIMENTARIA SAS., para el
+                        tratamiento de servicio de los datos en actividades del
+                        objeto social de FRIOALIMENTARIA SAS acuerdo con la
+                        legislación vigente. Así mismo, manifiesta que los datos
+                        personales de los colaboradores de la persona jurídica
+                        que representa, lo han autorizado para entregarlos a
+                        terceros, en el desarrollo del objeto social propio.
+                        FRIOALIMENTARIA SAS. garantiza el cumplimiento de los
+                        principios señalados en la ley 1581 de 2.012 y sus
+                        decretos reglamentarios, en particular lo relacionado
+                        con la seguridad y la confidencialidad con la que se
+                        manejan los datos recibidos. El titular manifiesta que
+                        ha sido informado que tiene el derecho a acceder,
+                        modificar, rectificar, suprimir, solicitar la copia de
+                        su autorización, a formular quejas, reclamos y consultas
+                        frente al tratamiento que haga FRIOALIMENTARIA SAS de
+                        sus datos personales. Para ejercer esos derechos puede
+                        contactarse al correo electrónico:
+                        contabilidad@frioalimentaria.com.co, al telefono: (+5)
+                        6424342 ext 100 o mediante documento escrito a la
+                        siguiente dirección: Variante Cartagena Turbaco Zona
+                        Franca Parque Central Lote 69.
+                      </p>
                     </FormDescription>
                     <FormMessage />
                   </div>
