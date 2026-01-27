@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const bucket = admin.storage().bucket();
+  // Explicitly get the bucket by its full name. This is more robust.
+  const bucket = admin.storage().bucket('proveedores-fal.appspot.com');
 
   try {
     const formData = await request.formData();
@@ -81,8 +82,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: publicUrl }, { status: 200 });
   } catch (error: any) {
     console.error('Error uploading file:', error);
+    // The error object from Google Cloud can be complex. We extract the message.
+    const errorMessage =
+      error.errors?.[0]?.message ||
+      error.message ||
+      'An unknown error occurred.';
     return NextResponse.json(
-      { error: `Failed to upload file: ${error.message}` },
+      { error: `Failed to upload file: ${errorMessage}` },
       { status: 500 }
     );
   }
