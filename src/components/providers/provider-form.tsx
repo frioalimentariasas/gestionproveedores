@@ -90,8 +90,6 @@ const initialFormValues: ProviderFormValues = {
   formLocked: false,
   rutFileUrl: '',
   camaraComercioFileUrl: '',
-  estadosFinancierosFileUrl: '',
-  declaracionRentaFileUrl: '',
   cedulaRepresentanteLegalFileUrl: '',
   certificacionBancariaFileUrl: '',
 };
@@ -189,8 +187,6 @@ export default function ProviderForm() {
       const fileFields: (keyof ProviderFormValues)[] = [
         'rutFile',
         'camaraComercioFile',
-        'estadosFinancierosFile',
-        'declaracionRentaFile',
         'cedulaRepresentanteLegalFile',
         'certificacionBancariaFile',
       ];
@@ -198,8 +194,6 @@ export default function ProviderForm() {
       const fileNames: { [key: string]: string } = {
         rutFile: 'rut.pdf',
         camaraComercioFile: 'camara_comercio.pdf',
-        estadosFinancierosFile: 'estados_financieros.pdf',
-        declaracionRentaFile: 'declaracion_renta.pdf',
         cedulaRepresentanteLegalFile: 'cedula_representante.pdf',
         certificacionBancariaFile: 'certificacion_bancaria.pdf',
       };
@@ -1146,8 +1140,6 @@ export default function ProviderForm() {
               [
                 'rutFile',
                 'camaraComercioFile',
-                'estadosFinancierosFile',
-                'declaracionRentaFile',
                 'cedulaRepresentanteLegalFile',
                 'certificacionBancariaFile',
               ] as const
@@ -1155,8 +1147,6 @@ export default function ProviderForm() {
               const labels: Record<string, string> = {
                 rutFile: 'RUT',
                 camaraComercioFile: 'Cámara de Comercio',
-                estadosFinancierosFile: 'Estados Financieros',
-                declaracionRentaFile: 'Declaración de Renta',
                 cedulaRepresentanteLegalFile: 'Cédula Representante Legal',
                 certificacionBancariaFile: 'Certificación Bancaria',
               };
@@ -1178,6 +1168,12 @@ export default function ProviderForm() {
                           disabled={isLocked}
                         />
                       </FormControl>
+                      {fieldName === 'rutFile' && (
+                        <FormDescription>Actualizado</FormDescription>
+                      )}
+                      {fieldName === 'camaraComercioFile' && (
+                        <FormDescription>No mayor a 60 días</FormDescription>
+                      )}
                       {fileUrl && typeof fileUrl === 'string' && (
                         <FormDescription>
                           <a

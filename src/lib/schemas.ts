@@ -154,15 +154,11 @@ export const providerFormSchema = z
     // Section 6 - Documentos
     rutFile: fileSchemaOptional,
     camaraComercioFile: fileSchemaOptional,
-    estadosFinancierosFile: fileSchemaOptional,
-    declaracionRentaFile: fileSchemaOptional,
     cedulaRepresentanteLegalFile: fileSchemaOptional,
     certificacionBancariaFile: fileSchemaOptional,
     // Hidden URL fields
     rutFileUrl: z.string().optional(),
     camaraComercioFileUrl: z.string().optional(),
-    estadosFinancierosFileUrl: z.string().optional(),
-    declaracionRentaFileUrl: z.string().optional(),
     cedulaRepresentanteLegalFileUrl: z.string().optional(),
     certificacionBancariaFileUrl: z.string().optional(),
     // Section 7 - SARLAFT

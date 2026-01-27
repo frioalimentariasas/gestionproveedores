@@ -53,16 +53,6 @@
           "description": "URL of the Camara de Comercio (Chamber of Commerce) file stored in cloud storage.",
           "format": "uri"
         },
-        "estadosFinancierosFileUrl": {
-          "type": "string",
-          "description": "URL of the Estados Financieros (Financial Statements) file stored in cloud storage.",
-          "format": "uri"
-        },
-        "declaracionRentaFileUrl": {
-          "type": "string",
-          "description": "URL of the Declaracion de Renta (Income Tax Return) file stored in cloud storage.",
-          "format": "uri"
-        },
         "cedulaRepresentanteLegalFileUrl": {
           "type": "string",
           "description": "URL of the Cedula (ID) of the legal representative file stored in cloud storage.",
