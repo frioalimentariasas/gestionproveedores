@@ -295,7 +295,7 @@ export default function ProviderForm() {
           'Tus datos han sido guardados y bloqueados. Contacta a un administrador para realizar cambios.',
       });
     } catch (error: any) {
-      console.error(error);
+      console.error("Error detallado al guardar el formulario:", error);
       toast({
         variant: 'destructive',
         title: 'Error al guardar',
