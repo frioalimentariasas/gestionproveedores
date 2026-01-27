@@ -42,6 +42,39 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
+// Define a complete set of initial values to prevent uncontrolled components.
+const initialFormValues: ProviderFormValues = {
+  serviceDescription: '',
+  businessName: '',
+  documentType: '',
+  documentNumber: '',
+  address: '',
+  department: '',
+  city: '',
+  phone: '',
+  email: '',
+  personType: '',
+  taxRegime: '',
+  isIcaAgent: '',
+  icaTariff: '',
+  isIncomeTaxAgent: '',
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
+  bankName: '',
+  accountType: '',
+  accountNumber: '',
+  beneficiaryName: '',
+  sarlaftAccepted: false,
+  formLocked: false,
+  rutFileUrl: '',
+  camaraComercioFileUrl: '',
+  estadosFinancierosFileUrl: '',
+  declaracionRentaFileUrl: '',
+  cedulaRepresentanteLegalFileUrl: '',
+  certificacionBancariaFileUrl: '',
+};
+
 const documentTypes = [
   'NIT',
   'Cédula de Ciudadanía',
@@ -73,35 +106,16 @@ export default function ProviderForm() {
 
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerFormSchema),
-    defaultValues: {
-      serviceDescription: '',
-      businessName: '',
-      documentType: '',
-      documentNumber: '',
-      address: '',
-      department: '',
-      city: '',
-      phone: '',
-      email: '',
-      personType: '',
-      taxRegime: '',
-      isIcaAgent: '',
-      icaTariff: '',
-      isIncomeTaxAgent: '',
-      contactName: '',
-      contactPhone: '',
-      contactEmail: '',
-      bankName: '',
-      accountType: '',
-      accountNumber: '',
-      beneficiaryName: '',
-      sarlaftAccepted: false,
-    },
+    defaultValues: initialFormValues,
   });
 
   useEffect(() => {
     if (providerData) {
-      form.reset(providerData);
+      // Merge fetched data with default values to ensure no field is undefined.
+      // This prevents React's "uncontrolled to controlled" warning.
+      const populatedValues = { ...initialFormValues, ...providerData };
+      form.reset(populatedValues);
+
       if (providerData.department) {
         setSelectedDepartment(providerData.department);
       }
