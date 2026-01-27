@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Service configuration for Firebase Storage
+service firebase.storage {
+  // The {database} wildcard specifies that the rules apply to any database in the project.
+  match /b/{bucket}/o {
+
+    // @path /providers/{providerId}/{allPaths=**}
+    // @description
+    //   - Allow providers to read and write (create, update, delete) files within their own dedicated folder.
+    //   - The {providerId} MUST match the UID of the authenticated user.
+    //   - Enforces a maximum file size of 2MB.
+    //   - Restricts uploads to PDF files only.
+    // @allow (read, write) An authenticated user (uid: 'user123') accessing 'providers/user123/rut.pdf'.
+    // @deny (read, write) An authenticated user (uid: 'user123') trying to access 'providers/user456/rut.pdf'.
+    // @deny (write) A user trying to upload a file larger than 2MB.
+    // @deny (write) A user trying to upload a file that is not a PDF.
+    match /providers/{providerId}/{allPaths=**} {
+      allow read, write: if request.auth != null && 
+                           request.auth.uid == providerId &&
+                           request.resource.size < 2 * 1024 * 1024 &&
+                           request.resource.contentType.matches('application/pdf');
+    }
+  }
+}
