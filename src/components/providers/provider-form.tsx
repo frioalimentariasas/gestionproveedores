@@ -362,30 +362,13 @@ export default function ProviderForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FormField
                 control={form.control}
-                name="city"
+                name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ciudad</FormLabel>
-                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLocked || !selectedDepartment}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un departamento primero..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {(colombiaCities[selectedDepartment] || []).map(
-                          (city) => (
-                            <SelectItem key={city} value={city}>
-                              {city}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>País</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -424,19 +407,36 @@ export default function ProviderForm() {
               />
               <FormField
                 control={form.control}
-                name="country"
+                name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>País</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
+                    <FormLabel>Ciudad</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isLocked || !selectedDepartment}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un departamento primero..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(colombiaCities[selectedDepartment] || []).map(
+                          (city) => (
+                            <SelectItem key={city} value={city}>
+                              {city}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
               name="address"
@@ -452,133 +452,135 @@ export default function ProviderForm() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Teléfono(s)</FormLabel>
-                        <FormControl>
-                        <Input {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="fax"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Fax</FormLabel>
-                        <FormControl>
-                        <Input {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Pag web</FormLabel>
-                        <FormControl>
-                        <Input {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teléfono(s)</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="fax"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fax</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pag web</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
-                control={form.control}
-                name="providerContactName"
-                render={({ field }) => (
+              control={form.control}
+              name="providerContactName"
+              render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Nombre del contacto del proveedor</FormLabel>
-                    <FormControl>
+                  <FormLabel>Nombre del contacto del proveedor</FormLabel>
+                  <FormControl>
                     <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="providerContactTitle"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Cargo</FormLabel>
-                        <FormControl>
-                        <Input {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="providerContactEmail"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                        <Input type="email" {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+                control={form.control}
+                name="providerContactTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cargo</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="providerContactEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
-                control={form.control}
-                name="paymentContactName"
-                render={({ field }) => (
+              control={form.control}
+              name="paymentContactName"
+              render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Nombre de la persona para notificar pago</FormLabel>
-                    <FormControl>
+                  <FormLabel>
+                    Nombre de la persona para notificar pago
+                  </FormLabel>
+                  <FormControl>
                     <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="paymentContactTitle"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Cargo</FormLabel>
-                        <FormControl>
-                        <Input {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="paymentContactEmail"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email para notificación pago</FormLabel>
-                        <FormControl>
-                        <Input type="email" {...field} disabled={isLocked} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+                control={form.control}
+                name="paymentContactTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cargo</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="paymentContactEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email para notificación pago</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-             <FormField
+            <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
@@ -588,7 +590,8 @@ export default function ProviderForm() {
                     <Input {...field} disabled />
                   </FormControl>
                   <FormDescription>
-                    Este es el email asociado a tu cuenta y no se puede modificar.
+                    Este es el email asociado a tu cuenta y no se puede
+                    modificar.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
