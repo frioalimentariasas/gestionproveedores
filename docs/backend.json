@@ -80,6 +80,54 @@
         "formLocked": {
           "type": "boolean",
           "description": "If true, the provider's form is locked and cannot be edited."
+        },
+        "taxRegimeType": {
+          "type": "string",
+          "description": "Type of tax regime (e.g., Simplificado, Común)."
+        },
+        "isLargeTaxpayer": {
+          "type": "string",
+          "description": "Whether the provider is a large taxpayer (Sí/No)."
+        },
+        "largeTaxpayerResolution": {
+          "type": "string",
+          "description": "Resolution number if a large taxpayer."
+        },
+        "isIncomeSelfRetainer": {
+          "type": "string",
+          "description": "Whether the provider is an income self-retainer (Sí/No)."
+        },
+        "incomeSelfRetainerResolution": {
+          "type": "string",
+          "description": "Resolution number if an income self-retainer."
+        },
+        "isIcaSelfRetainer": {
+          "type": "string",
+          "description": "Whether the provider is an ICA self-retainer (Sí/No)."
+        },
+        "icaSelfRetainerMunicipality": {
+          "type": "string",
+          "description": "Municipality for ICA self-retention."
+        },
+        "icaSelfRetainerResolution": {
+          "type": "string",
+          "description": "Resolution number if an ICA self-retainer."
+        },
+        "ciiuCode": {
+          "type": "string",
+          "description": "CIIU economic activity code."
+        },
+        "icaCode": {
+          "type": "string",
+          "description": "ICA economic activity code."
+        },
+        "declarationCity": {
+          "type": "string",
+          "description": "City where taxes are declared."
+        },
+        "icaPercentage": {
+          "type": "string",
+          "description": "ICA percentage."
         }
       },
       "required": [

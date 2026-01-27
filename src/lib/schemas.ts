@@ -104,10 +104,19 @@ export const providerFormSchema = z.object({
   email: z.string().email('Email no válido.'),
 
   // Section 2 - Tributaria
-  taxRegime: z.string().min(1, 'El régimen de IVA es requerido.'),
-  isIcaAgent: z.string().min(1, 'Debe seleccionar una opción.'),
-  icaTariff: z.string().optional(),
-  isIncomeTaxAgent: z.string().min(1, 'Debe seleccionar una opción.'),
+  taxRegimeType: z.string().optional(),
+  isLargeTaxpayer: z.string().optional(),
+  largeTaxpayerResolution: z.string().optional(),
+  isIncomeSelfRetainer: z.string().optional(),
+  incomeSelfRetainerResolution: z.string().optional(),
+  isIcaSelfRetainer: z.string().optional(),
+  icaSelfRetainerMunicipality: z.string().optional(),
+  icaSelfRetainerResolution: z.string().optional(),
+  ciiuCode: z.string().optional(),
+  icaCode: z.string().optional(),
+  declarationCity: z.string().optional(),
+  icaPercentage: z.string().optional(),
+
   // Section 3 - Financiera
   bankName: z.string().min(1, 'El nombre del banco es requerido.'),
   accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
