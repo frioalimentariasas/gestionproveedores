@@ -11,7 +11,11 @@ export const loginSchema = z.object({
 export const registerSchema = z
   .object({
     businessName: z.string().min(1, 'La razón social es requerida.'),
-    documentNumber: z.string().min(1, 'El NIT es requerido.'),
+    documentType: z.string().min(1, 'El tipo de documento es requerido.'),
+    documentNumber: z
+      .string()
+      .min(1, 'El número de documento es requerido.')
+      .regex(/^[0-9]+$/, 'El número de documento solo debe contener números.'),
     email: z
       .string()
       .min(1, 'El email es requerido.')

@@ -13,6 +13,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { registerSchema } from '@/lib/schemas';
 import { useAuth, useFirestore } from '@/firebase';
@@ -22,6 +29,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+
+const documentTypes = [
+  'NIT',
+  'Cédula de Ciudadanía',
+  'Cédula de Extranjería',
+  'Pasaporte',
+];
 
 export function RegisterForm() {
   const { toast } = useToast();
@@ -34,6 +48,7 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       businessName: '',
+      documentType: '',
       documentNumber: '',
       email: '',
       password: '',
@@ -59,8 +74,8 @@ export function RegisterForm() {
           id: user.uid,
           email: values.email,
           businessName: values.businessName,
+          documentType: values.documentType,
           documentNumber: values.documentNumber,
-          documentType: 'NIT', // Default to NIT as it's requested in the form
         },
         { merge: true }
       );
@@ -102,12 +117,36 @@ export function RegisterForm() {
         />
         <FormField
           control={form.control}
+          name="documentType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Documento</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un tipo..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {documentTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="documentNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>NIT</FormLabel>
+              <FormLabel>Número de Documento</FormLabel>
               <FormControl>
-                <Input placeholder="Tu número de NIT" {...field} />
+                <Input placeholder="Tu número de documento" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

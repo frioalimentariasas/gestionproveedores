@@ -46,7 +46,12 @@ import { Textarea } from '../ui/textarea';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
-const documentTypes = ['NIT', 'Cédula de Ciudadanía', 'Cédula de Extranjería'];
+const documentTypes = [
+  'NIT',
+  'Cédula de Ciudadanía',
+  'Cédula de Extranjería',
+  'Pasaporte',
+];
 const personTypes = ['Persona Natural', 'Persona Jurídica'];
 const taxRegimes = ['Responsable de IVA', 'No Responsable de IVA'];
 const yesNoOptions = ['Sí', 'No'];
