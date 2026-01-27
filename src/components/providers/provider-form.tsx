@@ -79,6 +79,9 @@ const initialFormValues: ProviderFormValues = {
   icaPercentage: '',
   implementsEnvironmentalMeasures: '',
   environmentalMeasuresDescription: '',
+  legalRepresentativeName: '',
+  legalRepresentativeDocumentType: '',
+  legalRepresentativeDocumentNumber: '',
   bankName: '',
   accountType: '',
   accountNumber: '',
@@ -98,6 +101,7 @@ const personTypes = ['Persona Natural', 'Persona Jurídica'];
 const taxRegimeTypes = ['Simplificado', 'Común'];
 const yesNoOptions = ['Sí', 'No'];
 const accountTypes = ['Ahorros', 'Corriente'];
+const legalRepDocTypes = ['CC', 'CE', 'Pasaporte'];
 
 export default function ProviderForm() {
   const { toast } = useToast();
@@ -125,18 +129,31 @@ export default function ProviderForm() {
 
   const watchedCountry = form.watch('country');
   const watchedDepartment = form.watch('department');
-  const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
+  const watchedImplementsEnvironmentalMeasures = form.watch(
+    'implementsEnvironmentalMeasures'
+  );
+  const watchedPersonType = form.watch('personType');
 
   useEffect(() => {
-    const country = Country.getAllCountries().find(c => c.name === watchedCountry);
+    const country = Country.getAllCountries().find(
+      (c) => c.name === watchedCountry
+    );
     setStates(country ? State.getStatesOfCountry(country.isoCode) : []);
     setCities([]);
   }, [watchedCountry]);
 
   useEffect(() => {
-    const country = Country.getAllCountries().find(c => c.name === watchedCountry);
-    const state = country ? State.getStatesOfCountry(country.isoCode)?.find(s => s.name === watchedDepartment) : undefined;
-    setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []);
+    const country = Country.getAllCountries().find(
+      (c) => c.name === watchedCountry
+    );
+    const state = country
+      ? State.getStatesOfCountry(country.isoCode)?.find(
+          (s) => s.name === watchedDepartment
+        )
+      : undefined;
+    setCities(
+      country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []
+    );
   }, [watchedCountry, watchedDepartment]);
 
   useEffect(() => {
@@ -189,7 +206,9 @@ export default function ProviderForm() {
       };
 
       for (const field of fileFields) {
-        const fileList = values[field as keyof typeof values] as FileList | undefined;
+        const fileList = values[field as keyof typeof values] as
+          | FileList
+          | undefined;
         if (fileList && fileList.length > 0) {
           const file = fileList[0];
           const urlField = `${field}Url` as keyof ProviderFormValues;
@@ -385,7 +404,7 @@ export default function ProviderForm() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <FormField
+              <FormField
                 control={form.control}
                 name="country"
                 render={({ field }) => (
@@ -407,7 +426,10 @@ export default function ProviderForm() {
                       </FormControl>
                       <SelectContent>
                         {Country.getAllCountries().map((country) => (
-                          <SelectItem key={country.isoCode} value={country.name}>
+                          <SelectItem
+                            key={country.isoCode}
+                            value={country.name}
+                          >
                             {country.name}
                           </SelectItem>
                         ))}
@@ -438,7 +460,7 @@ export default function ProviderForm() {
                       </FormControl>
                       <SelectContent>
                         {states.map((state) => (
-                           <SelectItem key={state.isoCode} value={state.name}>
+                          <SelectItem key={state.isoCode} value={state.name}>
                             {state.name}
                           </SelectItem>
                         ))}
@@ -465,13 +487,11 @@ export default function ProviderForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {cities.map(
-                          (city) => (
-                            <SelectItem key={city.name} value={city.name}>
-                              {city.name}
-                            </SelectItem>
-                          )
-                        )}
+                        {cities.map((city) => (
+                          <SelectItem key={city.name} value={city.name}>
+                            {city.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -502,7 +522,7 @@ export default function ProviderForm() {
                   <FormItem>
                     <FormLabel>Teléfono Celular</FormLabel>
                     <FormControl>
-                       <PhoneInput
+                      <PhoneInput
                         country={'co'}
                         value={field.value}
                         onChange={field.onChange}
@@ -894,7 +914,7 @@ export default function ProviderForm() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-               <FormField
+              <FormField
                 control={form.control}
                 name="implementsEnvironmentalMeasures"
                 render={({ field }) => (
@@ -917,7 +937,9 @@ export default function ProviderForm() {
                             <FormControl>
                               <RadioGroupItem value={type} />
                             </FormControl>
-                            <FormLabel className="font-normal">{type}</FormLabel>
+                            <FormLabel className="font-normal">
+                              {type}
+                            </FormLabel>
                           </FormItem>
                         ))}
                       </RadioGroup>
@@ -926,7 +948,7 @@ export default function ProviderForm() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="environmentalMeasuresDescription"
                 render={({ field }) => (
@@ -936,7 +958,10 @@ export default function ProviderForm() {
                       <Textarea
                         placeholder="Describa las medidas..."
                         {...field}
-                        disabled={isLocked || watchedImplementsEnvironmentalMeasures !== 'Sí'}
+                        disabled={
+                          isLocked ||
+                          watchedImplementsEnvironmentalMeasures !== 'Sí'
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -947,9 +972,82 @@ export default function ProviderForm() {
           </CardContent>
         </Card>
 
+        {watchedPersonType === 'Persona Jurídica' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>4. Datos del Representante Legal</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="legalRepresentativeName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre del Representante Legal</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="legalRepresentativeDocumentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Documento</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex space-x-4"
+                          disabled={isLocked}
+                        >
+                          {legalRepDocTypes.map((type) => (
+                            <FormItem
+                              key={type}
+                              className="flex items-center space-x-2 space-y-0"
+                            >
+                              <FormControl>
+                                <RadioGroupItem value={type} />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {type}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="legalRepresentativeDocumentNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={isLocked} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
-            <CardTitle>4. Información Financiera para Pagos</CardTitle>
+            <CardTitle>
+              {watchedPersonType === 'Persona Jurídica' ? '5' : '4'}.
+              Información Financiera para Pagos
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
@@ -1024,7 +1122,9 @@ export default function ProviderForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>5. Documentos</CardTitle>
+            <CardTitle>
+              {watchedPersonType === 'Persona Jurídica' ? '6' : '5'}. Documentos
+            </CardTitle>
             <CardDescription>
               Adjunta los siguientes documentos en formato PDF (máximo 2MB cada
               uno).
@@ -1090,7 +1190,10 @@ export default function ProviderForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>6. SARLAFT y Aceptación</CardTitle>
+            <CardTitle>
+              {watchedPersonType === 'Persona Jurídica' ? '7' : '6'}. SARLAFT y
+              Aceptación
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <FormField

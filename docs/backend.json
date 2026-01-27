@@ -136,6 +136,18 @@
         "environmentalMeasuresDescription": {
           "type": "string",
           "description": "Description of the environmental measures implemented by the provider."
+        },
+        "legalRepresentativeName": {
+          "type": "string",
+          "description": "Name of the legal representative."
+        },
+        "legalRepresentativeDocumentType": {
+          "type": "string",
+          "description": "Document type of the legal representative (e.g., CC, CE, Pasaporte)."
+        },
+        "legalRepresentativeDocumentNumber": {
+          "type": "string",
+          "description": "Document number of the legal representative."
         }
       },
       "required": [

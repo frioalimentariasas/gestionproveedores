@@ -76,76 +76,124 @@ const fileSchemaOptional = z
     'El archivo debe ser un PDF de menos de 2MB.'
   );
 
-export const providerFormSchema = z.object({
-  serviceDescription: z
-    .string()
-    .min(1, 'La descripción del bien y/o servicio es requerida.'),
-  // Section 1
-  documentType: z.string().min(1, 'El tipo de documento es requerido.'),
-  documentNumber: z
-    .string()
-    .min(1, 'El número de documento es requerido.')
-    .regex(/^[0-9-]*$/, 'El número de documento solo debe contener números y guiones.'),
-  businessName: z.string().min(1, 'La razón social es requerida.'),
-  personType: z.string().min(1, 'El tipo de persona es requerido.'),
-  city: z.string().min(1, 'La ciudad es requerida.'),
-  department: z.string().min(1, 'El departamento es requerido.'),
-  country: z.string().min(1, 'El país es requerido.'),
-  address: z.string().min(1, 'La dirección es requerida.'),
-  fax: z.string().optional(),
-  phone: z.string().min(1, 'El teléfono es requerido.'),
-  website: z.string().url('URL de página web no válida').optional().or(z.literal('')),
-  providerContactName: z.string().min(1, 'El nombre de contacto es requerido.'),
-  providerContactTitle: z.string().min(1, 'El cargo del contacto es requerido.'),
-  providerContactEmail: z.string().email('Email de contacto no válido.'),
-  paymentContactName: z.string().min(1, 'El nombre de la persona para notificar pago es requerido.'),
-  paymentContactTitle: z.string().min(1, 'El cargo de la persona para notificar pago es requerido.'),
-  paymentContactEmail: z.string().email('El email para notificación de pago no es válido.'),
-  email: z.string().email('Email no válido.'),
+export const providerFormSchema = z
+  .object({
+    serviceDescription: z
+      .string()
+      .min(1, 'La descripción del bien y/o servicio es requerida.'),
+    // Section 1
+    documentType: z.string().min(1, 'El tipo de documento es requerido.'),
+    documentNumber: z
+      .string()
+      .min(1, 'El número de documento es requerido.')
+      .regex(
+        /^[0-9-]*$/,
+        'El número de documento solo debe contener números y guiones.'
+      ),
+    businessName: z.string().min(1, 'La razón social es requerida.'),
+    personType: z.string().min(1, 'El tipo de persona es requerido.'),
+    city: z.string().min(1, 'La ciudad es requerida.'),
+    department: z.string().min(1, 'El departamento es requerido.'),
+    country: z.string().min(1, 'El país es requerido.'),
+    address: z.string().min(1, 'La dirección es requerida.'),
+    fax: z.string().optional(),
+    phone: z.string().min(1, 'El teléfono es requerido.'),
+    website: z
+      .string()
+      .url('URL de página web no válida')
+      .optional()
+      .or(z.literal('')),
+    providerContactName: z
+      .string()
+      .min(1, 'El nombre de contacto es requerido.'),
+    providerContactTitle: z
+      .string()
+      .min(1, 'El cargo del contacto es requerido.'),
+    providerContactEmail: z.string().email('Email de contacto no válido.'),
+    paymentContactName: z
+      .string()
+      .min(1, 'El nombre de la persona para notificar pago es requerido.'),
+    paymentContactTitle: z
+      .string()
+      .min(1, 'El cargo de la persona para notificar pago es requerido.'),
+    paymentContactEmail: z
+      .string()
+      .email('El email para notificación de pago no es válido.'),
+    email: z.string().email('Email no válido.'),
 
-  // Section 2 - Tributaria
-  taxRegimeType: z.string().optional(),
-  isLargeTaxpayer: z.string().optional(),
-  largeTaxpayerResolution: z.string().optional(),
-  isIncomeSelfRetainer: z.string().optional(),
-  incomeSelfRetainerResolution: z.string().optional(),
-  isIcaSelfRetainer: z.string().optional(),
-  icaSelfRetainerMunicipality: z.string().optional(),
-  icaSelfRetainerResolution: z.string().optional(),
-  ciiuCode: z.string().optional(),
-  icaCode: z.string().optional(),
-  declarationCity: z.string().optional(),
-  icaPercentage: z.string().optional(),
-  
-  // Section 3 - Ambiental
-  implementsEnvironmentalMeasures: z.string().optional(),
-  environmentalMeasuresDescription: z.string().optional(),
+    // Section 2 - Tributaria
+    taxRegimeType: z.string().optional(),
+    isLargeTaxpayer: z.string().optional(),
+    largeTaxpayerResolution: z.string().optional(),
+    isIncomeSelfRetainer: z.string().optional(),
+    incomeSelfRetainerResolution: z.string().optional(),
+    isIcaSelfRetainer: z.string().optional(),
+    icaSelfRetainerMunicipality: z.string().optional(),
+    icaSelfRetainerResolution: z.string().optional(),
+    ciiuCode: z.string().optional(),
+    icaCode: z.string().optional(),
+    declarationCity: z.string().optional(),
+    icaPercentage: z.string().optional(),
 
-  // Section 4 - Financiera
-  bankName: z.string().min(1, 'El nombre del banco es requerido.'),
-  accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
-  accountNumber: z.string().min(1, 'El número de cuenta es requerido.'),
-  beneficiaryName: z
-    .string()
-    .min(1, 'El nombre del titular es requerido.'),
-  // Section 5 - Documentos
-  rutFile: fileSchemaOptional,
-  camaraComercioFile: fileSchemaOptional,
-  estadosFinancierosFile: fileSchemaOptional,
-  declaracionRentaFile: fileSchemaOptional,
-  cedulaRepresentanteLegalFile: fileSchemaOptional,
-  certificacionBancariaFile: fileSchemaOptional,
-  // Hidden URL fields
-  rutFileUrl: z.string().optional(),
-  camaraComercioFileUrl: z.string().optional(),
-  estadosFinancierosFileUrl: z.string().optional(),
-  declaracionRentaFileUrl: z.string().optional(),
-  cedulaRepresentanteLegalFileUrl: z.string().optional(),
-  certificacionBancariaFileUrl: z.string().optional(),
-  // Section 6 - SARLAFT
-  sarlaftAccepted: z
-    .boolean()
-    .refine((val) => val === true, 'Debe aceptar los términos.'),
-  // New lock field
-  formLocked: z.boolean().optional(),
-});
+    // Section 3 - Ambiental
+    implementsEnvironmentalMeasures: z.string().optional(),
+    environmentalMeasuresDescription: z.string().optional(),
+
+    // Section 4 - Representante Legal
+    legalRepresentativeName: z.string().optional(),
+    legalRepresentativeDocumentType: z.string().optional(),
+    legalRepresentativeDocumentNumber: z.string().optional(),
+
+    // Section 5 - Financiera
+    bankName: z.string().min(1, 'El nombre del banco es requerido.'),
+    accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
+    accountNumber: z.string().min(1, 'El número de cuenta es requerido.'),
+    beneficiaryName: z
+      .string()
+      .min(1, 'El nombre del titular es requerido.'),
+    // Section 6 - Documentos
+    rutFile: fileSchemaOptional,
+    camaraComercioFile: fileSchemaOptional,
+    estadosFinancierosFile: fileSchemaOptional,
+    declaracionRentaFile: fileSchemaOptional,
+    cedulaRepresentanteLegalFile: fileSchemaOptional,
+    certificacionBancariaFile: fileSchemaOptional,
+    // Hidden URL fields
+    rutFileUrl: z.string().optional(),
+    camaraComercioFileUrl: z.string().optional(),
+    estadosFinancierosFileUrl: z.string().optional(),
+    declaracionRentaFileUrl: z.string().optional(),
+    cedulaRepresentanteLegalFileUrl: z.string().optional(),
+    certificacionBancariaFileUrl: z.string().optional(),
+    // Section 7 - SARLAFT
+    sarlaftAccepted: z
+      .boolean()
+      .refine((val) => val === true, 'Debe aceptar los términos.'),
+    // New lock field
+    formLocked: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.personType === 'Persona Jurídica') {
+      if (!data.legalRepresentativeName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre del representante legal es requerido.',
+          path: ['legalRepresentativeName'],
+        });
+      }
+      if (!data.legalRepresentativeDocumentType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El tipo de documento del representante es requerido.',
+          path: ['legalRepresentativeDocumentType'],
+        });
+      }
+      if (!data.legalRepresentativeDocumentNumber) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El número de documento del representante es requerido.',
+          path: ['legalRepresentativeDocumentNumber'],
+        });
+      }
+    }
+  });
