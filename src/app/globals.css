@@ -56,3 +56,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for react-phone-input-2 to match ShadCN theme */
+@layer components {
+  .react-tel-input .form-control {
+    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm;
+    /* Adjust padding for the flag */
+    @apply !pl-14;
+    height: 2.5rem !important;
+  }
+
+  .react-tel-input .flag-dropdown {
+    @apply rounded-l-md border border-r-0 border-input bg-transparent;
+  }
+  
+  .react-tel-input .flag-dropdown.open, .react-tel-input .flag-dropdown:hover {
+     @apply bg-muted;
+  }
+
+  .react-tel-input .country-list {
+    @apply bg-popover text-popover-foreground shadow-md;
+  }
+
+  .react-tel-input .country-list .country:hover,
+  .react-tel-input .country-list .country.highlight {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .react-tel-input .form-control:disabled,
+  .react-tel-input .flag-dropdown.disabled {
+      @apply cursor-not-allowed opacity-50;
+  }
+}

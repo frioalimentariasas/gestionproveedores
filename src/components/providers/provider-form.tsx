@@ -40,6 +40,8 @@ import { useState, useEffect } from 'react';
 import { Info, Loader2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -487,9 +489,15 @@ export default function ProviderForm() {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teléfono(s)</FormLabel>
+                    <FormLabel>Teléfono Celular</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={isLocked} />
+                       <PhoneInput
+                        country={'co'}
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isLocked}
+                        inputClass="form-control"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
