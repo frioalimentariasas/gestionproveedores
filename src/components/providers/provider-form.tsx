@@ -100,7 +100,6 @@ const documentTypes = ['NIT', 'CC', 'CE', 'Pasaporte'];
 const personTypes = ['Persona Natural', 'Persona Jurídica'];
 const taxRegimeTypes = ['Simplificado', 'Común'];
 const yesNoOptions = ['Sí', 'No'];
-const accountTypes = ['Ahorros', 'Corriente'];
 const legalRepDocTypes = ['CC', 'CE', 'Pasaporte'];
 
 export default function ProviderForm() {
@@ -1046,70 +1045,19 @@ export default function ProviderForm() {
           <CardHeader>
             <CardTitle>
               {watchedPersonType === 'Persona Jurídica' ? '5' : '4'}.
-              Información Financiera para Pagos
+              Inscripción de cuenta para pago electrónico
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="bankName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Entidad Bancaria</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="accountType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Cuenta</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLocked}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {accountTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="accountNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número de Cuenta</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <CardContent className="space-y-6">
             <FormField
               control={form.control}
               name="beneficiaryName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre del Titular de la Cuenta</FormLabel>
+                  <FormLabel>
+                    Autorizamos consignar en nuestra cuenta bancaria a nombre
+                    de:
+                  </FormLabel>
                   <FormControl>
                     <Input {...field} disabled={isLocked} />
                   </FormControl>
@@ -1117,6 +1065,69 @@ export default function ProviderForm() {
                 </FormItem>
               )}
             />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Cuenta</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex space-x-4 pt-2"
+                        disabled={isLocked}
+                      >
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="Corriente" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Cta. corriente
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="Ahorros" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Cta. de ahorros
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="accountNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>No de cuenta:</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bankName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Banco:</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isLocked} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 

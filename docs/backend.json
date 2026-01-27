@@ -148,6 +148,22 @@
         "legalRepresentativeDocumentNumber": {
           "type": "string",
           "description": "Document number of the legal representative."
+        },
+        "bankName": {
+          "type": "string",
+          "description": "Name of the banking entity."
+        },
+        "accountType": {
+          "type": "string",
+          "description": "Type of bank account (e.g., Ahorros, Corriente)."
+        },
+        "accountNumber": {
+          "type": "string",
+          "description": "Bank account number."
+        },
+        "beneficiaryName": {
+          "type": "string",
+          "description": "Name of the bank account holder."
         }
       },
       "required": [
@@ -160,13 +176,11 @@
         "country",
         "address",
         "email",
-        "rutFileUrl",
-        "camaraComercioFileUrl",
-        "estadosFinancierosFileUrl",
-        "declaracionRentaFileUrl",
-        "cedulaRepresentanteLegalFileUrl",
-        "certificacionBancariaFileUrl",
-        "sarlaftAccepted"
+        "sarlaftAccepted",
+        "bankName",
+        "accountType",
+        "accountNumber",
+        "beneficiaryName"
       ]
     },
     "AdminUser": {
