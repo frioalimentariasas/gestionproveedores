@@ -19,13 +19,14 @@ export default function HomePage() {
   useEffect(() => {
     // Only perform actions once all loading is complete.
     if (!isLoading) {
-      // If we have a user and they are confirmed NOT to be an admin, redirect.
-      if (user && !isAdmin) {
+      if (!user) {
+        // If there is no user, redirect to the login page.
+        router.replace('/auth/login');
+      } else if (!isAdmin) {
+        // If we have a user and they are confirmed NOT to be an admin, redirect.
         router.replace('/providers/form');
       }
       // If the user is an admin, the component will render the admin dashboard below.
-      // If there is no user, the AuthGuard inside the admin view will handle it,
-      // but typically they'd be on the login page anyway.
     }
   }, [user, isAdmin, isLoading, router]);
 
@@ -55,7 +56,7 @@ export default function HomePage() {
     );
   }
 
-  // If loading is done but the conditions above aren't met (e.g., non-admin user),
+  // If loading is done but the conditions above aren't met (e.g., non-admin user or no user),
   // a redirect is likely in progress via the useEffect. Show a loader to prevent
   // a blank screen or flash of incorrect content.
   return (
