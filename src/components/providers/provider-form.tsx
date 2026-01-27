@@ -42,6 +42,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -70,6 +71,7 @@ export default function ProviderForm() {
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerFormSchema),
     defaultValues: {
+      serviceDescription: '',
       businessName: '',
       documentType: '',
       documentNumber: '',
@@ -198,6 +200,36 @@ export default function ProviderForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        
+        {/* Service Description Section */}
+        <div>
+          <div className="bg-primary text-primary-foreground font-bold text-center p-3 rounded-t-lg">
+            OBLIGATORIO DILIGENCIAMIENTO POR PARTE DEL PROVEEDOR
+          </div>
+          <Card className="rounded-t-none">
+            <CardContent className="pt-6">
+              <FormField
+                control={form.control}
+                name="serviceDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Breve descripción del bien y/o servicio ofrecido:
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Detalla los productos o servicios que tu empresa provee..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Section 1 */}
         <Card>
           <CardHeader>

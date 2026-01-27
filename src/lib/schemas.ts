@@ -73,6 +73,9 @@ const fileSchemaOptional = z
   );
 
 export const providerFormSchema = z.object({
+  serviceDescription: z
+    .string()
+    .min(1, 'La descripción del bien y/o servicio es requerida.'),
   // Section 1
   businessName: z.string().min(1, 'La razón social es requerida.'),
   documentType: z.string().min(1, 'El tipo de documento es requerido.'),
