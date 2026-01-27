@@ -42,6 +42,16 @@ import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -109,6 +119,12 @@ export default function ProviderForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [states, setStates] = useState<IState[]>([]);
   const [cities, setCities] = useState<ICity[]>([]);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [persistedData, setPersistedData] =
+    useState<ProviderFormValues | null>(null);
+
+  const getAutoSaveKey = (userId: string) =>
+    `provider-form-autosave-${userId}`;
 
   const providerDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -131,6 +147,47 @@ export default function ProviderForm() {
     'implementsEnvironmentalMeasures'
   );
   const watchedPersonType = form.watch('personType');
+
+  // Check for auto-saved data on initial load
+  useEffect(() => {
+    if (user && !isProviderDataLoading && !providerData?.formLocked) {
+      const autoSaveKey = getAutoSaveKey(user.uid);
+      const savedDataString = localStorage.getItem(autoSaveKey);
+      if (savedDataString) {
+        try {
+          const savedData = JSON.parse(savedDataString);
+          setPersistedData(savedData);
+          setShowRestoreDialog(true);
+        } catch (e) {
+          console.error('Error parsing autosaved form data:', e);
+          localStorage.removeItem(autoSaveKey);
+        }
+      }
+    }
+  }, [user, isProviderDataLoading, providerData]);
+
+  // Auto-save form data to local storage
+  const watchedValues = form.watch();
+  useEffect(() => {
+    if (isLocked || !user) {
+      return;
+    }
+
+    const autoSaveKey = getAutoSaveKey(user.uid);
+
+    const handler = setTimeout(() => {
+      const dataToSave = { ...watchedValues };
+      delete (dataToSave as any).rutFile;
+      delete (dataToSave as any).camaraComercioFile;
+      delete (dataToSave as any).cedulaRepresentanteLegalFile;
+      delete (dataToSave as any).certificacionBancariaFile;
+      localStorage.setItem(autoSaveKey, JSON.stringify(dataToSave));
+    }, 1000); // Debounce saving
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [watchedValues, isLocked, user]);
 
   useEffect(() => {
     const country = Country.getAllCountries().find(
@@ -227,6 +284,11 @@ export default function ProviderForm() {
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
 
+      // Clear autosaved data on successful submission
+      if (user) {
+        localStorage.removeItem(getAutoSaveKey(user.uid));
+      }
+
       toast({
         title: '¡Información guardada!',
         description:
@@ -244,6 +306,30 @@ export default function ProviderForm() {
     }
   }
 
+  const handleRestoreData = () => {
+    if (persistedData) {
+      form.reset(persistedData);
+      toast({
+        title: 'Datos restaurados',
+        description:
+          'Se ha cargado la información que tenías diligenciada.',
+      });
+    }
+    setShowRestoreDialog(false);
+  };
+
+  const handleClearData = () => {
+    if (user) {
+      const autoSaveKey = getAutoSaveKey(user.uid);
+      localStorage.removeItem(autoSaveKey);
+      toast({
+        title: 'Formulario limpiado',
+        description: 'Puedes empezar a diligenciar tus datos desde cero.',
+      });
+    }
+    setShowRestoreDialog(false);
+  };
+
   if (isProviderDataLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -254,6 +340,27 @@ export default function ProviderForm() {
 
   return (
     <Form {...form}>
+      <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Restaurar datos no guardados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Detectamos que tienes información diligenciada que no ha sido
+              guardada. ¿Deseas restaurarla y continuar donde la dejaste o
+              prefieres empezar de nuevo con un formulario limpio?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleClearData}>
+              Limpiar Formulario
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreData}>
+              Restaurar Datos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {isLocked && (
           <Alert>
@@ -1269,7 +1376,7 @@ export default function ProviderForm() {
                       tratamiento de datos
                     </FormLabel>
                     <FormDescription className="space-y-4 text-xs">
-                      <p>
+                      <div>
                         De manera voluntaria y dando certeza de que todo lo aquí
                         consignado es cierto, realizo la siguiente declaración
                         de origen de fondos a FRIOALIMENTARIA SAS., con el
@@ -1286,8 +1393,8 @@ export default function ProviderForm() {
                         desarrollo de este contrato no se destinarán a la
                         financiación del terrorismo, grupos terroristas o
                         actividades terroristas.
-                      </p>
-                      <p>
+                      </div>
+                      <div>
                         En virtud de la Ley 1581 de 2012 y sus normas
                         reglamentarias, el titular de la información personal,
                         declara que la entrega en forma libre y voluntaria y
@@ -1314,7 +1421,7 @@ export default function ProviderForm() {
                         6424342 ext 100 o mediante documento escrito a la
                         siguiente dirección: Variante Cartagena Turbaco Zona
                         Franca Parque Central Lote 69.
-                      </p>
+                      </div>
                     </FormDescription>
                     <FormMessage />
                   </div>
