@@ -77,6 +77,8 @@ const initialFormValues: ProviderFormValues = {
   icaCode: '',
   declarationCity: '',
   icaPercentage: '',
+  implementsEnvironmentalMeasures: '',
+  environmentalMeasuresDescription: '',
   bankName: '',
   accountType: '',
   accountNumber: '',
@@ -123,6 +125,7 @@ export default function ProviderForm() {
 
   const watchedCountry = form.watch('country');
   const watchedDepartment = form.watch('department');
+  const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
 
   useEffect(() => {
     const country = Country.getAllCountries().find(c => c.name === watchedCountry);
@@ -887,7 +890,66 @@ export default function ProviderForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>3. Información Financiera para Pagos</CardTitle>
+            <CardTitle>3. Información Ambiental</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+               <FormField
+                control={form.control}
+                name="implementsEnvironmentalMeasures"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      ¿La empresa implementa medidas a favor del medio ambiente?
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex space-x-4"
+                        disabled={isLocked}
+                      >
+                        {yesNoOptions.map((type) => (
+                          <FormItem
+                            key={type}
+                            className="flex items-center space-x-2 space-y-0"
+                          >
+                            <FormControl>
+                              <RadioGroupItem value={type} />
+                            </FormControl>
+                            <FormLabel className="font-normal">{type}</FormLabel>
+                          </FormItem>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="environmentalMeasuresDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>¿Cuáles?</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describa las medidas..."
+                        {...field}
+                        disabled={isLocked || watchedImplementsEnvironmentalMeasures !== 'Sí'}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>4. Información Financiera para Pagos</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
@@ -962,7 +1024,7 @@ export default function ProviderForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>4. Documentos</CardTitle>
+            <CardTitle>5. Documentos</CardTitle>
             <CardDescription>
               Adjunta los siguientes documentos en formato PDF (máximo 2MB cada
               uno).
@@ -1028,7 +1090,7 @@ export default function ProviderForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>5. SARLAFT y Aceptación</CardTitle>
+            <CardTitle>6. SARLAFT y Aceptación</CardTitle>
           </CardHeader>
           <CardContent>
             <FormField

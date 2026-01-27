@@ -116,15 +116,19 @@ export const providerFormSchema = z.object({
   icaCode: z.string().optional(),
   declarationCity: z.string().optional(),
   icaPercentage: z.string().optional(),
+  
+  // Section 3 - Ambiental
+  implementsEnvironmentalMeasures: z.string().optional(),
+  environmentalMeasuresDescription: z.string().optional(),
 
-  // Section 3 - Financiera
+  // Section 4 - Financiera
   bankName: z.string().min(1, 'El nombre del banco es requerido.'),
   accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
   accountNumber: z.string().min(1, 'El número de cuenta es requerido.'),
   beneficiaryName: z
     .string()
     .min(1, 'El nombre del titular es requerido.'),
-  // Section 4 - Documentos
+  // Section 5 - Documentos
   rutFile: fileSchemaOptional,
   camaraComercioFile: fileSchemaOptional,
   estadosFinancierosFile: fileSchemaOptional,
@@ -138,7 +142,7 @@ export const providerFormSchema = z.object({
   declaracionRentaFileUrl: z.string().optional(),
   cedulaRepresentanteLegalFileUrl: z.string().optional(),
   certificacionBancariaFileUrl: z.string().optional(),
-  // Section 5 - SARLAFT
+  // Section 6 - SARLAFT
   sarlaftAccepted: z
     .boolean()
     .refine((val) => val === true, 'Debe aceptar los términos.'),
