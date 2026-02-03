@@ -32,8 +32,8 @@ async function sendTransactionalEmail({
     return { success: false, error: 'Brevo API key is not configured.' };
   }
   
-  // Dynamically import the Brevo library to avoid build errors with Next.js
-  const brevo = await import('@getbrevo/brevo');
+  // Use require instead of dynamic import to work around build issues.
+  const brevo = require('@getbrevo/brevo');
   
   const apiInstance = new brevo.TransactionalEmailsApi();
   apiInstance.setApiKey(
