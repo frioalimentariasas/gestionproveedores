@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { providerFormSchema } from '@/lib/schemas';
 import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
-import { Loader2, ArrowLeft, FileDown, FileText } from 'lucide-react';
+import { Loader2, ArrowLeft, FileDown, FileText, Printer } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 import * as XLSX from 'xlsx';
 
@@ -75,6 +75,7 @@ export default function ProviderViewPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { isAdmin, isLoading: isRoleLoading } = useRole();
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   const providerDocRef = useMemoFirebase(
     () =>
@@ -176,6 +177,177 @@ export default function ProviderViewPage() {
       `Proveedor_${providerData.documentNumber || providerId}.xlsx`
     );
   };
+  
+    const handleExportPdf = async () => {
+    if (!providerData) return;
+    setIsPdfGenerating(true);
+
+    const { default: jsPDF } = await import('jspdf');
+    const { format } = await import('date-fns');
+
+    try {
+        const doc = new jsPDF();
+        const margin = 15;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPos = margin;
+
+        const getLogoBase64 = async () => {
+            const response = await fetch('/logo.png');
+            const blob = await response.blob();
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        };
+        const logoBase64 = await getLogoBase64();
+        doc.addImage(logoBase64, 'PNG', margin, 12, 50, 14);
+
+        doc.setFontSize(8);
+        doc.setDrawColor(0);
+        const boxX = pageWidth - margin - 50;
+        const boxY = 12;
+        const boxWidth = 50;
+        const boxHeight = 15;
+        doc.rect(boxX, boxY, boxWidth, boxHeight);
+        doc.text('Codigo: FA-GFC-F04', boxX + 2, boxY + 4);
+        doc.line(boxX, boxY + 5, boxX + boxWidth, boxY + 5);
+        doc.text('Version: 3', boxX + 2, boxY + 9);
+        doc.line(boxX, boxY + 10, boxX + boxWidth, boxY + 10);
+        doc.text('Vigencia: 12/06/2025', boxX + 2, boxY + 14);
+        
+        yPos += 20;
+
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text(
+            'REGISTRO O ACTUALIZACION DE PROVEEDORES Y/O CONTRATISTAS',
+            pageWidth / 2,
+            yPos,
+            { align: 'center' }
+        );
+        yPos += 15;
+
+        const addSection = (title: string, fields: { label: string; value?: any }[]) => {
+            if (yPos > pageHeight - margin - 15) {
+                doc.addPage();
+                yPos = margin;
+            }
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.setFillColor(220, 220, 220);
+            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.text(title, margin + 2, yPos);
+            yPos += 10;
+            
+            fields.forEach(field => {
+                const value = field.value;
+                if (value !== undefined && value !== null && value !== '') {
+                    const displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : String(value);
+
+                    if (yPos > pageHeight - margin - 12) {
+                        doc.addPage();
+                        yPos = margin;
+                    }
+
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(field.label, margin, yPos);
+
+                    doc.setFont(undefined, 'normal');
+                    const valueLines = doc.splitTextToSize(displayValue, pageWidth - margin * 2 - 5);
+                    if (yPos + (valueLines.length * 5) > pageHeight - margin) {
+                        doc.addPage();
+                        yPos = margin;
+                    }
+                    doc.text(valueLines, margin + 5, yPos + 6);
+                    yPos += (valueLines.length * 5) + 8;
+                }
+            });
+            yPos += 5;
+        };
+
+        const sectionsData = [
+            { title: "DESCRIPCIÓN DEL BIEN Y/O SERVICIO", fields: [{ label: '', value: providerData.serviceDescription }] },
+            { title: "1. Información del Proveedor", fields: [
+                { label: "Razón Social o nombre:", value: providerData.businessName },
+                { label: "Tipo de Documento:", value: providerData.documentType },
+                { label: "Número:", value: providerData.documentNumber },
+                { label: "Tipo de Persona:", value: providerData.personType },
+                { label: "País:", value: providerData.country },
+                { label: "Departamento:", value: providerData.department },
+                { label: "Ciudad:", value: providerData.city },
+                { label: "Dirección:", value: providerData.address },
+                { label: "Teléfono Celular:", value: providerData.phone },
+                { label: "Fax:", value: providerData.fax },
+                { label: "Pag web:", value: providerData.website },
+                { label: "Nombre del contacto del proveedor:", value: providerData.providerContactName },
+                { label: "Cargo (Contacto):", value: providerData.providerContactTitle },
+                { label: "Email (Contacto):", value: providerData.providerContactEmail },
+                { label: "Nombre de la persona para notificar pago:", value: providerData.paymentContactName },
+                { label: "Cargo (Pagos):", value: providerData.paymentContactTitle },
+                { label: "Email para notificación pago:", value: providerData.paymentContactEmail },
+                { label: "Email de Inicio de Sesión:", value: providerData.email },
+            ] },
+            { title: "2. Información Tributaria", fields: [
+                { label: 'Tipo de Régimen:', value: providerData.taxRegimeType },
+                { label: 'Gran Contribuyente:', value: providerData.isLargeTaxpayer },
+                { label: 'Resolución No (Gran Contribuyente):', value: providerData.largeTaxpayerResolution },
+                { label: 'Autorretenedor Renta:', value: providerData.isIncomeSelfRetainer },
+                { label: 'Resolución No (Renta):', value: providerData.incomeSelfRetainerResolution },
+                { label: 'Autorretenedor ICA:', value: providerData.isIcaSelfRetainer },
+                { label: 'Indique municipio (ICA):', value: providerData.icaSelfRetainerMunicipality },
+                { label: 'Resolución No (ICA):', value: providerData.icaSelfRetainerResolution },
+                { label: 'Código actividad económica CIIU:', value: providerData.ciiuCode },
+                { label: 'Código actividad económica ICA:', value: providerData.icaCode },
+                { label: 'Ciudad donde declara:', value: providerData.declarationCity },
+                { label: 'Porcentaje según ICA (%):', value: providerData.icaPercentage },
+            ] },
+            { title: "3. Información Ambiental", fields: [
+                { label: '¿La empresa implementa medidas a favor del medio ambiente?:', value: providerData.implementsEnvironmentalMeasures },
+                { label: '¿Cuáles?:', value: providerData.environmentalMeasuresDescription },
+            ] },
+            ...(providerData.personType === 'Persona Jurídica' ? [{ title: "4. Datos del Representante Legal", fields: [
+                { label: 'Nombre del Representante Legal:', value: providerData.legalRepresentativeName },
+                { label: 'Tipo de Documento:', value: providerData.legalRepresentativeDocumentType },
+                { label: 'Número:', value: providerData.legalRepresentativeDocumentNumber },
+            ] }] : []),
+            { title: `${providerData.personType === 'Persona Jurídica' ? '5' : '4'}. Inscripción de cuenta para pago electrónico`, fields: [
+                { label: 'Autorizamos consignar en nuestra cuenta bancaria a nombre de:', value: providerData.beneficiaryName },
+                { label: 'Tipo de Cuenta:', value: providerData.accountType },
+                { label: 'No de cuenta:', value: providerData.accountNumber },
+                { label: 'Banco:', value: providerData.bankName },
+            ] },
+            { title: `${providerData.personType === 'Persona Jurídica' ? '6' : '5'}. Documentos`, fields: [
+                { label: "RUT:", value: providerData.rutFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Cámara de Comercio:", value: providerData.camaraComercioFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Cédula Representante Legal:", value: providerData.cedulaRepresentanteLegalFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Certificación Bancaria:", value: providerData.certificacionBancariaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+            ] },
+            { title: `${providerData.personType === 'Persona Jurídica' ? '7' : '6'}. INFORMACION HSEQ`, fields: [
+                { label: 'Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%:', value: providerData.hseqSgsst },
+            ] },
+            { title: `${providerData.personType === 'Persona Jurídica' ? '8' : '7'}. DECLARACION SARLAFT Y AUTORIZACION`, fields: [
+                { label: 'Aceptó la declaración de origen de fondos y la política de tratamiento de datos:', value: providerData.sarlaftAccepted },
+            ] },
+        ];
+        
+        sectionsData.forEach(section => addSection(section.title, section.fields));
+
+        const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
+        const safeBusinessName = providerData.businessName.replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `FA-GFC-F04_Formato_de_Registro_o_Actualizacion_de_Proveedores_y_Contratistas_${safeBusinessName}_${timestamp}.pdf`;
+
+        doc.save(fileName);
+    } catch(e) {
+        console.error("Error generating PDF:", e);
+    } finally {
+        setIsPdfGenerating(false);
+    }
+  };
 
   const isLoadingCombined = isRoleLoading || isProviderLoading;
 
@@ -215,12 +387,12 @@ export default function ProviderViewPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto max-w-5xl p-4 py-12">
-        <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Button variant="outline" onClick={() => router.push('/providers')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver a la lista
+            Volver
           </Button>
-          <div className="text-center">
+          <div className="text-center flex-grow">
             <h1 className="text-3xl font-bold tracking-tight">
               Detalles del Proveedor
             </h1>
@@ -228,10 +400,20 @@ export default function ProviderViewPage() {
               {providerData.businessName}
             </p>
           </div>
-          <Button onClick={handleExport}>
-            <FileDown className="mr-2 h-4 w-4" />
-            Exportar a Excel
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleExportPdf} disabled={isPdfGenerating}>
+              {isPdfGenerating ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                  <Printer className="mr-2 h-4 w-4" />
+              )}
+              Exportar a PDF
+            </Button>
+            <Button onClick={handleExport}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar a Excel
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-8">
