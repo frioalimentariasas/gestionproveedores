@@ -1,7 +1,5 @@
 'use server';
 
-// --- Brevo Setup ---
-// The Brevo library is dynamically imported below to avoid build errors.
 if (!process.env.BREVO_API_KEY) {
   console.error('BREVO_API_KEY is not set. Emails will not be sent.');
 }
@@ -31,17 +29,18 @@ async function sendTransactionalEmail({
     console.error('Brevo API key is not configured. Email not sent.');
     return { success: false, error: 'Brevo API key is not configured.' };
   }
-  
-  // Use require instead of dynamic import to work around build issues.
-  const brevo = require('@getbrevo/brevo');
-  
-  const apiInstance = new brevo.TransactionalEmailsApi();
-  apiInstance.setApiKey(
-    brevo.TransactionalEmailsApiApiKeys.apiKey,
-    process.env.BREVO_API_KEY
-  );
 
-  const sendSmtpEmail = new brevo.SendSmtpEmail();
+  // Use the older, more stable sib-api-v3-sdk package
+  const SibApiV3Sdk = require('sib-api-v3-sdk');
+  const defaultClient = SibApiV3Sdk.ApiClient.instance;
+
+  // Configure API key authorization: api-key
+  const apiKey = defaultClient.authentications['api-key'];
+  apiKey.apiKey = process.env.BREVO_API_KEY;
+
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
   sendSmtpEmail.sender = sender;
   sendSmtpEmail.to = to;
   sendSmtpEmail.subject = subject;
@@ -53,7 +52,8 @@ async function sendTransactionalEmail({
     return { success: true, data };
   } catch (error) {
     console.error('Error sending Brevo email:', error);
-    return { success: false, error };
+    // Return a serializable error message
+    return { success: false, error: error.toString() };
   }
 }
 

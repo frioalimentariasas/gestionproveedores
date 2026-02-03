@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@getbrevo/brevo'],
+  transpilePackages: ['sib-api-v3-sdk'],
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
