@@ -138,6 +138,7 @@ export default function ProviderForm() {
     resolver: zodResolver(providerFormSchema),
     defaultValues: initialFormValues,
   });
+  const { reset } = form;
 
   const watchedImplementsEnvironmentalMeasures = form.watch(
     'implementsEnvironmentalMeasures'
@@ -188,36 +189,29 @@ export default function ProviderForm() {
   // Effect to populate form with data from Firestore, ensuring dropdowns have options first.
   useEffect(() => {
     if (providerData) {
-      // Create local variables to hold the dropdown options.
       let newStates: IState[] = [];
       let newCities: ICity[] = [];
       const { country: countryName, department: departmentName } = providerData;
 
       if (countryName) {
-        const country = Country.getAllCountries().find(c => c.name === countryName);
+        const country = Country.getAllCountries().find((c) => c.name === countryName);
         if (country) {
-          // Populate the states based on the country.
           newStates = State.getStatesOfCountry(country.isoCode) || [];
           if (departmentName) {
-            const state = newStates.find(s => s.name === departmentName);
+            const state = newStates.find((s) => s.name === departmentName);
             if (state) {
-              // Populate the cities based on the state.
               newCities = City.getCitiesOfState(country.isoCode, state.isoCode) || [];
             }
           }
         }
       }
-
-      // Update the state for the dropdowns.
+      
       setStates(newStates);
       setCities(newCities);
-
-      // Reset the form with the provider data. React will batch these state updates
-      // with the form reset, ensuring the Select components have their options
-      // available when they receive their value.
-      form.reset({ ...initialFormValues, ...providerData });
+      
+      reset({ ...initialFormValues, ...providerData });
     }
-  }, [providerData, form]);
+  }, [providerData, reset]);
 
 
   const uploadFile = async (
