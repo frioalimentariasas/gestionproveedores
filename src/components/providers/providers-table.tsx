@@ -8,7 +8,7 @@ import {
   FirestorePermissionError,
 } from '@/firebase';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
-import { Loader2, MoreHorizontal } from 'lucide-react';
+import { Eye, KeyRound, Loader2, Lock, Unlock, UserX } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -17,18 +17,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Define the shape of a provider document
 interface Provider {
@@ -81,6 +80,20 @@ export default function ProvidersTable() {
         errorEmitter.emit('permission-error', permissionError);
       });
   };
+  
+  const handleUpdatePassword = () => {
+    toast({
+        title: 'Próximamente',
+        description: 'La función para actualizar la contraseña estará disponible pronto.',
+    });
+  };
+
+  const handleDeactivateProvider = () => {
+      toast({
+          title: 'Próximamente',
+          description: 'La función para desactivar proveedores estará disponible pronto.',
+      });
+  };
 
 
   if (isLoading) {
@@ -116,9 +129,7 @@ export default function ProvidersTable() {
             <TableHead>NIT / Documento</TableHead>
             <TableHead>Email de Contacto</TableHead>
             <TableHead className="text-center">Estado Formulario</TableHead>
-            <TableHead>
-              <span className="sr-only">Acciones</span>
-            </TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -133,28 +144,71 @@ export default function ProvidersTable() {
                  </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Abrir menú</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                    <DropdownMenuItem>Ver Formulario</DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleToggleLock(provider.id, provider.formLocked)}
-                    >
-                      {provider.formLocked ? 'Habilitar Edición' : 'Bloquear Formulario'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>Actualizar Contraseña</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                      Desactivar Proveedor
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center justify-end gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link href={`/providers/${provider.id}/view`}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">Ver Formulario</span>
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Ver Formulario</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleLock(provider.id, provider.formLocked)}
+                        >
+                          {provider.formLocked ? (
+                            <Unlock className="h-4 w-4" />
+                          ) : (
+                            <Lock className="h-4 w-4" />
+                          )}
+                          <span className="sr-only">
+                            {provider.formLocked ? 'Habilitar Edición' : 'Bloquear Formulario'}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{provider.formLocked ? 'Habilitar Edición' : 'Bloquear Formulario'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleUpdatePassword}>
+                          <KeyRound className="h-4 w-4" />
+                          <span className="sr-only">Actualizar Contraseña</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Actualizar Contraseña</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={handleDeactivateProvider}
+                        >
+                          <UserX className="h-4 w-4" />
+                          <span className="sr-only">Desactivar Proveedor</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Desactivar Proveedor</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </TableCell>
             </TableRow>
           ))}
