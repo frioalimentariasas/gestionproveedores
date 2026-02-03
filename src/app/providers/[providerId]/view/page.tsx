@@ -203,7 +203,7 @@ export default function ProviderViewPage() {
             });
         };
         const logoBase64 = await getLogoBase64();
-        doc.addImage(logoBase64, 'PNG', margin, 12, 42, 12);
+        doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
 
         doc.setFontSize(8);
         doc.setDrawColor(0);
@@ -231,7 +231,7 @@ export default function ProviderViewPage() {
         yPos += 15;
 
         const addSection = (title: string, fields: { label: string; value?: any }[]) => {
-            if (yPos > pageHeight - margin - 15) {
+            if (yPos > pageHeight - margin - 20) {
                 doc.addPage();
                 yPos = margin;
             }
@@ -241,50 +241,54 @@ export default function ProviderViewPage() {
             doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
             doc.setTextColor(0, 0, 0);
             doc.text(title, margin + 2, yPos);
-            yPos += 10;
+            yPos += 8;
             
-            const col1Width = 90;
+            const col1Width = 85;
             const col2X = margin + col1Width;
             const col2Width = pageWidth - col2X - margin;
-        
+            doc.setDrawColor(200, 200, 200);
+
             fields.forEach(field => {
                 const value = field.value;
                 if (value !== undefined && value !== null && value !== '') {
                     const displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : String(value);
-        
+                    const rowPadding = 4;
+                    const lineHeight = 5;
+
                     if (!field.label) {
                         doc.setFontSize(9);
                         doc.setFont(undefined, 'normal');
-                        const valueLines = doc.splitTextToSize(displayValue, pageWidth - margin * 2);
-                        const requiredHeight = valueLines.length * 5 + 3;
-                        if (yPos + requiredHeight > pageHeight - margin) {
-                            doc.addPage();
-                            yPos = margin;
-                        }
-                        doc.text(valueLines, margin, yPos);
-                        yPos += requiredHeight;
+                        const valueLines = doc.splitTextToSize(displayValue, pageWidth - margin * 2 - (rowPadding*2));
+                        const rowHeight = valueLines.length * lineHeight + (rowPadding * 2);
+
+                        if (yPos + rowHeight > pageHeight - margin) { doc.addPage(); yPos = margin; }
+
+                        doc.rect(margin, yPos, pageWidth - margin * 2, rowHeight);
+                        doc.text(valueLines, margin + rowPadding, yPos + lineHeight + rowPadding/2);
+                        yPos += rowHeight;
+
                     } else {
                         doc.setFontSize(9);
                         doc.setFont(undefined, 'bold');
-                        const labelLines = doc.splitTextToSize(field.label, col1Width - 2);
-        
+                        const labelLines = doc.splitTextToSize(field.label, col1Width - (rowPadding*2));
+
                         doc.setFont(undefined, 'normal');
-                        const valueLines = doc.splitTextToSize(displayValue, col2Width);
+                        const valueLines = doc.splitTextToSize(displayValue, col2Width - (rowPadding*2));
                         
-                        const requiredHeight = Math.max(labelLines.length, valueLines.length) * 5 + 3;
-        
-                        if (yPos + requiredHeight > pageHeight - margin) {
-                            doc.addPage();
-                            yPos = margin;
-                        }
-        
+                        const rowHeight = Math.max(labelLines.length, valueLines.length) * lineHeight + (rowPadding * 2);
+
+                        if (yPos + rowHeight > pageHeight - margin) { doc.addPage(); yPos = margin; }
+                        
+                        doc.rect(margin, yPos, col1Width, rowHeight);
+                        doc.rect(col2X, yPos, col2Width, rowHeight);
+
                         doc.setFont(undefined, 'bold');
-                        doc.text(labelLines, margin, yPos);
-        
+                        doc.text(labelLines, margin + rowPadding, yPos + lineHeight + rowPadding/2);
+
                         doc.setFont(undefined, 'normal');
-                        doc.text(valueLines, col2X, yPos);
+                        doc.text(valueLines, col2X + rowPadding, yPos + lineHeight + rowPadding/2);
                         
-                        yPos += requiredHeight;
+                        yPos += rowHeight;
                     }
                 }
             });
@@ -357,6 +361,38 @@ export default function ProviderViewPage() {
         ];
         
         sectionsData.forEach(section => addSection(section.title, section.fields));
+
+        const watermarkBase64 = await (async () => {
+            const logoDataUrl = await getLogoBase64(); 
+            
+            const img = new Image();
+            await new Promise(resolve => {
+                img.onload = resolve;
+                img.src = logoDataUrl;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return logoDataUrl;
+
+            ctx.globalAlpha = 0.1;
+            ctx.drawImage(img, 0, 0);
+
+            return canvas.toDataURL('image/png');
+        })();
+
+        const totalPages = doc.internal.getNumberOfPages();
+        const watermarkWidth = 120;
+        const watermarkHeight = (watermarkWidth / 40) * 13;
+        const watermarkX = (pageWidth - watermarkWidth) / 2;
+        const watermarkY = (pageHeight - watermarkHeight) / 2;
+
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.addImage(watermarkBase64, 'PNG', watermarkX, watermarkY, watermarkWidth, watermarkHeight);
+        }
 
         const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
         const safeBusinessName = providerData.businessName.replace(/[^a-zA-Z0-9]/g, '_');
