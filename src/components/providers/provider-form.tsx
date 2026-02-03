@@ -188,29 +188,35 @@ export default function ProviderForm() {
   // Effect to populate form with data from Firestore, ensuring dropdowns have options first.
   useEffect(() => {
     if (providerData) {
+      // Create local variables to hold the dropdown options.
+      let newStates: IState[] = [];
+      let newCities: ICity[] = [];
       const { country: countryName, department: departmentName } = providerData;
 
-      // 1. Pre-populate states list based on saved country
       if (countryName) {
         const country = Country.getAllCountries().find(c => c.name === countryName);
         if (country) {
-          const countryStates = State.getStatesOfCountry(country.isoCode);
-          setStates(countryStates || []);
-          
-          // 2. Pre-populate cities list based on saved department
+          // Populate the states based on the country.
+          newStates = State.getStatesOfCountry(country.isoCode) || [];
           if (departmentName) {
-            const state = countryStates?.find(s => s.name === departmentName);
+            const state = newStates.find(s => s.name === departmentName);
             if (state) {
-              const stateCities = City.getCitiesOfState(country.isoCode, state.isoCode);
-              setCities(stateCities || []);
+              // Populate the cities based on the state.
+              newCities = City.getCitiesOfState(country.isoCode, state.isoCode) || [];
             }
           }
         }
       }
-      
-      // 3. Reset the form with all the data.
-      const populatedValues = { ...initialFormValues, ...providerData };
-      form.reset(populatedValues);
+
+      // Update the state for the dropdowns.
+      setStates(newStates);
+      setCities(newCities);
+
+      // Reset the form with the provider data. Because the state updates for
+      // states and cities are in the same function body, React will batch them
+      // with the re-render caused by form.reset, ensuring the Select components
+      // have their options available when they receive their value.
+      form.reset({ ...initialFormValues, ...providerData });
     }
   }, [providerData, form]);
 
