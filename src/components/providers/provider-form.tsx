@@ -212,10 +212,9 @@ export default function ProviderForm() {
       setStates(newStates);
       setCities(newCities);
 
-      // Reset the form with the provider data. Because the state updates for
-      // states and cities are in the same function body, React will batch them
-      // with the re-render caused by form.reset, ensuring the Select components
-      // have their options available when they receive their value.
+      // Reset the form with the provider data. React will batch these state updates
+      // with the form reset, ensuring the Select components have their options
+      // available when they receive their value.
       form.reset({ ...initialFormValues, ...providerData });
     }
   }, [providerData, form]);
