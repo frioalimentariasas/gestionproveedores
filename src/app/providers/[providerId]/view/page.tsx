@@ -9,7 +9,7 @@ import { providerFormSchema } from '@/lib/schemas';
 import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
 import { Loader2, ArrowLeft, FileDown, FileText } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { type z } from 'zod';
 import * as XLSX from 'xlsx';
@@ -69,12 +69,9 @@ const FileLinkField = ({
   );
 };
 
-export default function ProviderViewPage({
-  params,
-}: {
-  params: { providerId: string };
-}) {
-  const { providerId } = params;
+export default function ProviderViewPage() {
+  const params = useParams();
+  const providerId = params.providerId as string;
   const firestore = useFirestore();
   const router = useRouter();
   const { isAdmin, isLoading: isRoleLoading } = useRole();
