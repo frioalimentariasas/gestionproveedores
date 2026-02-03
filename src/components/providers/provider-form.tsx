@@ -139,8 +139,6 @@ export default function ProviderForm() {
     defaultValues: initialFormValues,
   });
 
-  const watchedCountry = form.watch('country');
-  const watchedDepartment = form.watch('department');
   const watchedImplementsEnvironmentalMeasures = form.watch(
     'implementsEnvironmentalMeasures'
   );
@@ -187,34 +185,35 @@ export default function ProviderForm() {
     };
   }, [watchedValues, isLocked, user]);
 
-  useEffect(() => {
-    const country = Country.getAllCountries().find(
-      (c) => c.name === watchedCountry
-    );
-    setStates(country ? State.getStatesOfCountry(country.isoCode) : []);
-    setCities([]);
-  }, [watchedCountry]);
-
-  useEffect(() => {
-    const country = Country.getAllCountries().find(
-      (c) => c.name === watchedCountry
-    );
-    const state = country
-      ? State.getStatesOfCountry(country.isoCode)?.find(
-          (s) => s.name === watchedDepartment
-        )
-      : undefined;
-    setCities(
-      country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []
-    );
-  }, [watchedCountry, watchedDepartment]);
-
+  // Effect to populate form with data from Firestore, ensuring dropdowns have options first.
   useEffect(() => {
     if (providerData) {
+      const { country: countryName, department: departmentName } = providerData;
+
+      // 1. Pre-populate states list based on saved country
+      if (countryName) {
+        const country = Country.getAllCountries().find(c => c.name === countryName);
+        if (country) {
+          const countryStates = State.getStatesOfCountry(country.isoCode);
+          setStates(countryStates || []);
+          
+          // 2. Pre-populate cities list based on saved department
+          if (departmentName) {
+            const state = countryStates?.find(s => s.name === departmentName);
+            if (state) {
+              const stateCities = City.getCitiesOfState(country.isoCode, state.isoCode);
+              setCities(stateCities || []);
+            }
+          }
+        }
+      }
+      
+      // 3. Reset the form with all the data.
       const populatedValues = { ...initialFormValues, ...providerData };
       form.reset(populatedValues);
     }
   }, [providerData, form]);
+
 
   const uploadFile = async (
     file: File,
@@ -526,6 +525,9 @@ export default function ProviderForm() {
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
+                        const country = Country.getAllCountries().find((c) => c.name === value);
+                        setStates(country ? State.getStatesOfCountry(country.isoCode) : []);
+                        setCities([]);
                         form.setValue('department', '');
                         form.setValue('city', '');
                       }}
@@ -561,10 +563,14 @@ export default function ProviderForm() {
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
+                        const countryName = form.getValues('country');
+                        const country = Country.getAllCountries().find((c) => c.name === countryName);
+                        const state = country ? State.getStatesOfCountry(country.isoCode)?.find((s) => s.name === value) : undefined;
+                        setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []);
                         form.setValue('city', '');
                       }}
                       value={field.value}
-                      disabled={isLocked || !watchedCountry}
+                      disabled={isLocked || !form.getValues('country')}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -592,7 +598,7 @@ export default function ProviderForm() {
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isLocked || !watchedDepartment}
+                      disabled={isLocked || !form.getValues('department')}
                     >
                       <FormControl>
                         <SelectTrigger>
