@@ -28,11 +28,11 @@ const InfoField = ({
   }
   const displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : value;
   return (
-    <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
-      <p className="font-semibold text-muted-foreground md:col-span-1">
-        {label}:
+    <div className="grid grid-cols-1 md:grid-cols-5 border-t first:border-t-0 text-sm">
+      <p className="col-span-1 md:col-span-2 border-b md:border-b-0 md:border-r bg-muted/50 p-3 font-semibold">
+        {label}
       </p>
-      <p className="md:col-span-2">{String(displayValue)}</p>
+      <p className="col-span-1 md:col-span-3 p-3 flex items-center">{String(displayValue)}</p>
     </div>
   );
 };
@@ -46,25 +46,27 @@ const FileLinkField = ({
 }) => {
   if (!url) return null;
   return (
-    <div className="grid grid-cols-1 items-center gap-2 text-sm md:grid-cols-3">
-      <p className="font-semibold text-muted-foreground md:col-span-1">
-        {label}:
+    <div className="grid grid-cols-1 md:grid-cols-5 border-t first:border-t-0 text-sm">
+      <p className="col-span-1 md:col-span-2 border-b md:border-b-0 md:border-r bg-muted/50 p-3 font-semibold">
+        {label}
       </p>
-      <Button
-        variant="link"
-        asChild
-        className="h-auto justify-start p-0 md:col-span-2"
-      >
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2"
+      <div className="col-span-1 md:col-span-3 p-2 flex items-center">
+        <Button
+          variant="link"
+          asChild
+          className="h-auto justify-start p-0"
         >
-          <FileText className="h-4 w-4" />
-          Ver Documento
-        </a>
-      </Button>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Ver Documento
+          </a>
+        </Button>
+      </div>
     </div>
   );
 };
@@ -487,58 +489,60 @@ export default function ProviderViewPage() {
             <CardHeader>
               <CardTitle>1. Información del Proveedor</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoField
-                label="Razón Social o nombre"
-                value={providerData.businessName}
-              />
-              <InfoField
-                label="Tipo de Documento"
-                value={providerData.documentType}
-              />
-              <InfoField label="Número" value={providerData.documentNumber} />
-              <InfoField
-                label="Tipo de Persona"
-                value={providerData.personType}
-              />
-              <InfoField label="País" value={providerData.country} />
-              <InfoField label="Departamento" value={providerData.department} />
-              <InfoField label="Ciudad" value={providerData.city} />
-              <InfoField label="Dirección" value={providerData.address} />
-              <InfoField
-                label="Teléfono Celular"
-                value={providerData.phone}
-              />
-              <InfoField label="Fax" value={providerData.fax} />
-              <InfoField label="Pag web" value={providerData.website} />
-              <InfoField
-                label="Nombre del contacto del proveedor"
-                value={providerData.providerContactName}
-              />
-              <InfoField
-                label="Cargo (Contacto)"
-                value={providerData.providerContactTitle}
-              />
-              <InfoField
-                label="Email (Contacto)"
-                value={providerData.providerContactEmail}
-              />
-              <InfoField
-                label="Nombre de la persona para notificar pago"
-                value={providerData.paymentContactName}
-              />
-              <InfoField
-                label="Cargo (Pagos)"
-                value={providerData.paymentContactTitle}
-              />
-              <InfoField
-                label="Email para notificación pago"
-                value={providerData.paymentContactEmail}
-              />
-              <InfoField
-                label="Email de Inicio de Sesión"
-                value={providerData.email}
-              />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <InfoField
+                  label="Razón Social o nombre"
+                  value={providerData.businessName}
+                />
+                <InfoField
+                  label="Tipo de Documento"
+                  value={providerData.documentType}
+                />
+                <InfoField label="Número" value={providerData.documentNumber} />
+                <InfoField
+                  label="Tipo de Persona"
+                  value={providerData.personType}
+                />
+                <InfoField label="País" value={providerData.country} />
+                <InfoField label="Departamento" value={providerData.department} />
+                <InfoField label="Ciudad" value={providerData.city} />
+                <InfoField label="Dirección" value={providerData.address} />
+                <InfoField
+                  label="Teléfono Celular"
+                  value={providerData.phone}
+                />
+                <InfoField label="Fax" value={providerData.fax} />
+                <InfoField label="Pag web" value={providerData.website} />
+                <InfoField
+                  label="Nombre del contacto del proveedor"
+                  value={providerData.providerContactName}
+                />
+                <InfoField
+                  label="Cargo (Contacto)"
+                  value={providerData.providerContactTitle}
+                />
+                <InfoField
+                  label="Email (Contacto)"
+                  value={providerData.providerContactEmail}
+                />
+                <InfoField
+                  label="Nombre de la persona para notificar pago"
+                  value={providerData.paymentContactName}
+                />
+                <InfoField
+                  label="Cargo (Pagos)"
+                  value={providerData.paymentContactTitle}
+                />
+                <InfoField
+                  label="Email para notificación pago"
+                  value={providerData.paymentContactEmail}
+                />
+                <InfoField
+                  label="Email de Inicio de Sesión"
+                  value={providerData.email}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -546,55 +550,57 @@ export default function ProviderViewPage() {
             <CardHeader>
               <CardTitle>2. Información Tributaria</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoField
-                label="Tipo de Régimen"
-                value={providerData.taxRegimeType}
-              />
-              <InfoField
-                label="Gran Contribuyente"
-                value={providerData.isLargeTaxpayer}
-              />
-              <InfoField
-                label="Resolución No (Gran Contribuyente)"
-                value={providerData.largeTaxpayerResolution}
-              />
-              <InfoField
-                label="Autorretenedor Renta"
-                value={providerData.isIncomeSelfRetainer}
-              />
-              <InfoField
-                label="Resolución No (Renta)"
-                value={providerData.incomeSelfRetainerResolution}
-              />
-              <InfoField
-                label="Autorretenedor ICA"
-                value={providerData.isIcaSelfRetainer}
-              />
-              <InfoField
-                label="Indique municipio (ICA)"
-                value={providerData.icaSelfRetainerMunicipality}
-              />
-              <InfoField
-                label="Resolución No (ICA)"
-                value={providerData.icaSelfRetainerResolution}
-              />
-              <InfoField
-                label="Código actividad económica CIIU"
-                value={providerData.ciiuCode}
-              />
-              <InfoField
-                label="Código actividad económica ICA"
-                value={providerData.icaCode}
-              />
-              <InfoField
-                label="Ciudad donde declara"
-                value={providerData.declarationCity}
-              />
-              <InfoField
-                label="Porcentaje según ICA (%)"
-                value={providerData.icaPercentage}
-              />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <InfoField
+                  label="Tipo de Régimen"
+                  value={providerData.taxRegimeType}
+                />
+                <InfoField
+                  label="Gran Contribuyente"
+                  value={providerData.isLargeTaxpayer}
+                />
+                <InfoField
+                  label="Resolución No (Gran Contribuyente)"
+                  value={providerData.largeTaxpayerResolution}
+                />
+                <InfoField
+                  label="Autorretenedor Renta"
+                  value={providerData.isIncomeSelfRetainer}
+                />
+                <InfoField
+                  label="Resolución No (Renta)"
+                  value={providerData.incomeSelfRetainerResolution}
+                />
+                <InfoField
+                  label="Autorretenedor ICA"
+                  value={providerData.isIcaSelfRetainer}
+                />
+                <InfoField
+                  label="Indique municipio (ICA)"
+                  value={providerData.icaSelfRetainerMunicipality}
+                />
+                <InfoField
+                  label="Resolución No (ICA)"
+                  value={providerData.icaSelfRetainerResolution}
+                />
+                <InfoField
+                  label="Código actividad económica CIIU"
+                  value={providerData.ciiuCode}
+                />
+                <InfoField
+                  label="Código actividad económica ICA"
+                  value={providerData.icaCode}
+                />
+                <InfoField
+                  label="Ciudad donde declara"
+                  value={providerData.declarationCity}
+                />
+                <InfoField
+                  label="Porcentaje según ICA (%)"
+                  value={providerData.icaPercentage}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -602,15 +608,17 @@ export default function ProviderViewPage() {
             <CardHeader>
               <CardTitle>3. Información Ambiental</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoField
-                label="¿La empresa implementa medidas a favor del medio ambiente?"
-                value={providerData.implementsEnvironmentalMeasures}
-              />
-              <InfoField
-                label="¿Cuáles?"
-                value={providerData.environmentalMeasuresDescription}
-              />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <InfoField
+                  label="¿La empresa implementa medidas a favor del medio ambiente?"
+                  value={providerData.implementsEnvironmentalMeasures}
+                />
+                <InfoField
+                  label="¿Cuáles?"
+                  value={providerData.environmentalMeasuresDescription}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -619,19 +627,21 @@ export default function ProviderViewPage() {
               <CardHeader>
                 <CardTitle>4. Datos del Representante Legal</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <InfoField
-                  label="Nombre del Representante Legal"
-                  value={providerData.legalRepresentativeName}
-                />
-                <InfoField
-                  label="Tipo de Documento"
-                  value={providerData.legalRepresentativeDocumentType}
-                />
-                <InfoField
-                  label="Número"
-                  value={providerData.legalRepresentativeDocumentNumber}
-                />
+              <CardContent className="pt-0">
+                <div className="border rounded-lg overflow-hidden">
+                  <InfoField
+                    label="Nombre del Representante Legal"
+                    value={providerData.legalRepresentativeName}
+                  />
+                  <InfoField
+                    label="Tipo de Documento"
+                    value={providerData.legalRepresentativeDocumentType}
+                  />
+                  <InfoField
+                    label="Número"
+                    value={providerData.legalRepresentativeDocumentNumber}
+                  />
+                </div>
               </CardContent>
             </Card>
           )}
@@ -643,20 +653,22 @@ export default function ProviderViewPage() {
                 Inscripción de cuenta para pago electrónico
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoField
-                label="Autorizamos consignar en nuestra cuenta bancaria a nombre de:"
-                value={providerData.beneficiaryName}
-              />
-              <InfoField
-                label="Tipo de Cuenta"
-                value={providerData.accountType}
-              />
-              <InfoField
-                label="No de cuenta:"
-                value={providerData.accountNumber}
-              />
-              <InfoField label="Banco:" value={providerData.bankName} />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <InfoField
+                  label="Autorizamos consignar en nuestra cuenta bancaria a nombre de:"
+                  value={providerData.beneficiaryName}
+                />
+                <InfoField
+                  label="Tipo de Cuenta"
+                  value={providerData.accountType}
+                />
+                <InfoField
+                  label="No de cuenta:"
+                  value={providerData.accountNumber}
+                />
+                <InfoField label="Banco:" value={providerData.bankName} />
+              </div>
             </CardContent>
           </Card>
 
@@ -667,20 +679,22 @@ export default function ProviderViewPage() {
                 Documentos
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <FileLinkField label="RUT" url={providerData.rutFileUrl} />
-              <FileLinkField
-                label="Cámara de Comercio"
-                url={providerData.camaraComercioFileUrl}
-              />
-              <FileLinkField
-                label="Cédula Representante Legal"
-                url={providerData.cedulaRepresentanteLegalFileUrl}
-              />
-              <FileLinkField
-                label="Certificación Bancaria"
-                url={providerData.certificacionBancariaFileUrl}
-              />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <FileLinkField label="RUT" url={providerData.rutFileUrl} />
+                <FileLinkField
+                  label="Cámara de Comercio"
+                  url={providerData.camaraComercioFileUrl}
+                />
+                <FileLinkField
+                  label="Cédula Representante Legal"
+                  url={providerData.cedulaRepresentanteLegalFileUrl}
+                />
+                <FileLinkField
+                  label="Certificación Bancaria"
+                  url={providerData.certificacionBancariaFileUrl}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -691,11 +705,13 @@ export default function ProviderViewPage() {
                 INFORMACION HSEQ
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoField
-                label="Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%"
-                value={providerData.hseqSgsst}
-              />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <InfoField
+                  label="Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%"
+                  value={providerData.hseqSgsst}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -706,11 +722,13 @@ export default function ProviderViewPage() {
                 DECLARACION SARLAFT Y AUTORIZACION
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoField
-                label="Aceptó la declaración de origen de fondos y la política de tratamiento de datos"
-                value={providerData.sarlaftAccepted}
-              />
+            <CardContent className="pt-0">
+              <div className="border rounded-lg overflow-hidden">
+                <InfoField
+                  label="Aceptó la declaración de origen de fondos y la política de tratamiento de datos"
+                  value={providerData.sarlaftAccepted}
+                />
+              </div>
             </CardContent>
           </Card>
         </div>
