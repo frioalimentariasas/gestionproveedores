@@ -1,6 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@getbrevo/brevo'],
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
