@@ -515,107 +515,132 @@ export default function ProviderForm() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
+              {isLocked ? (
+                <>
                   <FormItem>
                     <FormLabel>País</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const country = Country.getAllCountries().find((c) => c.name === value);
-                        setStates(country ? State.getStatesOfCountry(country.isoCode) : []);
-                        setCities([]);
-                        form.setValue('department', '');
-                        form.setValue('city', '');
-                      }}
-                      value={field.value}
-                      disabled={isLocked}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un país..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Country.getAllCountries().map((country) => (
-                          <SelectItem
-                            key={country.isoCode}
-                            value={country.name}
-                          >
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                    <FormControl>
+                      <Input value={form.getValues('country')} disabled />
+                    </FormControl>
                   </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Departamento</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const countryName = form.getValues('country');
-                        const country = Country.getAllCountries().find((c) => c.name === countryName);
-                        const state = country ? State.getStatesOfCountry(country.isoCode)?.find((s) => s.name === value) : undefined;
-                        setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []);
-                        form.setValue('city', '');
-                      }}
-                      value={field.value}
-                      disabled={isLocked || !form.getValues('country')}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {states.map((state) => (
-                          <SelectItem key={state.isoCode} value={state.name}>
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                    <FormControl>
+                      <Input value={form.getValues('department')} disabled />
+                    </FormControl>
                   </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ciudad</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLocked || !form.getValues('department')}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city.name} value={city.name}>
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                    <FormControl>
+                      <Input value={form.getValues('city')} disabled />
+                    </FormControl>
                   </FormItem>
-                )}
-              />
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>País</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            const country = Country.getAllCountries().find((c) => c.name === value);
+                            setStates(country ? State.getStatesOfCountry(country.isoCode) : []);
+                            setCities([]);
+                            form.setValue('department', '');
+                            form.setValue('city', '');
+                          }}
+                          value={field.value}
+                          disabled={isLocked}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona un país..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Country.getAllCountries().map((country) => (
+                              <SelectItem
+                                key={country.isoCode}
+                                value={country.name}
+                              >
+                                {country.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Departamento</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            const countryName = form.getValues('country');
+                            const country = Country.getAllCountries().find((c) => c.name === countryName);
+                            const state = country ? State.getStatesOfCountry(country.isoCode)?.find((s) => s.name === value) : undefined;
+                            setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []);
+                            form.setValue('city', '');
+                          }}
+                          value={field.value}
+                          disabled={isLocked || !form.getValues('country')}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {states.map((state) => (
+                              <SelectItem key={state.isoCode} value={state.name}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ciudad</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isLocked || !form.getValues('department')}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cities.map((city) => (
+                              <SelectItem key={city.name} value={city.name}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </div>
 
             <FormField
