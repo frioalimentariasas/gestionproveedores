@@ -1,8 +1,7 @@
 'use server';
 
-import * as brevo from '@getbrevo/brevo';
-
 // --- Brevo Setup ---
+// The Brevo library is dynamically imported below to avoid build errors.
 if (!process.env.BREVO_API_KEY) {
   console.error('BREVO_API_KEY is not set. Emails will not be sent.');
 }
@@ -10,14 +9,6 @@ if (!process.env.BREVO_API_KEY) {
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 if (!ADMIN_EMAIL) {
   console.warn('ADMIN_EMAIL is not set. Admin notifications will not be sent.');
-}
-
-const apiInstance = new brevo.TransactionalEmailsApi();
-if (process.env.BREVO_API_KEY) {
-  apiInstance.setApiKey(
-    brevo.TransactionalEmailsApiApiKeys.apiKey,
-    process.env.BREVO_API_KEY
-  );
 }
 
 interface SendEmailParams {
@@ -40,6 +31,15 @@ async function sendTransactionalEmail({
     console.error('Brevo API key is not configured. Email not sent.');
     return { success: false, error: 'Brevo API key is not configured.' };
   }
+  
+  // Dynamically import the Brevo library to avoid build errors with Next.js
+  const brevo = await import('@getbrevo/brevo');
+  
+  const apiInstance = new brevo.TransactionalEmailsApi();
+  apiInstance.setApiKey(
+    brevo.TransactionalEmailsApiApiKeys.apiKey,
+    process.env.BREVO_API_KEY
+  );
 
   const sendSmtpEmail = new brevo.SendSmtpEmail();
   sendSmtpEmail.sender = sender;
