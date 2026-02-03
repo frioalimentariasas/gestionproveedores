@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { notifyAdminOfNewProvider } from '@/actions/email';
 
 const documentTypes = [
   'NIT',
@@ -80,6 +81,14 @@ export function RegisterForm() {
         },
         { merge: true }
       );
+      
+      // Notify admin about the new provider (fire-and-forget)
+      notifyAdminOfNewProvider({
+        businessName: values.businessName,
+        documentNumber: values.documentNumber,
+        email: values.email,
+      }).catch(console.error);
+
 
       toast({
         title: '¡Registro exitoso!',

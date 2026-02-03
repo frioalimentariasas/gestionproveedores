@@ -28,6 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { notifyProviderFormUnlocked } from '@/actions/email';
 
 // Define the shape of a provider document
 interface Provider {
@@ -50,17 +51,24 @@ export default function ProvidersTable() {
   const { data: providers, isLoading, error } = useCollection<Provider>(providersQuery);
 
   const handleToggleLock = (
-    providerId: string,
+    provider: Provider,
     currentStatus: boolean | undefined
   ) => {
     if (!firestore) return;
     const isCurrentlyLocked = currentStatus ?? false;
-    const providerRef = doc(firestore, 'providers', providerId);
+    const providerRef = doc(firestore, 'providers', provider.id);
     const dataToUpdate = { formLocked: !isCurrentlyLocked };
 
-    // Don't await. Firestore's onSnapshot listener will update the UI automatically.
     updateDoc(providerRef, dataToUpdate)
       .then(() => {
+        // If the form was locked, it is now unlocked, so send notification.
+        if (isCurrentlyLocked) {
+          notifyProviderFormUnlocked({
+            providerEmail: provider.email,
+            providerName: provider.businessName,
+          }).catch(console.error);
+        }
+
         toast({
           title: 'Estado de Formulario Actualizado',
           description: `El formulario del proveedor ha sido ${
@@ -69,14 +77,11 @@ export default function ProvidersTable() {
         });
       })
       .catch(async (serverError) => {
-        // This will be called if the update fails on the server (e.g. permission error).
-        // The optimistic local update will be reverted by Firestore SDK automatically.
         const permissionError = new FirestorePermissionError({
           path: providerRef.path,
           operation: 'update',
           requestResourceData: dataToUpdate,
         });
-        // This will be caught by the FirebaseErrorListener and shown in the dev overlay.
         errorEmitter.emit('permission-error', permissionError);
       });
   };
@@ -164,7 +169,7 @@ export default function ProvidersTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleToggleLock(provider.id, provider.formLocked)}
+                          onClick={() => handleToggleLock(provider, provider.formLocked)}
                         >
                           {provider.formLocked ? (
                             <Unlock className="h-4 w-4" />

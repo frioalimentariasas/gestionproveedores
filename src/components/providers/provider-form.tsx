@@ -51,6 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { notifyAdminOfFormUpdate } from '@/actions/email';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -293,6 +294,13 @@ export default function ProviderForm() {
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
+      
+      // Notify admin about the form update (fire-and-forget)
+      notifyAdminOfFormUpdate({
+        businessName: dataToSave.businessName,
+        email: dataToSave.email!,
+      }).catch(console.error);
+
 
       // Clear autosaved data on successful submission
       if (user) {
