@@ -203,7 +203,7 @@ export default function ProviderViewPage() {
             });
         };
         const logoBase64 = await getLogoBase64();
-        doc.addImage(logoBase64, 'PNG', margin, 12, 50, 14);
+        doc.addImage(logoBase64, 'PNG', margin, 12, 42, 12);
 
         doc.setFontSize(8);
         doc.setDrawColor(0);
@@ -243,28 +243,49 @@ export default function ProviderViewPage() {
             doc.text(title, margin + 2, yPos);
             yPos += 10;
             
+            const col1Width = 90;
+            const col2X = margin + col1Width;
+            const col2Width = pageWidth - col2X - margin;
+        
             fields.forEach(field => {
                 const value = field.value;
                 if (value !== undefined && value !== null && value !== '') {
                     const displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : String(value);
-
-                    if (yPos > pageHeight - margin - 12) {
-                        doc.addPage();
-                        yPos = margin;
+        
+                    if (!field.label) {
+                        doc.setFontSize(9);
+                        doc.setFont(undefined, 'normal');
+                        const valueLines = doc.splitTextToSize(displayValue, pageWidth - margin * 2);
+                        const requiredHeight = valueLines.length * 5 + 3;
+                        if (yPos + requiredHeight > pageHeight - margin) {
+                            doc.addPage();
+                            yPos = margin;
+                        }
+                        doc.text(valueLines, margin, yPos);
+                        yPos += requiredHeight;
+                    } else {
+                        doc.setFontSize(9);
+                        doc.setFont(undefined, 'bold');
+                        const labelLines = doc.splitTextToSize(field.label, col1Width - 2);
+        
+                        doc.setFont(undefined, 'normal');
+                        const valueLines = doc.splitTextToSize(displayValue, col2Width);
+                        
+                        const requiredHeight = Math.max(labelLines.length, valueLines.length) * 5 + 3;
+        
+                        if (yPos + requiredHeight > pageHeight - margin) {
+                            doc.addPage();
+                            yPos = margin;
+                        }
+        
+                        doc.setFont(undefined, 'bold');
+                        doc.text(labelLines, margin, yPos);
+        
+                        doc.setFont(undefined, 'normal');
+                        doc.text(valueLines, col2X, yPos);
+                        
+                        yPos += requiredHeight;
                     }
-
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(field.label, margin, yPos);
-
-                    doc.setFont(undefined, 'normal');
-                    const valueLines = doc.splitTextToSize(displayValue, pageWidth - margin * 2 - 5);
-                    if (yPos + (valueLines.length * 5) > pageHeight - margin) {
-                        doc.addPage();
-                        yPos = margin;
-                    }
-                    doc.text(valueLines, margin + 5, yPos + 6);
-                    yPos += (valueLines.length * 5) + 8;
                 }
             });
             yPos += 5;
@@ -273,65 +294,65 @@ export default function ProviderViewPage() {
         const sectionsData = [
             { title: "DESCRIPCIÓN DEL BIEN Y/O SERVICIO", fields: [{ label: '', value: providerData.serviceDescription }] },
             { title: "1. Información del Proveedor", fields: [
-                { label: "Razón Social o nombre:", value: providerData.businessName },
-                { label: "Tipo de Documento:", value: providerData.documentType },
-                { label: "Número:", value: providerData.documentNumber },
-                { label: "Tipo de Persona:", value: providerData.personType },
-                { label: "País:", value: providerData.country },
-                { label: "Departamento:", value: providerData.department },
-                { label: "Ciudad:", value: providerData.city },
-                { label: "Dirección:", value: providerData.address },
-                { label: "Teléfono Celular:", value: providerData.phone },
-                { label: "Fax:", value: providerData.fax },
-                { label: "Pag web:", value: providerData.website },
-                { label: "Nombre del contacto del proveedor:", value: providerData.providerContactName },
-                { label: "Cargo (Contacto):", value: providerData.providerContactTitle },
-                { label: "Email (Contacto):", value: providerData.providerContactEmail },
-                { label: "Nombre de la persona para notificar pago:", value: providerData.paymentContactName },
-                { label: "Cargo (Pagos):", value: providerData.paymentContactTitle },
-                { label: "Email para notificación pago:", value: providerData.paymentContactEmail },
-                { label: "Email de Inicio de Sesión:", value: providerData.email },
+                { label: "Razón Social o nombre", value: providerData.businessName },
+                { label: "Tipo de Documento", value: providerData.documentType },
+                { label: "Número", value: providerData.documentNumber },
+                { label: "Tipo de Persona", value: providerData.personType },
+                { label: "País", value: providerData.country },
+                { label: "Departamento", value: providerData.department },
+                { label: "Ciudad", value: providerData.city },
+                { label: "Dirección", value: providerData.address },
+                { label: "Teléfono Celular", value: providerData.phone },
+                { label: "Fax", value: providerData.fax },
+                { label: "Pag web", value: providerData.website },
+                { label: "Nombre del contacto del proveedor", value: providerData.providerContactName },
+                { label: "Cargo (Contacto)", value: providerData.providerContactTitle },
+                { label: "Email (Contacto)", value: providerData.providerContactEmail },
+                { label: "Nombre de la persona para notificar pago", value: providerData.paymentContactName },
+                { label: "Cargo (Pagos)", value: providerData.paymentContactTitle },
+                { label: "Email para notificación pago", value: providerData.paymentContactEmail },
+                { label: "Email de Inicio de Sesión", value: providerData.email },
             ] },
             { title: "2. Información Tributaria", fields: [
-                { label: 'Tipo de Régimen:', value: providerData.taxRegimeType },
-                { label: 'Gran Contribuyente:', value: providerData.isLargeTaxpayer },
-                { label: 'Resolución No (Gran Contribuyente):', value: providerData.largeTaxpayerResolution },
-                { label: 'Autorretenedor Renta:', value: providerData.isIncomeSelfRetainer },
-                { label: 'Resolución No (Renta):', value: providerData.incomeSelfRetainerResolution },
-                { label: 'Autorretenedor ICA:', value: providerData.isIcaSelfRetainer },
-                { label: 'Indique municipio (ICA):', value: providerData.icaSelfRetainerMunicipality },
-                { label: 'Resolución No (ICA):', value: providerData.icaSelfRetainerResolution },
-                { label: 'Código actividad económica CIIU:', value: providerData.ciiuCode },
-                { label: 'Código actividad económica ICA:', value: providerData.icaCode },
-                { label: 'Ciudad donde declara:', value: providerData.declarationCity },
-                { label: 'Porcentaje según ICA (%):', value: providerData.icaPercentage },
+                { label: 'Tipo de Régimen', value: providerData.taxRegimeType },
+                { label: 'Gran Contribuyente', value: providerData.isLargeTaxpayer },
+                { label: 'Resolución No (Gran Contribuyente)', value: providerData.largeTaxpayerResolution },
+                { label: 'Autorretenedor Renta', value: providerData.isIncomeSelfRetainer },
+                { label: 'Resolución No (Renta)', value: providerData.incomeSelfRetainerResolution },
+                { label: 'Autorretenedor ICA', value: providerData.isIcaSelfRetainer },
+                { label: 'Indique municipio (ICA)', value: providerData.icaSelfRetainerMunicipality },
+                { label: 'Resolución No (ICA)', value: providerData.icaSelfRetainerResolution },
+                { label: 'Código actividad económica CIIU', value: providerData.ciiuCode },
+                { label: 'Código actividad económica ICA', value: providerData.icaCode },
+                { label: 'Ciudad donde declara', value: providerData.declarationCity },
+                { label: 'Porcentaje según ICA (%)', value: providerData.icaPercentage },
             ] },
             { title: "3. Información Ambiental", fields: [
-                { label: '¿La empresa implementa medidas a favor del medio ambiente?:', value: providerData.implementsEnvironmentalMeasures },
-                { label: '¿Cuáles?:', value: providerData.environmentalMeasuresDescription },
+                { label: '¿La empresa implementa medidas a favor del medio ambiente?', value: providerData.implementsEnvironmentalMeasures },
+                { label: '¿Cuáles?', value: providerData.environmentalMeasuresDescription },
             ] },
             ...(providerData.personType === 'Persona Jurídica' ? [{ title: "4. Datos del Representante Legal", fields: [
-                { label: 'Nombre del Representante Legal:', value: providerData.legalRepresentativeName },
-                { label: 'Tipo de Documento:', value: providerData.legalRepresentativeDocumentType },
-                { label: 'Número:', value: providerData.legalRepresentativeDocumentNumber },
+                { label: 'Nombre del Representante Legal', value: providerData.legalRepresentativeName },
+                { label: 'Tipo de Documento', value: providerData.legalRepresentativeDocumentType },
+                { label: 'Número', value: providerData.legalRepresentativeDocumentNumber },
             ] }] : []),
             { title: `${providerData.personType === 'Persona Jurídica' ? '5' : '4'}. Inscripción de cuenta para pago electrónico`, fields: [
-                { label: 'Autorizamos consignar en nuestra cuenta bancaria a nombre de:', value: providerData.beneficiaryName },
-                { label: 'Tipo de Cuenta:', value: providerData.accountType },
-                { label: 'No de cuenta:', value: providerData.accountNumber },
-                { label: 'Banco:', value: providerData.bankName },
+                { label: 'Autorizamos consignar en nuestra cuenta bancaria a nombre de', value: providerData.beneficiaryName },
+                { label: 'Tipo de Cuenta', value: providerData.accountType },
+                { label: 'No de cuenta', value: providerData.accountNumber },
+                { label: 'Banco', value: providerData.bankName },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '6' : '5'}. Documentos`, fields: [
-                { label: "RUT:", value: providerData.rutFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Cámara de Comercio:", value: providerData.camaraComercioFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Cédula Representante Legal:", value: providerData.cedulaRepresentanteLegalFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Certificación Bancaria:", value: providerData.certificacionBancariaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "RUT", value: providerData.rutFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Cámara de Comercio", value: providerData.camaraComercioFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Cédula Representante Legal", value: providerData.cedulaRepresentanteLegalFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Certificación Bancaria", value: providerData.certificacionBancariaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '7' : '6'}. INFORMACION HSEQ`, fields: [
-                { label: 'Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%:', value: providerData.hseqSgsst },
+                { label: 'Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%', value: providerData.hseqSgsst },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '8' : '7'}. DECLARACION SARLAFT Y AUTORIZACION`, fields: [
-                { label: 'Aceptó la declaración de origen de fondos y la política de tratamiento de datos:', value: providerData.sarlaftAccepted },
+                { label: 'Aceptó la declaración de origen de fondos y la política de tratamiento de datos', value: providerData.sarlaftAccepted },
             ] },
         ];
         
