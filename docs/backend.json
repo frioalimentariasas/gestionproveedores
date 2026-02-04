@@ -71,6 +71,10 @@
           "type": "boolean",
           "description": "If true, the provider's form is locked and cannot be edited."
         },
+        "disabled": {
+          "type": "boolean",
+          "description": "If true, the provider's account is disabled and they cannot log in."
+        },
         "taxRegimeType": {
           "type": "string",
           "description": "Type of tax regime (e.g., Simplificado, Común)."

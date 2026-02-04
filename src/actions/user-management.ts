@@ -1,0 +1,38 @@
+'use server';
+
+import admin from '@/lib/firebase-admin';
+
+function generatePassword() {
+  const length = 10;
+  // Character set without easily confused characters like I, l, 1, O, 0
+  const charset = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*()";
+  let password = "";
+  for (let i = 0, n = charset.length; i < length; ++i) {
+    password += charset.charAt(Math.floor(Math.random() * n));
+  }
+  return password;
+}
+
+export async function resetUserPassword(uid: string) {
+  try {
+    const newPassword = generatePassword();
+    await admin.auth().updateUser(uid, {
+      password: newPassword,
+    });
+    return { success: true, newPassword };
+  } catch (error: any) {
+    console.error('Error resetting user password:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function toggleUserStatus(uid: string, disabled: boolean) {
+  try {
+    await admin.auth().updateUser(uid, { disabled });
+    await admin.firestore().collection('providers').doc(uid).update({ disabled });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating user status:', error);
+    return { success: false, error: error.message };
+  }
+}

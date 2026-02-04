@@ -154,3 +154,62 @@ export async function notifyProviderFormUnlocked({
     htmlContent,
   });
 }
+
+/**
+ * Notifies a provider that their password has been reset by an administrator.
+ */
+export async function notifyProviderPasswordReset({
+  providerEmail,
+  providerName,
+  newPassword,
+}: {
+  providerEmail: string;
+  providerName: string;
+  newPassword: string;
+}) {
+  const subject = 'Restablecimiento de Contraseña de su Cuenta de Proveedor';
+  const htmlContent = `
+    <h1>Hola, ${providerName}</h1>
+    <p>Un administrador ha restablecido la contraseña de su cuenta en el portal de proveedores de Frioalimentaria.</p>
+    <p>Su nueva contraseña temporal es: <strong>${newPassword}</strong></p>
+    <p>Le recomendamos iniciar sesión y cambiarla lo antes posible desde la sección "Mi Cuenta".</p>
+    <br>
+    <p>Gracias,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
+/**
+ * Notifies a provider about a change in their account status (activated/deactivated).
+ */
+export async function notifyProviderAccountStatus({
+  providerEmail,
+  providerName,
+  status,
+}: {
+  providerEmail: string;
+  providerName:string;
+  status: 'activada' | 'desactivada';
+}) {
+  const subject = `Su cuenta de proveedor ha sido ${status}`;
+  const htmlContent = `
+    <h1>Hola, ${providerName}</h1>
+    <p>Le informamos que su cuenta en el portal de proveedores de Frioalimentaria ha sido <strong>${status}</strong> por un administrador.</p>
+    ${status === 'desactivada' ? '<p>No podrá acceder a la plataforma hasta que su cuenta sea reactivada. Si cree que esto es un error, por favor póngase en contacto con nosotros.</p>' : '<p>Ya puede acceder a la plataforma con sus credenciales.</p>'}
+    <br>
+    <p>Gracias,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+  
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}

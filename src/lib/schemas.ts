@@ -167,8 +167,9 @@ export const providerFormSchema = z
     sarlaftAccepted: z
       .boolean()
       .refine((val) => val === true, 'Debe aceptar los términos.'),
-    // New lock field
+    // Status fields
     formLocked: z.boolean().optional(),
+    disabled: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.personType === 'Persona Jurídica') {

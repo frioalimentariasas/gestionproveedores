@@ -35,7 +35,7 @@ import { providerFormSchema } from '@/lib/schemas';
 import { Country, State, City, IState, ICity } from 'country-state-city';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Info, Loader2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -99,6 +99,7 @@ const initialFormValues: ProviderFormValues = {
   hseqSgsst: '',
   sarlaftAccepted: false,
   formLocked: false,
+  disabled: false,
   rutFileUrl: '',
   camaraComercioFileUrl: '',
   cedulaRepresentanteLegalFileUrl: '',
@@ -187,32 +188,27 @@ export default function ProviderForm() {
     };
   }, [watchedValues, isLocked, user]);
 
-  // Effect to populate form with data from Firestore, ensuring dropdowns have options first.
+  // Effect to populate form with data from Firestore
+  const stableReset = useCallback(reset, []);
   useEffect(() => {
     if (providerData) {
-      let newStates: IState[] = [];
-      let newCities: ICity[] = [];
-      const { country: countryName, department: departmentName } = providerData;
-
-      if (countryName) {
-        const country = Country.getAllCountries().find((c) => c.name === countryName);
-        if (country) {
-          newStates = State.getStatesOfCountry(country.isoCode) || [];
-          if (departmentName) {
-            const state = newStates.find((s) => s.name === departmentName);
-            if (state) {
-              newCities = City.getCitiesOfState(country.isoCode, state.isoCode) || [];
+      const { country, department } = providerData;
+      if (country) {
+        const countryData = Country.getAllCountries().find(c => c.name === country);
+        if (countryData) {
+          const countryStates = State.getStatesOfCountry(countryData.isoCode);
+          setStates(countryStates || []);
+          if (department) {
+            const stateData = countryStates?.find(s => s.name === department);
+            if (stateData) {
+              setCities(City.getCitiesOfState(countryData.isoCode, stateData.isoCode) || []);
             }
           }
         }
       }
-      
-      setStates(newStates);
-      setCities(newCities);
-      
-      reset({ ...initialFormValues, ...providerData });
+      stableReset({ ...initialFormValues, ...providerData });
     }
-  }, [providerData, reset]);
+  }, [providerData, stableReset]);
 
 
   const uploadFile = async (
@@ -528,19 +524,19 @@ export default function ProviderForm() {
                   <FormItem>
                     <FormLabel>País</FormLabel>
                     <FormControl>
-                      <Input value={form.getValues('country')} disabled />
+                      <Input value={form.getValues('country') || ''} disabled />
                     </FormControl>
                   </FormItem>
                   <FormItem>
                     <FormLabel>Departamento</FormLabel>
                     <FormControl>
-                      <Input value={form.getValues('department')} disabled />
+                      <Input value={form.getValues('department') || ''} disabled />
                     </FormControl>
                   </FormItem>
                   <FormItem>
                     <FormLabel>Ciudad</FormLabel>
                     <FormControl>
-                      <Input value={form.getValues('city')} disabled />
+                      <Input value={form.getValues('city') || ''} disabled />
                     </FormControl>
                   </FormItem>
                 </>
