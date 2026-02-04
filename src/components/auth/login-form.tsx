@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { notifyAdminOfReactivationRequest } from '@/actions/email';
+import { getProviderDataByEmail } from '@/actions/user-management';
 
 export function LoginForm() {
   const { toast } = useToast();
@@ -83,7 +84,24 @@ export function LoginForm() {
     if (!attemptedEmail) return;
 
     setIsReactivating(true);
-    const result = await notifyAdminOfReactivationRequest({ providerEmail: attemptedEmail });
+
+    const providerDataResult = await getProviderDataByEmail(attemptedEmail);
+
+    if (!providerDataResult.success || !providerDataResult.data?.businessName) {
+      toast({
+        variant: 'destructive',
+        title: 'Error al obtener datos',
+        description: 'No se pudo encontrar la información de su empresa para la solicitud.',
+      });
+      setIsReactivating(false);
+      setShowDisabledDialog(false);
+      return;
+    }
+
+    const businessName = providerDataResult.data.businessName;
+    
+    const result = await notifyAdminOfReactivationRequest({ providerEmail: attemptedEmail, businessName });
+    
     setShowDisabledDialog(false);
     setIsReactivating(false);
 

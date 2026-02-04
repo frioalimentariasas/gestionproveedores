@@ -26,7 +26,7 @@ async function sendTransactionalEmail({
   htmlContent,
   sender = {
     email: SENDER_EMAIL,
-    name: 'Frioalimentaria SAS',
+    name: 'Notificacion Gestion de proveedores FAL',
   },
   replyTo
 }: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
@@ -226,13 +226,15 @@ export async function notifyProviderAccountStatus({
  */
 export async function notifyAdminOfReactivationRequest({
   providerEmail,
+  businessName,
 }: {
   providerEmail: string;
+  businessName: string;
 }) {
-  const subject = `Solicitud de Reactivación de Cuenta: ${providerEmail}`;
+  const subject = `Solicitud de Reactivación de Cuenta: "${businessName}"`;
   const htmlContent = `
     <h1>Solicitud de Reactivación de Cuenta</h1>
-    <p>El proveedor con el correo electrónico <strong>${providerEmail}</strong> ha solicitado que su cuenta sea reactivada.</p>
+    <p>El proveedor <strong>${businessName}</strong> (email: ${providerEmail}) ha solicitado que su cuenta sea reactivada.</p>
     <p>Por favor, inicie sesión en el panel de administración para revisar y habilitar la cuenta si lo considera apropiado.</p>
   `;
 
@@ -240,5 +242,6 @@ export async function notifyAdminOfReactivationRequest({
     to: [{ email: ADMIN_EMAIL }],
     subject,
     htmlContent,
+    replyTo: { email: providerEmail, name: businessName },
   });
 }
