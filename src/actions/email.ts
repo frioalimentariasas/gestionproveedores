@@ -3,9 +3,7 @@
 // The Brevo API key is sensitive and should be stored in an environment variable.
 // Ensure you have a .env.local file with:
 // BREVO_API_KEY=your_brevo_api_key
-if (!process.env.BREVO_API_KEY) {
-  console.error('BREVO_API_KEY is not set. Emails will not be sent.');
-}
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 // The admin email to which notifications are sent.
 const ADMIN_EMAIL = 'asistente@frioalimentaria.com.co';
@@ -29,9 +27,7 @@ async function sendTransactionalEmail({
     name: 'Frioalimentaria SAS',
   },
 }: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
-  const apiKey = process.env.BREVO_API_KEY;
-
-  if (!apiKey) {
+  if (!BREVO_API_KEY) {
     const errorMsg = 'Brevo API key is not configured. Cannot send email.';
     console.error(`sendTransactionalEmail failed: ${errorMsg}`);
     return { success: false, error: errorMsg };
@@ -50,7 +46,7 @@ async function sendTransactionalEmail({
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'api-key': apiKey,
+        'api-key': BREVO_API_KEY,
       },
       body: JSON.stringify(payload),
     });
@@ -192,6 +188,7 @@ export async function notifyProviderPasswordReset({
  */
 export async function notifyProviderAccountStatus({
   providerEmail,
+inject,
   providerName,
   status,
 }: {
