@@ -25,37 +25,46 @@ async function sendTransactionalEmail({
     name: 'Frioalimentaria SAS',
   },
 }: SendEmailParams) {
-  if (!process.env.BREVO_API_KEY) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
     console.error('Brevo API key is not configured. Email not sent.');
     return { success: false, error: 'Brevo API key is not configured.' };
   }
 
-  // Use the older, more stable sib-api-v3-sdk package
-  const SibApiV3Sdk = require('sib-api-v3-sdk');
-  const defaultClient = SibApiV3Sdk.ApiClient.instance;
-
-  // Configure API key authorization: api-key
-  const apiKey = defaultClient.authentications['api-key'];
-  apiKey.apiKey = process.env.BREVO_API_KEY;
-
-  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-
-  sendSmtpEmail.sender = sender;
-  sendSmtpEmail.to = to;
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = htmlContent;
+  const payload = {
+    sender,
+    to,
+    subject,
+    htmlContent,
+  };
 
   try {
-    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('Brevo email sent successfully.');
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error sending Brevo email:', errorData);
+      const errorMessage = `Brevo API Error: ${response.status} ${response.statusText}. Message: ${errorData.message || 'No additional details.'}`;
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log('Brevo email sent successfully. Message ID:', data.messageId);
     return { success: true, data };
   } catch (error) {
-    console.error('Error sending Brevo email:', error);
-    // Return a serializable error message
-    return { success: false, error: error.toString() };
+    console.error('Error in sendTransactionalEmail:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred while sending the email.' };
   }
 }
+
 
 // --- Email Notification Actions ---
 
