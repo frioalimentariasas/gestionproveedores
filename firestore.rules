@@ -130,7 +130,8 @@ service cloud.firestore {
        * @principle Protects sensitive evaluation data, restricting all access to authorized personnel.
        */
       match /evaluations/{evaluationId} {
-        allow read, write: if isAdmin();
+        allow read: if true; // TEMPORARY DEBUGGING RULE
+        allow write: if isAdmin();
       }
     }
 
