@@ -16,7 +16,6 @@ import {
   Unlock,
   UserCheck,
   UserX,
-  MoreHorizontal,
   ClipboardList,
   PlusCircle,
 } from 'lucide-react';
@@ -34,17 +33,11 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-  DropdownMenuPortal,
-} from '@/components/ui/dropdown-menu';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,7 +76,6 @@ export default function ProvidersTable() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  // State management for modals
   const [actionState, setActionState] = useState<{
     [key: string]: boolean;
   }>({});
@@ -93,7 +85,8 @@ export default function ProvidersTable() {
     newPassword?: string;
   }>({ type: null, provider: null });
 
-  const [evaluationTarget, setEvaluationTarget] = useState<{ provider: Provider; type: EvaluationType } | null>(null);
+  const [evaluationTarget, setEvaluationTarget] = useState<{ provider: Provider | null; type: EvaluationType | null } | null>(null);
+
 
   const providersQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'providers')) : null),
@@ -113,11 +106,9 @@ export default function ProvidersTable() {
     const dataToUpdate = { formLocked: !isCurrentlyLocked };
 
     setActionLoading(provider.id, true);
-    // Use non-blocking update for better UI responsiveness
     updateDoc(providerRef, dataToUpdate)
       .then(() => {
         if (isCurrentlyLocked) {
-          // Send notification only when unlocking
           notifyProviderFormUnlocked({
             providerEmail: provider.email,
             providerName: provider.businessName,
@@ -258,9 +249,9 @@ export default function ProvidersTable() {
             {providers.map((provider) => (
               <TableRow
                 key={provider.id}
-                className={
+                className={cn(
                   provider.disabled ? 'bg-muted/50 text-muted-foreground' : ''
-                }
+                )}
               >
                 <TableCell className="font-medium">
                   {provider.businessName}
@@ -283,100 +274,62 @@ export default function ProvidersTable() {
                       <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
                   ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Abrir menú</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href={`/providers/${provider.id}/view`} className="cursor-pointer">
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>Ver Formulario</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/providers/${provider.id}/evaluations`} className="cursor-pointer">
-                            <ClipboardList className="mr-2 h-4 w-4" />
-                            <span>Historial de Evaluaciones</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            <span>Nueva Evaluación</span>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuPortal>
-                            <DropdownMenuSubContent>
-                              <DropdownMenuItem
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  setEvaluationTarget({ provider, type: 'provider_selection' });
-                                }}
-                              >
-                                Evaluación de Selección
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  setEvaluationTarget({ provider, type: 'provider_performance' });
-                                }}
-                              >
-                                Evaluación de Desempeño
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  setEvaluationTarget({ provider, type: 'contractor_evaluation' });
-                                }}
-                              >
-                                Evaluación de Contratista
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuPortal>
-                        </DropdownMenuSub>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleToggleLock(provider)}>
-                          {provider.formLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
-                          <span>
-                            {provider.formLocked
-                              ? 'Habilitar Edición'
-                              : 'Bloquear Formulario'}
-                          </span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setDialogState({ type: 'password', provider: provider })
-                          }
-                        >
-                          <KeyRound className="mr-2 h-4 w-4" />
-                          <span>Restablecer Contraseña</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className={cn(
-                            provider.disabled
-                              ? 'text-green-600 focus:text-green-700'
-                              : 'text-destructive focus:text-destructive'
-                          )}
-                          onClick={() =>
-                            setDialogState({ type: 'status', provider: provider })
-                          }
-                        >
-                          {provider.disabled ? (
-                            <UserCheck className="mr-2 h-4 w-4" />
-                          ) : (
-                            <UserX className="mr-2 h-4 w-4" />
-                          )}
-                          <span>
-                            {provider.disabled ? 'Activar Proveedor' : 'Desactivar Proveedor'}
-                          </span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-end gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/providers/${provider.id}/view`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver Formulario</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/providers/${provider.id}/evaluations`}>
+                              <ClipboardList className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Historial de Evaluaciones</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => setEvaluationTarget({ provider, type: null })}>
+                            <PlusCircle className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Nueva Evaluación</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => handleToggleLock(provider)}>
+                            {provider.formLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>{provider.formLocked ? 'Habilitar Edición' : 'Bloquear Formulario'}</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'password', provider: provider })}>
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Restablecer Contraseña</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" className={cn(provider.disabled ? 'text-green-600 focus:text-green-700' : 'text-destructive focus:text-destructive')} onClick={() => setDialogState({ type: 'status', provider: provider })}>
+                            {provider.disabled ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>{provider.disabled ? 'Activar Proveedor' : 'Desactivar Proveedor'}</p></TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    </div>
                   )}
                 </TableCell>
               </TableRow>
@@ -392,7 +345,6 @@ export default function ProvidersTable() {
         evaluationType={evaluationTarget?.type ?? null}
       />
 
-      {/* Password Reset Dialog */}
       <Dialog
         open={dialogState.type === 'password'}
         onOpenChange={(open) =>
@@ -449,7 +401,6 @@ export default function ProvidersTable() {
         </DialogContent>
       </Dialog>
       
-      {/* Status Change Dialog */}
       <AlertDialog
         open={dialogState.type === 'status'}
         onOpenChange={(open) =>

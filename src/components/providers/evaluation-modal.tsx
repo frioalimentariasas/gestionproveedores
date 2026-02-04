@@ -58,21 +58,17 @@ export function EvaluationModal({
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [modalData, setModalData] = useState({ provider, evaluationType });
+  const [selectedType, setSelectedType] = useState<EvaluationType | null>(evaluationType);
 
   useEffect(() => {
     if (isOpen) {
-      setModalData({ provider, evaluationType });
+      setSelectedType(evaluationType);
     }
-  }, [isOpen, provider, evaluationType]);
+  }, [isOpen, evaluationType]);
 
   const criteria = useMemo(
-    () =>
-      modalData.evaluationType
-        ? EVALUATION_CRITERIA[modalData.evaluationType]
-        : [],
-    [modalData.evaluationType]
+    () => (selectedType ? EVALUATION_CRITERIA[selectedType] : []),
+    [selectedType]
   );
 
   const defaultScores = useMemo(
@@ -89,13 +85,12 @@ export function EvaluationModal({
   });
 
   useEffect(() => {
-    if (isOpen) {
-      form.reset({
-        scores: defaultScores,
-        comments: '',
-      });
-    }
-  }, [isOpen, defaultScores, form]);
+    // Reset form when the type of evaluation changes
+    form.reset({
+      scores: defaultScores,
+      comments: '',
+    });
+  }, [selectedType, defaultScores, form]);
 
   const watchedScores = form.watch('scores');
 
@@ -108,7 +103,7 @@ export function EvaluationModal({
   }, [watchedScores, criteria]);
 
   async function onSubmit(values: EvaluationFormValues) {
-    if (!user || !firestore || !modalData.provider || !modalData.evaluationType) {
+    if (!user || !firestore || !provider || !selectedType) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -120,10 +115,10 @@ export function EvaluationModal({
     setIsSubmitting(true);
 
     const dataToSave = {
-      providerId: modalData.provider.id,
+      providerId: provider.id,
       evaluatorId: user.uid,
       evaluatorName: user.displayName || user.email,
-      evaluationType: modalData.evaluationType,
+      evaluationType: selectedType,
       scores: values.scores,
       totalScore: totalScore,
       comments: values.comments || '',
@@ -133,7 +128,7 @@ export function EvaluationModal({
     const evaluationsCollection = collection(
       firestore,
       'providers',
-      modalData.provider.id,
+      provider.id,
       'evaluations'
     );
 
@@ -141,7 +136,7 @@ export function EvaluationModal({
       .then(() => {
         toast({
           title: 'Evaluación Guardada',
-          description: `Se ha guardado la evaluación para ${modalData.provider?.businessName}.`,
+          description: `Se ha guardado la evaluación para ${provider?.businessName}.`,
         });
         onClose();
       })
@@ -158,23 +153,54 @@ export function EvaluationModal({
       });
   }
 
+  const handleClose = () => {
+    // We call onClose which is passed from the parent to close the modal.
+    onClose();
+    // After a short delay to allow for the closing animation, we reset the internal state.
+    setTimeout(() => {
+        setSelectedType(null);
+    }, 300);
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
-        className="sm:max-w-[600px]"
-        onCloseAutoFocus={(e) => {
-          e.preventDefault();
-        }}
-      >
-        {modalData.provider && modalData.evaluationType ? (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="sm:max-w-[600px]">
+        {!provider ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : !selectedType ? (
           <>
             <DialogHeader>
-              <DialogTitle>
-                {EVALUATION_TYPE_NAMES[modalData.evaluationType]}
-              </DialogTitle>
+              <DialogTitle>Seleccionar Tipo de Evaluación</DialogTitle>
               <DialogDescription>
-                Evalúa a <strong>{modalData.provider.businessName}</strong> en
-                una escala de 1 a 5.
+                Elige qué tipo de evaluación deseas realizar para <strong>{provider.businessName}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              {(Object.keys(EVALUATION_TYPE_NAMES) as EvaluationType[]).map((key) => (
+                <Button 
+                  key={key} 
+                  variant="outline" 
+                  className="justify-start h-auto py-3 text-left"
+                  onClick={() => setSelectedType(key)}
+                >
+                    <span className="font-semibold">{EVALUATION_TYPE_NAMES[key]}</span>
+                </Button>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={handleClose}>
+                Cancelar
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>{EVALUATION_TYPE_NAMES[selectedType]}</DialogTitle>
+              <DialogDescription>
+                Evalúa a <strong>{provider.businessName}</strong> en una escala de 1 a 5.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -218,7 +244,6 @@ export function EvaluationModal({
                       )}
                     />
                   ))}
-
                   <FormField
                     control={form.control}
                     name="comments"
@@ -236,16 +261,14 @@ export function EvaluationModal({
                     )}
                   />
                 </div>
-
                 <div className="flex items-center justify-end gap-4 rounded-lg bg-muted/50 p-4">
                   <span className="text-lg font-semibold">Puntaje Total:</span>
                   <span className="text-2xl font-bold text-primary">
                     {totalScore.toFixed(2)} / 5.00
                   </span>
                 </div>
-
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={onClose}>
+                  <Button type="button" variant="outline" onClick={handleClose}>
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={isSubmitting}>
@@ -258,10 +281,6 @@ export function EvaluationModal({
               </form>
             </Form>
           </>
-        ) : (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
         )}
       </DialogContent>
     </Dialog>
