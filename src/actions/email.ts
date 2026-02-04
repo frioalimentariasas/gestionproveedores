@@ -177,7 +177,7 @@ export async function notifyProviderPasswordReset({
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
   `;
-
+  
   return await sendTransactionalEmail({
     to: [{ email: providerEmail, name: providerName }],
     subject,
@@ -209,6 +209,32 @@ export async function notifyProviderAccountStatus({
   
   return await sendTransactionalEmail({
     to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
+/**
+ * Notifies the admin that a disabled user has requested to have their account reactivated.
+ */
+export async function notifyAdminOfReactivationRequest({
+  providerEmail,
+}: {
+  providerEmail: string;
+}) {
+  if (!ADMIN_EMAIL) {
+    return { success: false, error: 'Admin email not configured.' };
+  }
+
+  const subject = `Solicitud de Reactivación de Cuenta: ${providerEmail}`;
+  const htmlContent = `
+    <h1>Solicitud de Reactivación de Cuenta</h1>
+    <p>El proveedor con el correo electrónico <strong>${providerEmail}</strong> ha solicitado que su cuenta sea reactivada.</p>
+    <p>Por favor, inicie sesión en el panel de administración para revisar y habilitar la cuenta si lo considera apropiado.</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: ADMIN_EMAIL }],
     subject,
     htmlContent,
   });
