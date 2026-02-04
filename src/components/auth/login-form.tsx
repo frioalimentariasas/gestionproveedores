@@ -38,6 +38,7 @@ export function LoginForm() {
   const auth = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
   const [showDisabledDialog, setShowDisabledDialog] = useState(false);
   const [attemptedEmail, setAttemptedEmail] = useState('');
 
@@ -79,11 +80,13 @@ export function LoginForm() {
   }
 
   const handleReactivationRequest = async () => {
-    setShowDisabledDialog(false);
     if (!attemptedEmail) return;
 
+    setIsReactivating(true);
     const result = await notifyAdminOfReactivationRequest({ providerEmail: attemptedEmail });
-    
+    setShowDisabledDialog(false);
+    setIsReactivating(false);
+
     if (result.success) {
       toast({
         title: 'Solicitud Enviada',
@@ -93,7 +96,7 @@ export function LoginForm() {
       toast({
         variant: 'destructive',
         title: 'Error al enviar la solicitud',
-        description: 'No se pudo enviar la solicitud. Por favor, intenta de nuevo más tarde o contacta a soporte.',
+        description: result.error || 'No se pudo enviar la solicitud. Por favor, intenta de nuevo más tarde o contacta a soporte.',
       });
     }
   };
@@ -165,8 +168,8 @@ export function LoginForm() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cerrar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReactivationRequest}>
-              Solicitar Activación
+            <AlertDialogAction onClick={handleReactivationRequest} disabled={isReactivating}>
+              {isReactivating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Solicitar Activación'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

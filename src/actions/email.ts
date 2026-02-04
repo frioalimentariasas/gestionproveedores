@@ -1,5 +1,10 @@
 'use server';
 
+// The Brevo API key and Admin email are sensitive and should be stored in environment variables.
+// Ensure you have a .env.local file with:
+// BREVO_API_KEY=your_brevo_api_key
+// ADMIN_EMAIL=your_admin_email@example.com
+
 if (!process.env.BREVO_API_KEY) {
   console.error('BREVO_API_KEY is not set. Emails will not be sent.');
 }
@@ -16,6 +21,10 @@ interface SendEmailParams {
   sender?: { email: string; name?: string };
 }
 
+/**
+ * Sends a transactional email using the Brevo (formerly Sendinblue) API via fetch.
+ * This avoids issues with the Brevo SDK in Next.js server components.
+ */
 async function sendTransactionalEmail({
   to,
   subject,
@@ -24,11 +33,13 @@ async function sendTransactionalEmail({
     email: 'no-reply@frioalimentaria.com.co',
     name: 'Frioalimentaria SAS',
   },
-}: SendEmailParams) {
+}: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
   const apiKey = process.env.BREVO_API_KEY;
+
   if (!apiKey) {
-    console.error('Brevo API key is not configured. Email not sent.');
-    return { success: false, error: 'Brevo API key is not configured.' };
+    const errorMsg = 'Brevo API key is not configured.';
+    console.error(`sendTransactionalEmail failed: ${errorMsg}`);
+    return { success: false, error: errorMsg };
   }
 
   const payload = {
@@ -50,21 +61,21 @@ async function sendTransactionalEmail({
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error sending Brevo email:', errorData);
-      const errorMessage = `Brevo API Error: ${response.status} ${response.statusText}. Message: ${errorData.message || 'No additional details.'}`;
-      throw new Error(errorMessage);
+      const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from Brevo API.' }));
+      const errorMessage = `Brevo API Error: ${response.status} ${response.statusText}. Details: ${errorData.message || 'No additional details provided.'}`;
+      console.error('Error sending Brevo email:', errorMessage, errorData);
+      return { success: false, error: errorMessage };
     }
 
     const data = await response.json();
     console.log('Brevo email sent successfully. Message ID:', data.messageId);
     return { success: true, data };
   } catch (error) {
-    console.error('Error in sendTransactionalEmail:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred while sending the email.' };
+    console.error('Error in sendTransactionalEmail fetch call:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown network error occurred while sending the email.';
+    return { success: false, error: errorMessage };
   }
 }
-
 
 // --- Email Notification Actions ---
 
@@ -80,7 +91,11 @@ export async function notifyAdminOfNewProvider({
   documentNumber: string;
   email: string;
 }) {
-  if (!ADMIN_EMAIL) return;
+  if (!ADMIN_EMAIL) {
+    const errorMsg = 'Admin email is not configured. Cannot send new provider notification.';
+    console.warn(errorMsg);
+    return { success: false, error: errorMsg };
+  }
 
   const subject = `Nuevo Proveedor Registrado: ${businessName}`;
   const htmlContent = `
@@ -94,7 +109,7 @@ export async function notifyAdminOfNewProvider({
     <p>Puedes revisar los detalles en el panel de administración.</p>
   `;
 
-  await sendTransactionalEmail({
+  return await sendTransactionalEmail({
     to: [{ email: ADMIN_EMAIL }],
     subject,
     htmlContent,
@@ -111,7 +126,11 @@ export async function notifyAdminOfFormUpdate({
   businessName: string;
   email: string;
 }) {
-  if (!ADMIN_EMAIL) return;
+  if (!ADMIN_EMAIL) {
+    const errorMsg = 'Admin email is not configured. Cannot send form update notification.';
+    console.warn(errorMsg);
+    return { success: false, error: errorMsg };
+  }
 
   const subject = `Proveedor Actualizó su Información: ${businessName}`;
   const htmlContent = `
@@ -120,7 +139,7 @@ export async function notifyAdminOfFormUpdate({
     <p>Los datos han sido bloqueados y están listos para tu revisión en el panel de administración.</p>
   `;
 
-  await sendTransactionalEmail({
+  return await sendTransactionalEmail({
     to: [{ email: ADMIN_EMAIL }],
     subject,
     htmlContent,
@@ -142,13 +161,13 @@ export async function notifyProviderFormUnlocked({
     <h1>Hola, ${providerName}</h1>
     <p>Te informamos que tu formulario de proveedor en la plataforma de Frioalimentaria ha sido <strong>habilitado para edición</strong>.</p>
     <p>Ahora puedes iniciar sesión y realizar los cambios necesarios en tu información.</p>
-    <p>Una vez que guardes los cambios, el formulario se bloqueará nuevamente.</p>
+    <p>Una vez que guardes los cambios, el formulario se volverá a bloquear.</p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
   `;
 
-  await sendTransactionalEmail({
+  return await sendTransactionalEmail({
     to: [{ email: providerEmail, name: providerName }],
     subject,
     htmlContent,
@@ -223,7 +242,9 @@ export async function notifyAdminOfReactivationRequest({
   providerEmail: string;
 }) {
   if (!ADMIN_EMAIL) {
-    return { success: false, error: 'Admin email not configured.' };
+    const errorMsg = 'Admin email is not configured. Cannot send reactivation request.';
+    console.warn(errorMsg);
+    return { success: false, error: errorMsg };
   }
 
   const subject = `Solicitud de Reactivación de Cuenta: ${providerEmail}`;
