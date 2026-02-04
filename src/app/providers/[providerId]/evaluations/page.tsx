@@ -3,8 +3,6 @@
 
 import {
   collection,
-  query,
-  orderBy,
   Timestamp,
   deleteDoc,
   doc,
@@ -20,7 +18,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
 import { Loader2, ArrowLeft, Trash2, Star, Calendar } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   EVALUATION_TYPE_NAMES,
   type EvaluationType,
@@ -71,10 +69,7 @@ export default function ProviderEvaluationsPage() {
   const evaluationsCollectionRef = useMemoFirebase(
     () =>
       firestore && providerId
-        ? query(
-            collection(firestore, 'providers', providerId, 'evaluations'),
-            orderBy('createdAt', 'desc')
-          )
+        ? collection(firestore, 'providers', providerId, 'evaluations')
         : null,
     [firestore, providerId]
   );
@@ -84,6 +79,15 @@ export default function ProviderEvaluationsPage() {
     isLoading: isEvaluationsLoading,
     error,
   } = useCollection<Evaluation>(evaluationsCollectionRef);
+  
+  const sortedEvaluations = useMemo(() => {
+    if (!evaluations) return [];
+    return [...evaluations].sort((a, b) => {
+      const dateA = a.createdAt?.toDate() ?? new Date(0);
+      const dateB = b.createdAt?.toDate() ?? new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [evaluations]);
 
   useEffect(() => {
     if (!isRoleLoading && !isAdmin) {
@@ -160,9 +164,9 @@ export default function ProviderEvaluationsPage() {
           <div className="w-24"></div> {/* Spacer */}
         </div>
 
-        {evaluations && evaluations.length > 0 ? (
+        {sortedEvaluations && sortedEvaluations.length > 0 ? (
           <div className="space-y-4">
-            {evaluations.map((evaluation) => (
+            {sortedEvaluations.map((evaluation) => (
               <Card key={evaluation.id}>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-start">
