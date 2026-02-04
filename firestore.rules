@@ -125,14 +125,12 @@ service cloud.firestore {
       /**
        * @description Rules for the `evaluations` subcollection. Only admins can read or write.
        * @path /providers/{providerId}/evaluations/{evaluationId}
-       * @allow (list) An admin user listing all evaluations for a provider.
-       * @allow (get, write) An admin user reading or writing a specific evaluation.
+       * @allow (read, write) An admin user reading, listing, or writing evaluations.
        * @deny (read, write) Any non-admin user.
        * @principle Protects sensitive evaluation data, restricting all access to authorized personnel.
        */
       match /evaluations/{evaluationId} {
-        allow list: if isAdmin();
-        allow get, write: if isAdmin();
+        allow read, write: if isAdmin();
       }
     }
 
