@@ -313,6 +313,7 @@ export default function ProvidersTable() {
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
                               <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
                                 onClick={() =>
                                   setEvaluationTarget({ provider, type: 'provider_selection' })
                                 }
@@ -320,6 +321,7 @@ export default function ProvidersTable() {
                                 Evaluación de Selección
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
                                 onClick={() =>
                                   setEvaluationTarget({ provider, type: 'provider_performance' })
                                 }
@@ -327,6 +329,7 @@ export default function ProvidersTable() {
                                 Evaluación de Desempeño
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
                                 onClick={() =>
                                   setEvaluationTarget({ provider, type: 'contractor_evaluation' })
                                 }

@@ -165,7 +165,6 @@ export function EvaluationModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className="sm:max-w-[600px]"
-        onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {modalData.provider && modalData.evaluationType ? (
           <>
