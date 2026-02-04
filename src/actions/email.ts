@@ -7,12 +7,14 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 // The admin email to which notifications are sent.
 const ADMIN_EMAIL = 'asistente@frioalimentaria.com.co';
+const SENDER_EMAIL = 'asistente@frioalimentaria.com.co';
 
 interface SendEmailParams {
   to: { email: string; name?: string }[];
   subject: string;
   htmlContent: string;
   sender?: { email: string; name?: string };
+  replyTo?: { email: string; name?: string };
 }
 
 /**
@@ -23,9 +25,10 @@ async function sendTransactionalEmail({
   subject,
   htmlContent,
   sender = {
-    email: 'no-reply@frioalimentaria.com.co',
+    email: SENDER_EMAIL,
     name: 'Frioalimentaria SAS',
   },
+  replyTo
 }: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
   if (!BREVO_API_KEY) {
     const errorMsg = 'Brevo API key is not configured. Cannot send email.';
@@ -33,12 +36,16 @@ async function sendTransactionalEmail({
     return { success: false, error: errorMsg };
   }
 
-  const payload = {
+  const payload: any = {
     sender,
     to,
     subject,
     htmlContent,
   };
+
+  if (replyTo) {
+    payload.replyTo = replyTo;
+  }
 
   try {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -98,6 +105,7 @@ export async function notifyAdminOfNewProvider({
     to: [{ email: ADMIN_EMAIL }],
     subject,
     htmlContent,
+    replyTo: { email: email, name: businessName },
   });
 }
 
@@ -122,6 +130,7 @@ export async function notifyAdminOfFormUpdate({
     to: [{ email: ADMIN_EMAIL }],
     subject,
     htmlContent,
+    replyTo: { email: email, name: businessName },
   });
 }
 
@@ -188,12 +197,11 @@ export async function notifyProviderPasswordReset({
  */
 export async function notifyProviderAccountStatus({
   providerEmail,
-inject,
   providerName,
   status,
 }: {
   providerEmail: string;
-  providerName:string;
+  providerName: string;
   status: 'activada' | 'desactivada';
 }) {
   const subject = `Su cuenta de proveedor ha sido ${status}`;
