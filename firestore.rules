@@ -57,14 +57,12 @@ service cloud.firestore {
     }
 
     /**
-     * Checks if the user has an admin role by verifying their UID in the `roles_admin`
-     * collection OR if their email is in the hardcoded list of admin emails.
+     * Checks if the user has an admin role by verifying their email is in the hardcoded list.
+     * The database role check has been temporarily removed for debugging.
      */
     function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
-        request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co']
-      );
+      return isSignedIn() &&
+        request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co'];
     }
 
     /**
