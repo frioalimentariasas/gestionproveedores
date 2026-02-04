@@ -23,7 +23,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -58,10 +58,19 @@ export function EvaluationModal({
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Moved hooks to be unconditional
+  // Internal state to hold the data while the modal is open/closing.
+  // This prevents the content from disappearing during the closing animation, which fixes the focus issue.
+  const [modalData, setModalData] = useState({ provider, evaluationType });
+
+  useEffect(() => {
+    if (isOpen) {
+      setModalData({ provider, evaluationType });
+    }
+  }, [isOpen, provider, evaluationType]);
+
   const criteria = useMemo(
-    () => (evaluationType ? EVALUATION_CRITERIA[evaluationType] : []),
-    [evaluationType]
+    () => (modalData.evaluationType ? EVALUATION_CRITERIA[modalData.evaluationType] : []),
+    [modalData.evaluationType]
   );
 
   const defaultScores = useMemo(
@@ -86,9 +95,9 @@ export function EvaluationModal({
       return total + score * criterion.weight;
     }, 0);
   }, [watchedScores, criteria]);
-
+  
   useEffect(() => {
-    // Reset form when the modal is opened with new data
+    // Reset form only when the modal is freshly opened with new data.
     if (isOpen) {
       form.reset({
         scores: defaultScores,
@@ -97,8 +106,9 @@ export function EvaluationModal({
     }
   }, [isOpen, defaultScores, form]);
 
+
   async function onSubmit(values: EvaluationFormValues) {
-    if (!user || !firestore || !provider || !evaluationType) {
+    if (!user || !firestore || !modalData.provider || !modalData.evaluationType) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -108,55 +118,57 @@ export function EvaluationModal({
     }
 
     setIsSubmitting(true);
-
-    try {
-      const evaluationsCollection = collection(
-        firestore,
-        'providers',
-        provider.id,
-        'evaluations'
-      );
-      await addDoc(evaluationsCollection, {
-        providerId: provider.id,
+    
+    const dataToSave = {
+        providerId: modalData.provider.id,
         evaluatorId: user.uid,
         evaluatorName: user.displayName || user.email,
-        evaluationType: evaluationType,
+        evaluationType: modalData.evaluationType,
         scores: values.scores,
         totalScore: totalScore,
         comments: values.comments || '',
         createdAt: serverTimestamp(),
-      });
+      };
 
-      toast({
-        title: 'Evaluación Guardada',
-        description: `Se ha guardado la evaluación para ${provider.businessName}.`,
+    const evaluationsCollection = collection(
+      firestore,
+      'providers',
+      modalData.provider.id,
+      'evaluations'
+    );
+      
+    addDoc(evaluationsCollection, dataToSave)
+      .then(() => {
+        toast({
+          title: 'Evaluación Guardada',
+          description: `Se ha guardado la evaluación para ${modalData.provider?.businessName}.`,
+        });
+        onClose();
+      })
+      .catch((error) => {
+         const permissionError = new FirestorePermissionError({
+          path: evaluationsCollection.path,
+          operation: 'create',
+          requestResourceData: dataToSave
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      onClose();
-    } catch (error) {
-      console.error('Error saving evaluation: ', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al guardar',
-        description:
-          'No se pudo guardar la evaluación. Por favor, inténtalo de nuevo.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
   }
 
-  // Conditional rendering is now inside the component's return statement
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
-        {provider && evaluationType ? (
+        {modalData.provider && modalData.evaluationType ? (
           <>
             <DialogHeader>
               <DialogTitle>
-                {EVALUATION_TYPE_NAMES[evaluationType]}
+                {EVALUATION_TYPE_NAMES[modalData.evaluationType]}
               </DialogTitle>
               <DialogDescription>
-                Evalúa a <strong>{provider.businessName}</strong> en una escala
+                Evalúa a <strong>{modalData.provider.businessName}</strong> en una escala
                 de 1 a 5.
               </DialogDescription>
             </DialogHeader>
