@@ -313,26 +313,26 @@ export default function ProvidersTable() {
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
                               <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                onClick={() =>
-                                  setEvaluationTarget({ provider, type: 'provider_selection' })
-                                }
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setEvaluationTarget({ provider, type: 'provider_selection' });
+                                }}
                               >
                                 Evaluación de Selección
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                onClick={() =>
-                                  setEvaluationTarget({ provider, type: 'provider_performance' })
-                                }
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setEvaluationTarget({ provider, type: 'provider_performance' });
+                                }}
                               >
                                 Evaluación de Desempeño
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                onClick={() =>
-                                  setEvaluationTarget({ provider, type: 'contractor_evaluation' })
-                                }
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setEvaluationTarget({ provider, type: 'contractor_evaluation' });
+                                }}
                               >
                                 Evaluación de Contratista
                               </DropdownMenuItem>

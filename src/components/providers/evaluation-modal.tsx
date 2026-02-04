@@ -59,8 +59,6 @@ export function EvaluationModal({
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Internal state to hold the data while the modal is open/closing.
-  // This prevents the content from disappearing during the closing animation.
   const [modalData, setModalData] = useState({ provider, evaluationType });
 
   useEffect(() => {
@@ -90,7 +88,6 @@ export function EvaluationModal({
     },
   });
 
-  // Reset form only when the modal is freshly opened with new data.
   useEffect(() => {
     if (isOpen) {
       form.reset({
@@ -165,6 +162,9 @@ export function EvaluationModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className="sm:max-w-[600px]"
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+        }}
       >
         {modalData.provider && modalData.evaluationType ? (
           <>
