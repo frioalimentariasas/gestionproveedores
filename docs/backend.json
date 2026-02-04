@@ -193,13 +193,69 @@
         },
         "email": {
           "type": "string",
-          "description": "Email address of the admin user.  Used for login.",
+          "description": "Email address of the admin user. Used for login.",
           "format": "email"
         }
       },
       "required": [
         "id",
         "email"
+      ]
+    },
+    "Evaluation": {
+      "title": "Evaluation",
+      "type": "object",
+      "description": "Stores an evaluation record for a provider or contractor.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the evaluation."
+        },
+        "providerId": {
+          "type": "string",
+          "description": "ID of the provider being evaluated."
+        },
+        "evaluatorId": {
+          "type": "string",
+          "description": "ID of the admin who performed the evaluation."
+        },
+        "evaluatorName": {
+          "type": "string",
+          "description": "Name of the admin who performed the evaluation."
+        },
+        "evaluationType": {
+          "type": "string",
+          "enum": [
+            "provider_selection",
+            "provider_performance",
+            "contractor_evaluation"
+          ]
+        },
+        "scores": {
+          "type": "object",
+          "description": "Object containing scores for each criterion."
+        },
+        "totalScore": {
+          "type": "number",
+          "description": "The final weighted score."
+        },
+        "comments": {
+          "type": "string",
+          "description": "Additional comments or notes."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "providerId",
+        "evaluatorId",
+        "evaluationType",
+        "scores",
+        "totalScore",
+        "createdAt"
       ]
     }
   },
@@ -228,6 +284,26 @@
         }
       },
       {
+        "path": "providers/{providerId}/evaluations/{evaluationId}",
+        "definition": {
+          "entityName": "Evaluation",
+          "schema": {
+            "$ref": "#/backend/entities/Evaluation"
+          },
+          "description": "Stores evaluation records for a specific provider. Only admins can access.",
+          "params": [
+            {
+              "name": "providerId",
+              "description": "The UID of the provider."
+            },
+            {
+              "name": "evaluationId",
+              "description": "The unique ID for the evaluation record."
+            }
+          ]
+        }
+      },
+      {
         "path": "roles_admin/{adminId}",
         "definition": {
           "entityName": "AdminUser",
@@ -244,6 +320,6 @@
         }
       }
     ],
-    "reasoning": "This design prioritizes security and scalability for the Gestión de Proveedores application, focusing on Authorization Independence and clear data segregation.  The core entities are `Provider` and `AdminUser`. Providers will self-register and manage their information, while admins will have read-only access to provider data.\\n\\n**Authorization Independence:**  The `providers/{providerId}` collection relies on the `request.auth.uid` being equal to the `{providerId}` to ensure providers can only access their own data. No `get()` calls are needed in security rules, enabling atomic operations.\\n\\n**QAPs (Rules are not Filters):**\\n*   Secure `list` operations are supported because the structure segregates provider data into individual documents (`providers/{providerId}`).  Listing providers requires admin privileges enforced by the `roles_admin/{uid}` collection. Normal users cannot list providers, preventing data leakage.\\n*   The `roles_admin/{uid}` collection uses \"existence over content\", simply checking if a document exists to grant admin privileges. This is a secure and scalable approach.\\n\\n**Invariants:**\\n*   Ownership:  The `providers/{providerId}` path ensures that each provider can only manage their own data, determined by their `uid`.\\n*   Data Integrity:  The schema defines the required fields for a provider, ensuring consistent data across all provider profiles.\\n\\n**Denormalization:** No explicit denormalization is required in this structure, as Authorization Independence is achieved through the path-based ownership of provider documents. If, in the future, admin users needed to update provider data, a `lastUpdatedBy` field could be added to the `Provider` schema to track who made the update, though this is not a current requirement."
+    "reasoning": "This design prioritizes security and scalability for the Gestión de Proveedores application, focusing on Authorization Independence and clear data segregation.  The core entities are `Provider`, `AdminUser`, and `Evaluation`. Providers self-register and manage their information. Admins have read-only access to provider data and full control over evaluations. The `evaluations` are stored as a subcollection under each provider for clear data ownership and efficient querying.\\n\\n**Authorization Independence:**  The `providers/{providerId}` collection relies on the `request.auth.uid` being equal to the `{providerId}` to ensure providers can only access their own data. The `evaluations` subcollection is restricted to admins only.\\n\\n**QAPs (Rules are not Filters):**\\n*   Secure `list` operations are supported for admins on the `providers` collection. Providers cannot list other providers. Admins can list evaluations for a specific provider.\\n*   The `roles_admin/{uid}` collection uses \"existence over content\", simply checking if a document exists to grant admin privileges. This is a secure and scalable approach.\\n\\n**Invariants:**\\n*   Ownership:  The `providers/{providerId}` path ensures that each provider can only manage their own data, determined by their `uid`. Evaluations are owned by the system and managed by admins.\\n*   Data Integrity:  The schemas define the required fields, ensuring consistent data structures.\\n\\n**Denormalization:** No explicit denormalization is required in this structure, as Authorization Independence is achieved through the path-based ownership of provider documents."
   }
 }

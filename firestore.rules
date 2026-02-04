@@ -121,6 +121,17 @@ service cloud.firestore {
       allow create: if isCreatingOwnProviderProfile(providerId);
       allow update: if (isExistingOwner(providerId) || isExistingAdmin()) && hasImmutableProviderId();
       allow delete: if isExistingOwner(providerId);
+      
+      /**
+       * @description Rules for the `evaluations` subcollection. Only admins can read or write.
+       * @path /providers/{providerId}/evaluations/{evaluationId}
+       * @allow (read, write) An admin user creating, reading, updating, or deleting an evaluation.
+       * @deny (read, write) Any non-admin user.
+       * @principle Protects sensitive evaluation data, restricting access to authorized personnel.
+       */
+      match /evaluations/{evaluationId} {
+        allow read, write: if isAdmin();
+      }
     }
 
     /**

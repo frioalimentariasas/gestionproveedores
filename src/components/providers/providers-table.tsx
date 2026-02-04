@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -16,6 +17,7 @@ import {
   Unlock,
   UserCheck,
   UserX,
+  ChevronDown,
 } from 'lucide-react';
 import {
   Table,
@@ -36,6 +38,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   notifyProviderFormUnlocked,
   notifyProviderPasswordReset,
@@ -64,6 +72,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../ui/dialog';
+import { type EvaluationType } from '@/lib/evaluations';
+import { EvaluationModal } from './evaluation-modal';
 
 interface Provider {
   id: string;
@@ -87,6 +97,8 @@ export default function ProvidersTable() {
     provider: Provider | null;
     newPassword?: string;
   }>({ type: null, provider: null });
+
+  const [evaluationTarget, setEvaluationTarget] = useState<{ provider: Provider; type: EvaluationType } | null>(null);
 
   const providersQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'providers')) : null),
@@ -287,6 +299,46 @@ export default function ProvidersTable() {
                             <p>Ver Formulario</p>
                           </TooltipContent>
                         </Tooltip>
+
+                        <DropdownMenu>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  Evaluar
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Realizar una evaluación</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setEvaluationTarget({ provider, type: 'provider_selection' })
+                              }
+                            >
+                              Evaluación de Selección
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setEvaluationTarget({ provider, type: 'provider_performance' })
+                              }
+                            >
+                              Evaluación de Desempeño
+                            </DropdownMenuItem>
+                             <DropdownMenuItem
+                              onClick={() =>
+                                setEvaluationTarget({ provider, type: 'contractor_evaluation' })
+                              }
+                            >
+                              Evaluación de Contratista
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -383,6 +435,15 @@ export default function ProvidersTable() {
         </Table>
       </div>
       
+      {evaluationTarget && (
+        <EvaluationModal
+          isOpen={!!evaluationTarget}
+          onClose={() => setEvaluationTarget(null)}
+          provider={evaluationTarget.provider}
+          evaluationType={evaluationTarget.type}
+        />
+      )}
+
       {/* Password Reset Dialog */}
       <Dialog
         open={dialogState.type === 'password'}

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EVALUATION_CRITERIA } from './evaluations';
 
 export const loginSchema = z.object({
   email: z
@@ -196,3 +197,11 @@ export const providerFormSchema = z
       }
     }
   });
+
+// Schema for evaluation form
+const baseScores = z.record(z.string(), z.number().min(1).max(5));
+
+export const evaluationSchema = z.object({
+  scores: baseScores,
+  comments: z.string().optional(),
+});

@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { providerFormSchema } from '@/lib/schemas';
 import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
-import { Loader2, ArrowLeft, FileDown, FileText, Printer } from 'lucide-react';
+import { Loader2, ArrowLeft, FileDown, FileText, Printer, ClipboardList } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 import * as XLSX from 'xlsx';
+import Link from 'next/link';
 
 type ProviderData = z.infer<typeof providerFormSchema>;
 
@@ -460,6 +461,12 @@ export default function ProviderViewPage() {
             </p>
           </div>
           <div className="flex gap-2">
+             <Button variant="outline" asChild>
+                <Link href={`/providers/${providerId}/evaluations`}>
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Ver Evaluaciones
+                </Link>
+              </Button>
             <Button onClick={handleExportPdf} disabled={isPdfGenerating}>
               {isPdfGenerating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
