@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -17,7 +16,9 @@ import {
   Unlock,
   UserCheck,
   UserX,
-  ChevronDown,
+  MoreHorizontal,
+  ClipboardList,
+  PlusCircle,
 } from 'lucide-react';
 import {
   Table,
@@ -33,22 +34,17 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
-import {
-  notifyProviderFormUnlocked,
-  notifyProviderPasswordReset,
-  notifyProviderAccountStatus,
-} from '@/actions/email';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +70,7 @@ import {
 } from '../ui/dialog';
 import { type EvaluationType } from '@/lib/evaluations';
 import { EvaluationModal } from './evaluation-modal';
+import { cn } from '@/lib/utils';
 
 interface Provider {
   id: string;
@@ -281,153 +278,103 @@ export default function ProvidersTable() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    {actionState[provider.id] ? (
+                  {actionState[provider.id] ? (
+                    <div className="flex items-center justify-center">
                       <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/providers/${provider.id}/view`}>
-                                <Eye className="h-4 w-4" />
-                                <span className="sr-only">Ver Formulario</span>
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Ver Formulario</p>
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <DropdownMenu>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  Evaluar
-                                  <ChevronDown className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Realizar una evaluación</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setEvaluationTarget({ provider, type: 'provider_selection' })
-                              }
-                            >
-                              Evaluación de Selección
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setEvaluationTarget({ provider, type: 'provider_performance' })
-                              }
-                            >
-                              Evaluación de Desempeño
-                            </DropdownMenuItem>
-                             <DropdownMenuItem
-                              onClick={() =>
-                                setEvaluationTarget({ provider, type: 'contractor_evaluation' })
-                              }
-                            >
-                              Evaluación de Contratista
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleToggleLock(provider)}
-                            >
-                              {provider.formLocked ? (
-                                <Unlock className="h-4 w-4" />
-                              ) : (
-                                <Lock className="h-4 w-4" />
-                              )}
-                              <span className="sr-only">
-                                {provider.formLocked
-                                  ? 'Habilitar Edición'
-                                  : 'Bloquear Formulario'}
-                              </span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {provider.formLocked
-                                ? 'Habilitar Edición'
-                                : 'Bloquear Formulario'}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setDialogState({
-                                  type: 'password',
-                                  provider: provider,
-                                })
-                              }
-                            >
-                              <KeyRound className="h-4 w-4" />
-                              <span className="sr-only">
-                                Restablecer Contraseña
-                              </span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Restablecer Contraseña</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className={
-                                provider.disabled
-                                  ? 'text-green-600 hover:text-green-700'
-                                  : 'text-destructive hover:text-destructive'
-                              }
-                              onClick={() =>
-                                setDialogState({
-                                  type: 'status',
-                                  provider: provider,
-                                })
-                              }
-                            >
-                              {provider.disabled ? (
-                                <UserCheck className="h-4 w-4" />
-                              ) : (
-                                <UserX className="h-4 w-4" />
-                              )}
-                              <span className="sr-only">
-                                {provider.disabled
-                                  ? 'Activar Proveedor'
-                                  : 'Desactivar Proveedor'}
-                              </span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {provider.disabled
-                                ? 'Activar Proveedor'
-                                : 'Desactivar Proveedor'}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Abrir menú</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href={`/providers/${provider.id}/view`} className="cursor-pointer">
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>Ver Formulario</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/providers/${provider.id}/evaluations`} className="cursor-pointer">
+                            <ClipboardList className="mr-2 h-4 w-4" />
+                            <span>Historial de Evaluaciones</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            <span>Nueva Evaluación</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setEvaluationTarget({ provider, type: 'provider_selection' })
+                                }
+                              >
+                                Evaluación de Selección
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setEvaluationTarget({ provider, type: 'provider_performance' })
+                                }
+                              >
+                                Evaluación de Desempeño
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setEvaluationTarget({ provider, type: 'contractor_evaluation' })
+                                }
+                              >
+                                Evaluación de Contratista
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleToggleLock(provider)}>
+                          {provider.formLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+                          <span>
+                            {provider.formLocked
+                              ? 'Habilitar Edición'
+                              : 'Bloquear Formulario'}
+                          </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setDialogState({ type: 'password', provider: provider })
+                          }
+                        >
+                          <KeyRound className="mr-2 h-4 w-4" />
+                          <span>Restablecer Contraseña</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className={cn(
+                            provider.disabled
+                              ? 'text-green-600 focus:text-green-700'
+                              : 'text-destructive focus:text-destructive'
+                          )}
+                          onClick={() =>
+                            setDialogState({ type: 'status', provider: provider })
+                          }
+                        >
+                          {provider.disabled ? (
+                            <UserCheck className="mr-2 h-4 w-4" />
+                          ) : (
+                            <UserX className="mr-2 h-4 w-4" />
+                          )}
+                          <span>
+                            {provider.disabled ? 'Activar Proveedor' : 'Desactivar Proveedor'}
+                          </span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
