@@ -23,7 +23,8 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, useUser, errorEmitter } from '@/firebase';
+import { FirestorePermissionError } from '@/firebase/errors';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -59,7 +60,7 @@ export function EvaluationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Internal state to hold the data while the modal is open/closing.
-  // This prevents the content from disappearing during the closing animation, which fixes the focus issue.
+  // This prevents the content from disappearing during the closing animation.
   const [modalData, setModalData] = useState({ provider, evaluationType });
 
   useEffect(() => {
@@ -69,7 +70,10 @@ export function EvaluationModal({
   }, [isOpen, provider, evaluationType]);
 
   const criteria = useMemo(
-    () => (modalData.evaluationType ? EVALUATION_CRITERIA[modalData.evaluationType] : []),
+    () =>
+      modalData.evaluationType
+        ? EVALUATION_CRITERIA[modalData.evaluationType]
+        : [],
     [modalData.evaluationType]
   );
 
@@ -86,6 +90,16 @@ export function EvaluationModal({
     },
   });
 
+  // Reset form only when the modal is freshly opened with new data.
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        scores: defaultScores,
+        comments: '',
+      });
+    }
+  }, [isOpen, defaultScores, form]);
+
   const watchedScores = form.watch('scores');
 
   const totalScore = useMemo(() => {
@@ -95,17 +109,6 @@ export function EvaluationModal({
       return total + score * criterion.weight;
     }, 0);
   }, [watchedScores, criteria]);
-  
-  useEffect(() => {
-    // Reset form only when the modal is freshly opened with new data.
-    if (isOpen) {
-      form.reset({
-        scores: defaultScores,
-        comments: '',
-      });
-    }
-  }, [isOpen, defaultScores, form]);
-
 
   async function onSubmit(values: EvaluationFormValues) {
     if (!user || !firestore || !modalData.provider || !modalData.evaluationType) {
@@ -118,17 +121,17 @@ export function EvaluationModal({
     }
 
     setIsSubmitting(true);
-    
+
     const dataToSave = {
-        providerId: modalData.provider.id,
-        evaluatorId: user.uid,
-        evaluatorName: user.displayName || user.email,
-        evaluationType: modalData.evaluationType,
-        scores: values.scores,
-        totalScore: totalScore,
-        comments: values.comments || '',
-        createdAt: serverTimestamp(),
-      };
+      providerId: modalData.provider.id,
+      evaluatorId: user.uid,
+      evaluatorName: user.displayName || user.email,
+      evaluationType: modalData.evaluationType,
+      scores: values.scores,
+      totalScore: totalScore,
+      comments: values.comments || '',
+      createdAt: serverTimestamp(),
+    };
 
     const evaluationsCollection = collection(
       firestore,
@@ -136,7 +139,7 @@ export function EvaluationModal({
       modalData.provider.id,
       'evaluations'
     );
-      
+
     addDoc(evaluationsCollection, dataToSave)
       .then(() => {
         toast({
@@ -146,10 +149,10 @@ export function EvaluationModal({
         onClose();
       })
       .catch((error) => {
-         const permissionError = new FirestorePermissionError({
+        const permissionError = new FirestorePermissionError({
           path: evaluationsCollection.path,
           operation: 'create',
-          requestResourceData: dataToSave
+          requestResourceData: dataToSave,
         });
         errorEmitter.emit('permission-error', permissionError);
       })
@@ -160,7 +163,10 @@ export function EvaluationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent
+        className="sm:max-w-[600px]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {modalData.provider && modalData.evaluationType ? (
           <>
             <DialogHeader>
@@ -168,8 +174,8 @@ export function EvaluationModal({
                 {EVALUATION_TYPE_NAMES[modalData.evaluationType]}
               </DialogTitle>
               <DialogDescription>
-                Evalúa a <strong>{modalData.provider.businessName}</strong> en una escala
-                de 1 a 5.
+                Evalúa a <strong>{modalData.provider.businessName}</strong> en
+                una escala de 1 a 5.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -177,7 +183,7 @@ export function EvaluationModal({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
-                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-4">
+                <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-4">
                   {criteria.map((criterion) => (
                     <FormField
                       key={criterion.id}
@@ -198,11 +204,13 @@ export function EvaluationModal({
                                 max={5}
                                 step={1}
                                 defaultValue={[field.value]}
-                                onValueChange={(value) => field.onChange(value[0])}
+                                onValueChange={(value) =>
+                                  field.onChange(value[0])
+                                }
                                 className="flex-1"
                               />
                             </FormControl>
-                            <span className="font-bold w-8 text-center">
+                            <span className="w-8 text-center font-bold">
                               {field.value}
                             </span>
                           </div>
@@ -230,7 +238,7 @@ export function EvaluationModal({
                   />
                 </div>
 
-                <div className="flex justify-end items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-end gap-4 rounded-lg bg-muted/50 p-4">
                   <span className="text-lg font-semibold">Puntaje Total:</span>
                   <span className="text-2xl font-bold text-primary">
                     {totalScore.toFixed(2)} / 5.00
