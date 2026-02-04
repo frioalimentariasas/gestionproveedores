@@ -61,13 +61,11 @@ import {
   toggleUserStatus,
 } from '@/actions/user-management';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '../ui/dialog';
+  notifyProviderFormUnlocked,
+  notifyProviderPasswordReset,
+  notifyProviderAccountStatus,
+} from '@/actions/email';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { type EvaluationType } from '@/lib/evaluations';
 import { EvaluationModal } from './evaluation-modal';
 import { cn } from '@/lib/utils';
@@ -115,32 +113,34 @@ export default function ProvidersTable() {
     const dataToUpdate = { formLocked: !isCurrentlyLocked };
 
     setActionLoading(provider.id, true);
-    try {
-      await updateDoc(providerRef, dataToUpdate);
-
-      if (isCurrentlyLocked) {
-        await notifyProviderFormUnlocked({
-          providerEmail: provider.email,
-          providerName: provider.businessName,
+    // Use non-blocking update for better UI responsiveness
+    updateDoc(providerRef, dataToUpdate)
+      .then(() => {
+        if (isCurrentlyLocked) {
+          // Send notification only when unlocking
+          notifyProviderFormUnlocked({
+            providerEmail: provider.email,
+            providerName: provider.businessName,
+          });
+        }
+        toast({
+          title: 'Estado de Formulario Actualizado',
+          description: `El formulario del proveedor ha sido ${
+            !isCurrentlyLocked ? 'bloqueado' : 'habilitado para edición'
+          }.`,
         });
-      }
-
-      toast({
-        title: 'Estado de Formulario Actualizado',
-        description: `El formulario del proveedor ha sido ${
-          !isCurrentlyLocked ? 'bloqueado' : 'habilitado para edición'
-        }.`,
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: providerRef.path,
+          operation: 'update',
+          requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setActionLoading(provider.id, false);
       });
-    } catch (serverError: any) {
-      const permissionError = new FirestorePermissionError({
-        path: providerRef.path,
-        operation: 'update',
-        requestResourceData: dataToUpdate,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    } finally {
-      setActionLoading(provider.id, false);
-    }
   };
 
   const handleResetPassword = async () => {
@@ -279,7 +279,7 @@ export default function ProvidersTable() {
                 </TableCell>
                 <TableCell className="text-right">
                   {actionState[provider.id] ? (
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-end pr-4">
                       <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
                   ) : (
@@ -382,14 +382,12 @@ export default function ProvidersTable() {
         </Table>
       </div>
       
-      {evaluationTarget && (
-        <EvaluationModal
-          isOpen={!!evaluationTarget}
-          onClose={() => setEvaluationTarget(null)}
-          provider={evaluationTarget.provider}
-          evaluationType={evaluationTarget.type}
-        />
-      )}
+      <EvaluationModal
+        isOpen={!!evaluationTarget}
+        onClose={() => setEvaluationTarget(null)}
+        provider={evaluationTarget?.provider ?? null}
+        evaluationType={evaluationTarget?.type ?? null}
+      />
 
       {/* Password Reset Dialog */}
       <Dialog

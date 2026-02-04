@@ -1,8 +1,7 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,8 +32,8 @@ import { EVALUATION_CRITERIA, EVALUATION_TYPE_NAMES, type EvaluationType } from 
 interface EvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  provider: { id: string; businessName: string };
-  evaluationType: EvaluationType;
+  provider: { id: string; businessName: string } | null;
+  evaluationType: EvaluationType | null;
 }
 
 const evaluationSchema = z.object({
@@ -49,6 +48,10 @@ export function EvaluationModal({ isOpen, onClose, provider, evaluationType }: E
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!provider || !evaluationType) {
+    return null;
+  }
 
   const criteria = EVALUATION_CRITERIA[evaluationType];
   
