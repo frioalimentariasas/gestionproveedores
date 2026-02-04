@@ -1,18 +1,14 @@
 'use server';
 
-// The Brevo API key and Admin email are sensitive and should be stored in environment variables.
+// The Brevo API key is sensitive and should be stored in an environment variable.
 // Ensure you have a .env.local file with:
 // BREVO_API_KEY=your_brevo_api_key
-// ADMIN_EMAIL=your_admin_email@example.com
-
 if (!process.env.BREVO_API_KEY) {
   console.error('BREVO_API_KEY is not set. Emails will not be sent.');
 }
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-if (!ADMIN_EMAIL) {
-  console.warn('ADMIN_EMAIL is not set. Admin notifications will not be sent.');
-}
+// The admin email to which notifications are sent.
+const ADMIN_EMAIL = 'asistente@frioalimentaria.com.co';
 
 interface SendEmailParams {
   to: { email: string; name?: string }[];
@@ -22,8 +18,7 @@ interface SendEmailParams {
 }
 
 /**
- * Sends a transactional email using the Brevo (formerly Sendinblue) API via fetch.
- * This avoids issues with the Brevo SDK in Next.js server components.
+ * Sends a transactional email using the Brevo API via fetch.
  */
 async function sendTransactionalEmail({
   to,
@@ -37,7 +32,7 @@ async function sendTransactionalEmail({
   const apiKey = process.env.BREVO_API_KEY;
 
   if (!apiKey) {
-    const errorMsg = 'Brevo API key is not configured.';
+    const errorMsg = 'Brevo API key is not configured. Cannot send email.';
     console.error(`sendTransactionalEmail failed: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
@@ -91,12 +86,6 @@ export async function notifyAdminOfNewProvider({
   documentNumber: string;
   email: string;
 }) {
-  if (!ADMIN_EMAIL) {
-    const errorMsg = 'Admin email is not configured. Cannot send new provider notification.';
-    console.warn(errorMsg);
-    return { success: false, error: errorMsg };
-  }
-
   const subject = `Nuevo Proveedor Registrado: ${businessName}`;
   const htmlContent = `
     <h1>Nuevo Proveedor en la Plataforma</h1>
@@ -126,12 +115,6 @@ export async function notifyAdminOfFormUpdate({
   businessName: string;
   email: string;
 }) {
-  if (!ADMIN_EMAIL) {
-    const errorMsg = 'Admin email is not configured. Cannot send form update notification.';
-    console.warn(errorMsg);
-    return { success: false, error: errorMsg };
-  }
-
   const subject = `Proveedor Actualizó su Información: ${businessName}`;
   const htmlContent = `
     <h1>Actualización de Formulario</h1>
@@ -241,12 +224,6 @@ export async function notifyAdminOfReactivationRequest({
 }: {
   providerEmail: string;
 }) {
-  if (!ADMIN_EMAIL) {
-    const errorMsg = 'Admin email is not configured. Cannot send reactivation request.';
-    console.warn(errorMsg);
-    return { success: false, error: errorMsg };
-  }
-
   const subject = `Solicitud de Reactivación de Cuenta: ${providerEmail}`;
   const htmlContent = `
     <h1>Solicitud de Reactivación de Cuenta</h1>
