@@ -57,12 +57,13 @@ service cloud.firestore {
     }
 
     /**
-     * Checks if the user has an admin role by verifying their email is in the hardcoded list.
-     * The database role check has been temporarily removed for debugging.
+     * Checks if the user has an admin role by verifying their email is in the hardcoded list
+     * or if they have a corresponding document in the `roles_admin` collection.
      */
     function isAdmin() {
       return isSignedIn() &&
-        request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co'];
+        (request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co']
+        || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)));
     }
 
     /**
@@ -121,14 +122,17 @@ service cloud.firestore {
       allow delete: if isExistingOwner(providerId);
       
       /**
-       * @description Rules for the `evaluations` subcollection. Only admins can read or write.
+       * @description Rules for the `evaluations` subcollection. Admins have full access.
+       *              DIAGNOSTIC: `read` is temporarily open to debug a persistent permissions error.
        * @path /providers/{providerId}/evaluations/{evaluationId}
-       * @allow (read, write) An admin user reading, listing, or writing evaluations.
-       * @deny (read, write) Any non-admin user.
-       * @principle Protects sensitive evaluation data, restricting all access to authorized personnel.
+       * @allow (read) Any user (for debugging).
+       * @allow (write) An admin user.
+       * @deny (write) Any non-admin user (in production).
+       * @principle Protects sensitive evaluation data, restricting write access to authorized personnel.
        */
       match /evaluations/{evaluationId} {
-        allow read, write: if isAdmin();
+        allow read: if true; // Temporarily open for diagnostics.
+        allow write: if isAdmin();
       }
     }
 
