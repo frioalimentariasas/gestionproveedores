@@ -18,6 +18,7 @@ import {
   UserX,
   ClipboardList,
   PlusCircle,
+  Tag,
 } from 'lucide-react';
 import {
   Table,
@@ -59,9 +60,9 @@ import {
   notifyProviderAccountStatus,
 } from '@/actions/email';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
-import { type EvaluationType } from '@/lib/evaluations';
 import { EvaluationModal } from './evaluation-modal';
 import { cn } from '@/lib/utils';
+import { AssignCategoriesModal } from './assign-categories-modal';
 
 interface Provider {
   id: string;
@@ -70,6 +71,7 @@ interface Provider {
   email: string;
   formLocked?: boolean;
   disabled?: boolean;
+  categoryIds?: string[];
 }
 
 export default function ProvidersTable() {
@@ -85,7 +87,8 @@ export default function ProvidersTable() {
     newPassword?: string;
   }>({ type: null, provider: null });
 
-  const [evaluationTarget, setEvaluationTarget] = useState<{ provider: Provider | null; type: EvaluationType | null } | null>(null);
+  const [evaluationTarget, setEvaluationTarget] = useState<Provider | null>(null);
+  const [assignCategoriesTarget, setAssignCategoriesTarget] = useState<Provider | null>(null);
 
 
   const providersQuery = useMemoFirebase(
@@ -298,11 +301,19 @@ export default function ProvidersTable() {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setEvaluationTarget({ provider, type: null })}>
+                          <Button variant="ghost" size="icon" onClick={() => setEvaluationTarget(provider)}>
                             <PlusCircle className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent><p>Nueva Evaluación</p></TooltipContent>
+                      </Tooltip>
+                       <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => setAssignCategoriesTarget(provider)}>
+                            <Tag className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Asignar Categorías</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -341,8 +352,13 @@ export default function ProvidersTable() {
       <EvaluationModal
         isOpen={!!evaluationTarget}
         onClose={() => setEvaluationTarget(null)}
-        provider={evaluationTarget?.provider ?? null}
-        evaluationType={evaluationTarget?.type ?? null}
+        provider={evaluationTarget}
+      />
+      
+      <AssignCategoriesModal
+        isOpen={!!assignCategoriesTarget}
+        onClose={() => setAssignCategoriesTarget(null)}
+        provider={assignCategoriesTarget}
       />
 
       <Dialog

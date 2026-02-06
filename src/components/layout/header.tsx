@@ -29,6 +29,8 @@ import { useRole } from '@/hooks/use-role';
 const adminNavLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/providers', label: 'Gestión de Proveedores' },
+  { href: '/categories', label: 'Categorías' },
+  { href: '/comparison', label: 'Comparador' },
 ];
 
 const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];

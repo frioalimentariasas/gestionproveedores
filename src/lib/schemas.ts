@@ -171,6 +171,8 @@ export const providerFormSchema = z
     // Status fields
     formLocked: z.boolean().optional(),
     disabled: z.boolean().optional(),
+    // New field
+    categoryIds: z.array(z.string()).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.personType === 'Persona Jurídica') {
@@ -204,4 +206,9 @@ const baseScores = z.record(z.string(), z.number().min(1).max(5));
 export const evaluationSchema = z.object({
   scores: baseScores,
   comments: z.string().optional(),
+});
+
+export const categorySchema = z.object({
+  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+  description: z.string().optional(),
 });

@@ -159,6 +159,13 @@
           "type": "string",
           "description": "Name of the bank account holder."
         },
+        "categoryIds": {
+          "type": "array",
+          "description": "An array of category IDs to which this provider belongs.",
+          "items": {
+            "type": "string"
+          }
+        },
         "hseqSgsst": {
           "type": "string",
           "description": "Indicates if the company has an SG-SST in accordance with Decree 1072, with an evaluation result of resolution 0312/19, above 60% (Sí/No)."
@@ -257,6 +264,29 @@
         "totalScore",
         "createdAt"
       ]
+    },
+    "Category": {
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a category for grouping providers.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the category."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the category."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
     }
   },
   "auth": {
@@ -315,6 +345,22 @@
             {
               "name": "adminId",
               "description": "The UID of an administrator user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores all provider categories. Only admins can read and write.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique ID for the category record."
             }
           ]
         }
