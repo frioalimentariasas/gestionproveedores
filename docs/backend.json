@@ -10,6 +10,14 @@
           "type": "string",
           "description": "Unique identifier for the Provider entity."
         },
+        "providerType": {
+          "type": "string",
+          "description": "Define si el proveedor es de insumos y materiales o de servicios (contratista).",
+          "enum": [
+            "Insumos y/o Materiales",
+            "Servicios (Contratista)"
+          ]
+        },
         "documentType": {
           "type": "string",
           "description": "Type of document used for identification (e.g., NIT, CC)."
@@ -173,6 +181,7 @@
       },
       "required": [
         "id",
+        "providerType",
         "documentType",
         "documentNumber",
         "businessName",

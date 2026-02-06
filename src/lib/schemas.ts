@@ -83,6 +83,7 @@ export const providerFormSchema = z
       .string()
       .min(1, 'La descripción del bien y/o servicio es requerida.'),
     // Section 1
+    providerType: z.string().min(1, 'El tipo de proveedor es requerido.'),
     documentType: z.string().min(1, 'El tipo de documento es requerido.'),
     documentNumber: z
       .string()

@@ -38,7 +38,7 @@ import {
 interface EvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  provider: { id: string; businessName: string } | null;
+  provider: { id: string; businessName: string; providerType?: string } | null;
 }
 
 const evaluationSchema = z.object({
@@ -59,6 +59,19 @@ export function EvaluationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<EvaluationType | null>(null);
   const [totalScore, setTotalScore] = useState(0);
+
+  const availableEvaluationTypes = useMemo(() => {
+    if (!provider?.providerType) {
+      return [];
+    }
+    if (provider.providerType === 'Insumos y/o Materiales') {
+      return ['provider_selection', 'provider_performance'] as EvaluationType[];
+    }
+    if (provider.providerType === 'Servicios (Contratista)') {
+      return ['contractor_evaluation'] as EvaluationType[];
+    }
+    return [];
+  }, [provider]);
 
   const criteria = useMemo(
     () => (selectedType ? EVALUATION_CRITERIA[selectedType] : []),
@@ -202,7 +215,7 @@ export function EvaluationModal({
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              {(Object.keys(EVALUATION_TYPE_NAMES) as EvaluationType[]).map((key) => (
+              {availableEvaluationTypes.map((key) => (
                 <Button 
                   key={key} 
                   variant="outline" 
@@ -212,6 +225,13 @@ export function EvaluationModal({
                     <span className="font-semibold">{EVALUATION_TYPE_NAMES[key]}</span>
                 </Button>
               ))}
+               {availableEvaluationTypes.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Este proveedor no tiene un "Tipo de Proveedor" asignado o el tipo asignado no tiene evaluaciones configuradas.
+                  <br />
+                  Por favor, edita su perfil para poder evaluarlo.
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={handleClose}>

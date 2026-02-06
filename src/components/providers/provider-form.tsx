@@ -57,6 +57,7 @@ type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
 const initialFormValues: ProviderFormValues = {
   serviceDescription: '',
+  providerType: '',
   documentType: '',
   documentNumber: '',
   businessName: '',
@@ -517,6 +518,42 @@ export default function ProviderForm() {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="providerType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Proveedor</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex items-center space-x-4"
+                      disabled={isLocked}
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Insumos y/o Materiales" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Insumos y/o Materiales
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Servicios (Contratista)" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Servicios (Contratista)
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {isLocked ? (

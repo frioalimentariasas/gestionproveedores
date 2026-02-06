@@ -72,6 +72,7 @@ interface Provider {
   formLocked?: boolean;
   disabled?: boolean;
   categoryIds?: string[];
+  providerType?: string;
 }
 
 export default function ProvidersTable() {
