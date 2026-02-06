@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,7 +39,6 @@ interface EvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
   provider: { id: string; businessName: string } | null;
-  evaluationType: EvaluationType | null;
 }
 
 const evaluationSchema = z.object({
@@ -52,19 +52,12 @@ export function EvaluationModal({
   isOpen,
   onClose,
   provider,
-  evaluationType,
 }: EvaluationModalProps) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedType, setSelectedType] = useState<EvaluationType | null>(evaluationType);
-
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedType(evaluationType);
-    }
-  }, [isOpen, evaluationType]);
+  const [selectedType, setSelectedType] = useState<EvaluationType | null>(null);
 
   const criteria = useMemo(
     () => (selectedType ? EVALUATION_CRITERIA[selectedType] : []),
@@ -85,6 +78,21 @@ export function EvaluationModal({
   });
 
   useEffect(() => {
+    if (isOpen && !selectedType) {
+      // If modal opens without a type, we might want to reset things
+      // or ensure it prompts for a type. Current logic handles this.
+    }
+    if (!isOpen) {
+      // Reset state when modal is closed
+      setTimeout(() => {
+        setSelectedType(null);
+        form.reset({ scores: {}, comments: '' });
+      }, 300); // Delay to allow animation
+    }
+  }, [isOpen, selectedType, form]);
+
+
+  useEffect(() => {
     // Reset form when the type of evaluation changes
     form.reset({
       scores: defaultScores,
@@ -95,12 +103,18 @@ export function EvaluationModal({
   const watchedScores = form.watch('scores');
 
   const totalScore = useMemo(() => {
-    if (!watchedScores || criteria.length === 0) return 0;
-    return criteria.reduce((total, criterion) => {
+    if (!watchedScores || !criteria || criteria.length === 0) return 0;
+    const totalWeight = criteria.reduce((sum, criterion) => sum + criterion.weight, 0);
+    if (totalWeight === 0) return 0;
+
+    const weightedScoreSum = criteria.reduce((total, criterion) => {
       const score = watchedScores[criterion.id] || 0;
       return total + score * criterion.weight;
     }, 0);
+    
+    return weightedScoreSum;
   }, [watchedScores, criteria]);
+
 
   async function onSubmit(values: EvaluationFormValues) {
     if (!user || !firestore || !provider || !selectedType) {
@@ -154,17 +168,15 @@ export function EvaluationModal({
   }
 
   const handleClose = () => {
-    // We call onClose which is passed from the parent to close the modal.
     onClose();
-    // After a short delay to allow for the closing animation, we reset the internal state.
-    setTimeout(() => {
-        setSelectedType(null);
-    }, 300);
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent 
+        className="sm:max-w-[600px]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {!provider ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -228,7 +240,7 @@ export function EvaluationModal({
                                 min={1}
                                 max={5}
                                 step={1}
-                                defaultValue={[field.value]}
+                                value={[field.value]}
                                 onValueChange={(value) =>
                                   field.onChange(value[0])
                                 }
