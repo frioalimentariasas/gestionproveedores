@@ -68,10 +68,10 @@ export default function ProviderEvaluationsPage() {
 
   const evaluationsCollectionRef = useMemoFirebase(
     () =>
-      firestore && providerId
+      firestore && providerId && isAdmin
         ? collection(firestore, 'providers', providerId, 'evaluations')
         : null,
-    [firestore, providerId]
+    [firestore, providerId, isAdmin]
   );
 
   const {

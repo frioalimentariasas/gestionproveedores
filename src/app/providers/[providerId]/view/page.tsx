@@ -82,8 +82,10 @@ export default function ProviderViewPage() {
 
   const providerDocRef = useMemoFirebase(
     () =>
-      firestore && providerId ? doc(firestore, 'providers', providerId) : null,
-    [firestore, providerId]
+      firestore && providerId && isAdmin
+        ? doc(firestore, 'providers', providerId)
+        : null,
+    [firestore, providerId, isAdmin]
   );
 
   const { data: providerData, isLoading: isProviderLoading } =
