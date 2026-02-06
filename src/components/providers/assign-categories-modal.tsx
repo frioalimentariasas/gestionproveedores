@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MultiSelect, type Option } from '../ui/multi-select';
@@ -50,14 +50,17 @@ export function AssignCategoriesModal({
   const { data: categories, isLoading: isLoadingCategories } =
     useCollection<Category>(categoriesCollectionRef);
 
-  const categoryOptions: Option[] =
-    categories?.map((cat) => ({
-      value: cat.id,
-      label: cat.name,
-    })) || [];
+  const categoryOptions = useMemo(
+    () =>
+      categories?.map((cat) => ({
+        value: cat.id,
+        label: cat.name,
+      })) || [],
+    [categories]
+  );
 
   useEffect(() => {
-    if (provider && categories) {
+    if (provider) {
       const currentProviderCategories =
         categoryOptions.filter((opt) =>
           provider.categoryIds?.includes(opt.value)
@@ -66,7 +69,7 @@ export function AssignCategoriesModal({
     } else {
       setSelected([]);
     }
-  }, [provider, categories, categoryOptions]);
+  }, [provider, categoryOptions]);
 
   const handleSave = async () => {
     if (!firestore || !provider) return;
