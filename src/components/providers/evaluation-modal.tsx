@@ -58,6 +58,7 @@ export function EvaluationModal({
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<EvaluationType | null>(null);
+  const [totalScore, setTotalScore] = useState(0);
 
   const criteria = useMemo(
     () => (selectedType ? EVALUATION_CRITERIA[selectedType] : []),
@@ -93,27 +94,38 @@ export function EvaluationModal({
 
 
   useEffect(() => {
-    // Reset form when the type of evaluation changes
+    // Reset form and recalculate initial score when the evaluation type changes
+    const newScores = criteria.reduce((acc, crit) => ({ ...acc, [crit.id]: 3 }), {});
     form.reset({
-      scores: defaultScores,
+      scores: newScores,
       comments: '',
     });
-  }, [selectedType, defaultScores, form]);
-
-  const watchedScores = form.watch('scores');
-
-  const totalScore = useMemo(() => {
-    if (!watchedScores || !criteria || criteria.length === 0) return 0;
-    const totalWeight = criteria.reduce((sum, criterion) => sum + criterion.weight, 0);
-    if (totalWeight === 0) return 0;
-
-    const weightedScoreSum = criteria.reduce((total, criterion) => {
-      const score = watchedScores[criterion.id] || 0;
-      return total + score * criterion.weight;
-    }, 0);
     
-    return weightedScoreSum;
-  }, [watchedScores, criteria]);
+    const initialWeightedSum = criteria.reduce((total, criterion) => {
+        return total + 3 * criterion.weight;
+    }, 0);
+    setTotalScore(initialWeightedSum);
+
+  }, [selectedType, criteria, form]);
+
+
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const currentScores = value.scores;
+      if (!currentScores || !criteria || criteria.length === 0) {
+        setTotalScore(0);
+        return;
+      }
+  
+      const weightedScoreSum = criteria.reduce((total, criterion) => {
+        const score = currentScores[criterion.id] || 0;
+        return total + score * criterion.weight;
+      }, 0);
+
+      setTotalScore(weightedScoreSum);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, criteria]);
 
 
   async function onSubmit(values: EvaluationFormValues) {
