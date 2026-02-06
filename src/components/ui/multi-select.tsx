@@ -1,17 +1,23 @@
 'use client';
 
 import * as React from 'react';
-import { Command as CommandPrimitive } from 'cmdk';
-import { X, Check } from 'lucide-react';
-
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { Check, X, ChevronsUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Command,
+  CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Badge } from './badge';
 
 export type Option = Record<'value' | 'label', string>;
 
@@ -24,137 +30,101 @@ interface MultiSelectProps {
   isLoading?: boolean;
 }
 
-export function MultiSelect({
+function MultiSelect({
   options,
   selected,
   onChange,
-  placeholder = 'Select options',
+  placeholder = 'Selecciona categorías...',
   className,
   isLoading,
 }: MultiSelectProps) {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [query, setQuery] = React.useState('');
+  const [open, setOpen] = React.useState(false);
 
-  const handleSelect = React.useCallback(
-    (option: Option) => {
-      onChange((prev) =>
-        prev.some((p) => p.value === option.value)
-          ? prev.filter((p) => p.value !== option.value)
-          : [...prev, option]
-      );
-      inputRef.current?.focus();
-    },
-    [onChange]
-  );
-
-  const handleKeyDown = React.useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const input = inputRef.current;
-      if (input) {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-          if (input.value === '' && selected.length > 0) {
-            onChange((prev) => prev.slice(0, -1));
-          }
-        }
-        if (e.key === 'Escape') {
-          input.blur();
-        }
-      }
-    },
-    [onChange, selected]
-  );
-
-  const filteredOptions = options.filter(
-    (option) =>
-      !selected.some((s) => s.value === option.value) &&
-      option.label.toLowerCase().includes(query.toLowerCase())
-  );
+  const handleUnselect = (option: Option) => {
+    onChange(selected.filter((s) => s.value !== option.value));
+  };
 
   return (
-    <Command
-      onKeyDown={handleKeyDown}
-      className={cn('overflow-visible bg-transparent', className)}
-    >
-      <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-        <div className="flex flex-wrap gap-1">
-          {selected.map((option) => (
-            <Badge key={option.value} variant="secondary">
-              {option.label}
-              <button
-                className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSelect(option);
-                  }
-                }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={() => handleSelect(option)}
-              >
-                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-              </button>
-            </Badge>
-          ))}
-          <CommandPrimitive.Input
-            ref={inputRef}
-            value={query}
-            onValueChange={setQuery}
-            onBlur={() => setIsOpen(false)}
-            onFocus={() => setIsOpen(true)}
-            placeholder={placeholder}
-            className="ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-          />
-        </div>
-      </div>
-      <div className="relative mt-2">
-        <CommandList>
-          {isOpen && (
-            <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
-              {isLoading ? (
-                <div className="p-2 text-center text-sm text-muted-foreground">
-                  Cargando...
-                </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className={cn('relative', className)}>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between h-auto min-h-10"
+            onClick={() => setOpen(!open)}
+          >
+            <div className="flex gap-1 flex-wrap">
+              {selected.length > 0 ? (
+                selected.map((option) => (
+                  <Badge
+                    variant="secondary"
+                    key={option.value}
+                    className="mr-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnselect(option);
+                    }}
+                  >
+                    {option.label}
+                    <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                ))
               ) : (
-                <CommandGroup className="h-full overflow-auto">
-                  {filteredOptions.length > 0 ? (
-                    filteredOptions.map((option) => (
-                      <CommandItem
-                        key={option.value}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        onSelect={() => {
-                          setQuery('');
-                          handleSelect(option);
-                        }}
-                        className={'cursor-pointer'}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            selected.some((s) => s.value === option.value)
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                        {option.label}
-                      </CommandItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-center text-sm text-muted-foreground">
-                      No se encontraron resultados.
-                    </div>
-                  )}
-                </CommandGroup>
+                <span className="text-muted-foreground font-normal">{placeholder}</span>
               )}
             </div>
-          )}
-        </CommandList>
-      </div>
-    </Command>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command>
+          <CommandInput placeholder="Buscar categoría..." />
+          <CommandList>
+            {isLoading ? (
+              <div className="p-4 text-center text-sm">Cargando...</div>
+            ) : (
+              <>
+                <CommandEmpty>No se encontró la categoría.</CommandEmpty>
+                <CommandGroup>
+                  {options.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      onSelect={() => {
+                        const isSelected = selected.some(
+                          (s) => s.value === option.value
+                        );
+                        if (isSelected) {
+                          onChange(
+                            selected.filter((s) => s.value !== option.value)
+                          );
+                        } else {
+                          onChange([...selected, option]);
+                        }
+                        setOpen(true);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          selected.some((s) => s.value === option.value)
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                        )}
+                      />
+                      {option.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
+
+export { MultiSelect };
