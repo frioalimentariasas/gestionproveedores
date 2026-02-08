@@ -47,16 +47,19 @@ import { es } from 'date-fns/locale';
 import Link from 'next/link';
 
 interface Provider {
+  id: string;
   businessName: string;
   disabled?: boolean;
   categoryIds?: string[];
 }
 
 interface Category {
+  id: string;
   name: string;
 }
 
 interface Evaluation {
+  id: string;
   providerId: string;
   evaluationType: EvaluationType;
   totalScore: number;
@@ -109,8 +112,8 @@ export default function AdminDashboard() {
       firestore
         ? query(
             collectionGroup(firestore, 'evaluations'),
-            orderBy('createdAt', 'desc'),
-            limit(5)
+            // orderBy('createdAt', 'desc'), // This requires a composite index. We will sort on the client.
+            limit(20) // Fetch a larger batch to sort on client
           )
         : null,
     [firestore]
@@ -160,7 +163,19 @@ export default function AdminDashboard() {
 
   const evaluationsWithProviderNames = useMemo(() => {
     if (!recentEvaluations || !providers) return [];
-    return recentEvaluations.map((ev) => {
+
+    // Sort evaluations by date descending on the client
+    const sortedEvaluations = [...recentEvaluations].sort((a, b) => {
+      const dateA = a.createdAt?.toDate() ?? new Date(0);
+      const dateB = b.createdAt?.toDate() ?? new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    // Take the top 5 most recent evaluations
+    const top5 = sortedEvaluations.slice(0, 5);
+    
+    // Map provider names to the top 5
+    return top5.map((ev) => {
       const provider = providers.find((p) => p.id === ev.providerId);
       return {
         ...ev,
