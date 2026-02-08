@@ -6,6 +6,7 @@ import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import AdminDashboard from '@/components/dashboard/admin-dashboard';
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -43,15 +44,7 @@ export default function HomePage() {
   if (user && isAdmin) {
     return (
       <AuthGuard>
-        <div className="container mx-auto p-4">
-          <h1 className="my-8 text-center text-4xl font-bold tracking-tight">
-            Dashboard Administrativo
-          </h1>
-          <p className="text-center text-muted-foreground">
-            Bienvenido al panel de administración. Desde aquí podrás ver
-            resúmenes de actividad y gestionar los proveedores.
-          </p>
-        </div>
+        <AdminDashboard />
       </AuthGuard>
     );
   }

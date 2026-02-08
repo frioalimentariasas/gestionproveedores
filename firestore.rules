@@ -134,6 +134,16 @@ service cloud.firestore {
     }
 
     /**
+     * @description Allows admins to query across all `evaluations` subcollections for dashboard purposes.
+     * @path /{path=**}/evaluations/{evaluationId}
+     * @allow (read) An admin performing a `list` (collectionGroup) query.
+     * @principle Enables admin-only dashboard features like "Recent Evaluations" without compromising security.
+     */
+    match /{path=**}/evaluations/{evaluationId} {
+      allow read: if isAdmin();
+    }
+
+    /**
      * @description Defines admin user roles. The existence of a document grants admin privileges.
      *              This collection is read-only from the client to prevent privilege escalation.
      * @path /roles_admin/{adminId}
