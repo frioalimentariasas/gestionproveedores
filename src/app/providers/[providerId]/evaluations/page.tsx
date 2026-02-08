@@ -16,7 +16,15 @@ import {
 import { Button } from '@/components/ui/button';
 import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
-import { Loader2, ArrowLeft, Trash2, Star, Calendar } from 'lucide-react';
+import {
+  Loader2,
+  ArrowLeft,
+  Trash2,
+  Star,
+  Calendar,
+  FileText,
+  FileBadge,
+} from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -29,6 +37,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   AlertDialog,
@@ -55,6 +64,9 @@ interface Evaluation {
   totalScore: number;
   comments: string;
   createdAt: Timestamp;
+  evidenceFileUrl?: string;
+  quotationNumber?: string;
+  fracttalOrderIds?: string;
 }
 
 export default function ProviderEvaluationsPage() {
@@ -79,7 +91,7 @@ export default function ProviderEvaluationsPage() {
     isLoading: isEvaluationsLoading,
     error,
   } = useCollection<Evaluation>(evaluationsCollectionRef);
-  
+
   const sortedEvaluations = useMemo(() => {
     if (!evaluations) return [];
     return [...evaluations].sort((a, b) => {
@@ -201,7 +213,7 @@ export default function ProviderEvaluationsPage() {
                           </AlertDialogTitle>
                           <AlertDialogDescription>
                             Esta acción no se puede deshacer. Esto eliminará
-                            permanentemente la evaluación del
+                            permanentemente la evaluación del{' '}
                             {format(
                               evaluation.createdAt.toDate(),
                               'dd MMMM, yyyy',
@@ -236,6 +248,54 @@ export default function ProviderEvaluationsPage() {
                     {evaluation.comments || 'Sin comentarios.'}
                   </p>
                 </CardContent>
+                {(evaluation.evidenceFileUrl ||
+                  evaluation.quotationNumber ||
+                  evaluation.fracttalOrderIds) && (
+                  <CardFooter className="flex-col items-start gap-3 bg-muted/50 pt-4">
+                    <h4 className="font-semibold text-sm">
+                      Soportes de la Evaluación
+                    </h4>
+                    <div className="space-y-2 text-sm w-full">
+                      {evaluation.quotationNumber && (
+                        <div className="flex items-center gap-2">
+                          <FileBadge className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Nº Cotización:</span>
+                          <span>{evaluation.quotationNumber}</span>
+                        </div>
+                      )}
+                      {evaluation.fracttalOrderIds && (
+                        <div>
+                          <span className="font-medium flex items-center gap-2">
+                             <FileBadge className="h-4 w-4 text-muted-foreground" />
+                            IDs Órdenes de Compra (Fracttal):
+                          </span>
+                          <p className="text-xs text-muted-foreground whitespace-pre-wrap bg-background p-2 rounded-md mt-1 border">
+                            {evaluation.fracttalOrderIds}
+                          </p>
+                        </div>
+                      )}
+                       {evaluation.evidenceFileUrl && (
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Documento adjunto:</span>
+                          <Button
+                            asChild
+                            variant="link"
+                            className="p-0 h-auto"
+                          >
+                            <a
+                              href={evaluation.evidenceFileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Ver Documento
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardFooter>
+                )}
               </Card>
             ))}
           </div>
@@ -251,3 +311,5 @@ export default function ProviderEvaluationsPage() {
     </AuthGuard>
   );
 }
+
+    

@@ -16,11 +16,13 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -41,9 +43,38 @@ interface EvaluationModalProps {
   provider: { id: string; businessName: string; providerType?: string } | null;
 }
 
-const evaluationSchema = z.object({
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_FILE_TYPES = ['application/pdf'];
+
+const fileSchema = z
+  .any()
+  .refine((files) => files?.length === 1, 'El archivo es requerido.')
+  .refine(
+    (files) => files?.[0]?.size <= MAX_FILE_SIZE,
+    `El tamaño máximo del archivo es de 5MB.`
+  )
+  .refine(
+    (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
+    'Solo se aceptan archivos .pdf'
+  );
+
+const fileSchemaOptional = z
+  .any()
+  .optional()
+  .refine(
+    (files) =>
+      !files ||
+      files.length === 0 ||
+      (files?.[0]?.size <= MAX_FILE_SIZE &&
+        ACCEPTED_FILE_TYPES.includes(files?.[0]?.type)),
+    'El archivo debe ser un PDF de menos de 5MB.'
+  );
+
+const baseEvaluationSchema = z.object({
   scores: z.record(z.number().min(1).max(5)),
   comments: z.string().optional(),
+  quotationNumber: z.string().optional(),
+  fracttalOrderIds: z.string().optional(),
 });
 
 type EvaluationFormValues = z.infer<typeof evaluationSchema>;
@@ -57,7 +88,10 @@ export function EvaluationModal({
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedType, setSelectedType] = useState<EvaluationType | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedType, setSelectedType] = useState<EvaluationType | null>(
+    null
+  );
   const [totalScore, setTotalScore] = useState(0);
 
   const availableEvaluationTypes = useMemo(() => {
@@ -72,6 +106,14 @@ export function EvaluationModal({
     }
     return [];
   }, [provider]);
+  
+  const evaluationSchema = useMemo(() => {
+    if (['provider_selection', 'contractor_evaluation'].includes(selectedType || '')) {
+      return baseEvaluationSchema.extend({ evidenceFile: fileSchema });
+    }
+    return baseEvaluationSchema.extend({ evidenceFile: fileSchemaOptional });
+  }, [selectedType]);
+
 
   const criteria = useMemo(
     () => (selectedType ? EVALUATION_CRITERIA[selectedType] : []),
@@ -88,6 +130,8 @@ export function EvaluationModal({
     defaultValues: {
       scores: defaultScores,
       comments: '',
+      quotationNumber: '',
+      fracttalOrderIds: '',
     },
   });
 
@@ -105,22 +149,24 @@ export function EvaluationModal({
     }
   }, [isOpen, selectedType, form]);
 
-
   useEffect(() => {
     // Reset form and recalculate initial score when the evaluation type changes
-    const newScores = criteria.reduce((acc, crit) => ({ ...acc, [crit.id]: 3 }), {});
+    const newScores = criteria.reduce(
+      (acc, crit) => ({ ...acc, [crit.id]: 3 }),
+      {}
+    );
     form.reset({
       scores: newScores,
       comments: '',
+      quotationNumber: '',
+      fracttalOrderIds: '',
     });
-    
+
     const initialWeightedSum = criteria.reduce((total, criterion) => {
-        return total + 3 * criterion.weight;
+      return total + 3 * criterion.weight;
     }, 0);
     setTotalScore(initialWeightedSum);
-
   }, [selectedType, criteria, form]);
-
 
   useEffect(() => {
     const subscription = form.watch((value) => {
@@ -129,7 +175,7 @@ export function EvaluationModal({
         setTotalScore(0);
         return;
       }
-  
+
       const weightedScoreSum = criteria.reduce((total, criterion) => {
         const score = currentScores[criterion.id] || 0;
         return total + score * criterion.weight;
@@ -139,7 +185,6 @@ export function EvaluationModal({
     });
     return () => subscription.unsubscribe();
   }, [form, criteria]);
-
 
   async function onSubmit(values: EvaluationFormValues) {
     if (!user || !firestore || !provider || !selectedType) {
@@ -153,6 +198,45 @@ export function EvaluationModal({
 
     setIsSubmitting(true);
 
+    let evidenceFileUrl = '';
+    const fileList = values.evidenceFile as FileList | undefined;
+
+    if (fileList && fileList.length > 0) {
+      setIsUploading(true);
+      try {
+        const file = fileList[0];
+        const fileName = `evaluation_evidence_${provider.id}_${Date.now()}.pdf`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', provider.id);
+        formData.append('fileName', fileName);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to upload file.');
+        }
+
+        const { url } = await response.json();
+        evidenceFileUrl = url;
+      } catch (uploadError: any) {
+        toast({
+          title: 'Error al subir archivo',
+          description: uploadError.message,
+          variant: 'destructive',
+        });
+        setIsUploading(false);
+        setIsSubmitting(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+
     const dataToSave = {
       providerId: provider.id,
       evaluatorId: user.uid,
@@ -162,6 +246,9 @@ export function EvaluationModal({
       totalScore: totalScore,
       comments: values.comments || '',
       createdAt: serverTimestamp(),
+      ...(evidenceFileUrl && { evidenceFileUrl }),
+      ...(values.quotationNumber && { quotationNumber: values.quotationNumber }),
+      ...(values.fracttalOrderIds && { fracttalOrderIds: values.fracttalOrderIds }),
     };
 
     const evaluationsCollection = collection(
@@ -194,11 +281,13 @@ export function EvaluationModal({
 
   const handleClose = () => {
     onClose();
-  }
+  };
+
+  const isFormSubmitting = isSubmitting || isUploading;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent 
+      <DialogContent
         className="sm:max-w-[600px]"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
@@ -211,23 +300,27 @@ export function EvaluationModal({
             <DialogHeader>
               <DialogTitle>Seleccionar Tipo de Evaluación</DialogTitle>
               <DialogDescription>
-                Elige qué tipo de evaluación deseas realizar para <strong>{provider.businessName}</strong>.
+                Elige qué tipo de evaluación deseas realizar para{' '}
+                <strong>{provider.businessName}</strong>.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               {availableEvaluationTypes.map((key) => (
-                <Button 
-                  key={key} 
-                  variant="outline" 
+                <Button
+                  key={key}
+                  variant="outline"
                   className="justify-start h-auto py-3 text-left"
                   onClick={() => setSelectedType(key)}
                 >
-                    <span className="font-semibold">{EVALUATION_TYPE_NAMES[key]}</span>
+                  <span className="font-semibold">
+                    {EVALUATION_TYPE_NAMES[key]}
+                  </span>
                 </Button>
               ))}
-               {availableEvaluationTypes.length === 0 && (
+              {availableEvaluationTypes.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Este proveedor no tiene un "Tipo de Proveedor" asignado o el tipo asignado no tiene evaluaciones configuradas.
+                  Este proveedor no tiene un "Tipo de Proveedor" asignado o el
+                  tipo asignado no tiene evaluaciones configuradas.
                   <br />
                   Por favor, edita su perfil para poder evaluarlo.
                 </p>
@@ -244,7 +337,8 @@ export function EvaluationModal({
             <DialogHeader>
               <DialogTitle>{EVALUATION_TYPE_NAMES[selectedType]}</DialogTitle>
               <DialogDescription>
-                Evalúa a <strong>{provider.businessName}</strong> en una escala de 1 a 5.
+                Evalúa a <strong>{provider.businessName}</strong> en una escala
+                de 1 a 5 y adjunta los soportes necesarios.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -253,6 +347,66 @@ export function EvaluationModal({
                 className="space-y-6"
               >
                 <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-4">
+                  {/* --- Evidence Fields --- */}
+                  <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+                    <h4 className="font-semibold text-sm mb-2">Soportes de la Evaluación</h4>
+                    {['provider_selection', 'contractor_evaluation'].includes(selectedType) && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="quotationNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número de Cotización (Opcional)</FormLabel>
+                              <FormControl><Input placeholder="Ej: COT-2024-001" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="evidenceFile"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Adjuntar Cotización (PDF)</FormLabel>
+                              <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                     {selectedType === 'provider_performance' && (
+                       <>
+                        <FormField
+                          control={form.control}
+                          name="fracttalOrderIds"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>IDs Órdenes de Compra (Fracttal)</FormLabel>
+                              <FormControl><Textarea placeholder="Listar IDs separados por coma, ej: FA-123, FA-124" {...field} /></FormControl>
+                              <FormDescription>Registre los identificadores de las órdenes de compra evaluadas.</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={form.control}
+                          name="evidenceFile"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Adjuntar Soporte Adicional (Opcional)</FormLabel>
+                              <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} /></FormControl>
+                               <FormDescription>Puede adjuntar un informe de resumen u otro soporte.</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                       </>
+                     )}
+                  </div>
+                  
+                  {/* --- Criteria Fields --- */}
                   {criteria.map((criterion) => (
                     <FormField
                       key={criterion.id}
@@ -315,11 +469,11 @@ export function EvaluationModal({
                   <Button type="button" variant="outline" onClick={handleClose}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && (
+                  <Button type="submit" disabled={isFormSubmitting}>
+                    {(isUploading || isSubmitting) && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Guardar Evaluación
+                    {isUploading ? 'Subiendo archivo...' : 'Guardar Evaluación'}
                   </Button>
                 </DialogFooter>
               </form>
@@ -330,3 +484,5 @@ export function EvaluationModal({
     </Dialog>
   );
 }
+
+    

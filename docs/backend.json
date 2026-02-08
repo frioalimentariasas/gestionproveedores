@@ -262,6 +262,19 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "evidenceFileUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to a supporting document like a quotation PDF."
+        },
+        "quotationNumber": {
+          "type": "string",
+          "description": "The quotation number or identifier for a selection evaluation."
+        },
+        "fracttalOrderIds": {
+          "type": "string",
+          "description": "A list of comma-separated Fracttal order IDs for a performance evaluation."
         }
       },
       "required": [
@@ -378,3 +391,5 @@
     "reasoning": "This design prioritizes security and scalability for the Gestión de Proveedores application, focusing on Authorization Independence and clear data segregation.  The core entities are `Provider`, `AdminUser`, and `Evaluation`. Providers self-register and manage their information. Admins have read-only access to provider data and full control over evaluations. The `evaluations` are stored as a subcollection under each provider for clear data ownership and efficient querying.\\n\\n**Authorization Independence:**  The `providers/{providerId}` collection relies on the `request.auth.uid` being equal to the `{providerId}` to ensure providers can only access their own data. The `evaluations` subcollection is restricted to admins only.\\n\\n**QAPs (Rules are not Filters):**\\n*   Secure `list` operations are supported for admins on the `providers` collection. Providers cannot list other providers. Admins can list evaluations for a specific provider.\\n*   The `roles_admin/{uid}` collection uses \"existence over content\", simply checking if a document exists to grant admin privileges. This is a secure and scalable approach.\\n\\n**Invariants:**\\n*   Ownership:  The `providers/{providerId}` path ensures that each provider can only manage their own data, determined by their `uid`. Evaluations are owned by the system and managed by admins.\\n*   Data Integrity:  The schemas define the required fields, ensuring consistent data structures.\\n\\n**Denormalization:** No explicit denormalization is required in this structure, as Authorization Independence is achieved through the path-based ownership of provider documents."
   }
 }
+
+    
