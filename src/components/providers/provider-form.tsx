@@ -42,7 +42,7 @@ import {
 } from '@/firebase';
 import { doc, setDoc, collection, query } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Info, Loader2 } from 'lucide-react';
+import { Info, Loader2, Search } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -58,6 +58,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { notifyAdminOfFormUpdate } from '@/actions/email';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -141,6 +142,7 @@ export default function ProviderForm() {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [persistedData, setPersistedData] =
     useState<ProviderFormValues | null>(null);
+  const [categorySearchTerm, setCategorySearchTerm] = useState('');
 
   const getAutoSaveKey = (userId: string) =>
     `provider-form-autosave-${userId}`;
@@ -255,6 +257,16 @@ export default function ProviderForm() {
       (opt) => opt.type && watchedProviderType.includes(opt.type)
     );
   }, [watchedProviderType, categoryOptions]);
+
+  const searchableCategoryOptions = useMemo(() => {
+    if (!categorySearchTerm) {
+      return filteredCategoryOptions;
+    }
+    return filteredCategoryOptions.filter((opt) =>
+      opt.label.toLowerCase().includes(categorySearchTerm.toLowerCase())
+    );
+  }, [filteredCategoryOptions, categorySearchTerm]);
+
 
   // Clear selected categories if they are no longer in the filtered list
   useEffect(() => {
@@ -588,42 +600,56 @@ export default function ProviderForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categorías</FormLabel>
-                  <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
-                    {filteredCategoryOptions.length > 0 ? (
-                      filteredCategoryOptions.map((option) => (
-                        <FormItem
-                          key={option.value}
-                          className="flex flex-row items-start space-x-3 space-y-0"
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(option.value)}
-                              onCheckedChange={(checked) => {
-                                const currentValue = field.value || [];
-                                return checked
-                                  ? field.onChange([...currentValue, option.value])
-                                  : field.onChange(
-                                      currentValue.filter(
-                                        (value) => value !== option.value
-                                      )
-                                    );
-                              }}
-                              disabled={isLocked}
+                    <div className="space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Buscar categorías..."
+                                value={categorySearchTerm}
+                                onChange={(e) => setCategorySearchTerm(e.target.value)}
+                                className="pl-10"
+                                disabled={isLocked}
                             />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            {option.label}
-                          </FormLabel>
-                        </FormItem>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center">
-                        {isCategoriesLoading
-                          ? 'Cargando categorías...'
-                          : 'Selecciona un Tipo de Proveedor para ver las categorías.'}
-                      </p>
-                    )}
-                  </div>
+                        </div>
+                        <ScrollArea className="h-60 rounded-md border">
+                            <div className="p-4 space-y-4">
+                                {searchableCategoryOptions.length > 0 ? (
+                                    searchableCategoryOptions.map((option) => (
+                                    <FormItem
+                                        key={option.value}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(option.value)}
+                                            onCheckedChange={(checked) => {
+                                            const currentValue = field.value || [];
+                                            return checked
+                                                ? field.onChange([...currentValue, option.value])
+                                                : field.onChange(
+                                                    currentValue.filter(
+                                                        (value) => value !== option.value
+                                                    )
+                                                );
+                                            }}
+                                            disabled={isLocked}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">
+                                        {option.label}
+                                        </FormLabel>
+                                    </FormItem>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground text-center">
+                                    {isCategoriesLoading
+                                        ? 'Cargando categorías...'
+                                        : 'No se encontraron categorías. Selecciona un "Tipo de Proveedor" o ajusta tu búsqueda.'}
+                                    </p>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </div>
                   <FormMessage />
                 </FormItem>
               )}
