@@ -162,13 +162,16 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for the `categories` collection. Admins have full access.
+     * @description Rules for the `categories` collection. Any authenticated user can read categories,
+     *              but only admins can create, update, or delete them.
      * @path /categories/{categoryId}
-     * @allow (read, write) An admin user.
-     * @deny (read, write) Any non-admin user.
+     * @allow (read) Any signed-in user.
+     * @allow (write) An admin user.
+     * @deny (write) Any non-admin user.
      */
     match /categories/{categoryId} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }
