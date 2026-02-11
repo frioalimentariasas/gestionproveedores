@@ -1,7 +1,13 @@
 'use client';
 
 import { LoginForm } from '@/components/auth/login-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -34,6 +40,11 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-bold tracking-tight text-center">
             Iniciar Sesión
           </CardTitle>
+          <CardDescription className="text-center pt-2">
+            Si eres un proveedor, inicia sesión con tu NIT (sin dígito de
+            verificación). El inicio de sesión con email es para
+            administradores.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <LoginForm />
