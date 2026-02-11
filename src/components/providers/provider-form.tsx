@@ -366,6 +366,9 @@ export default function ProviderForm() {
         formLocked: true,
       };
 
+      // Exclude email from updates to prevent accidental overwrite.
+      delete (dataToSave as any).email;
+      
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
