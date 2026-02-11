@@ -124,3 +124,22 @@ export async function deleteProvider(uid: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function deleteSelectionEvent(eventId: string) {
+  try {
+    const bucket = admin.storage().bucket();
+    const eventRef = admin.firestore().collection('selection_events').doc(eventId);
+
+    // Concurrently delete Storage files and Firestore document
+    // The prefix is based on the current implementation in `competitors-manager.tsx` and `api/upload/route.ts`
+    await Promise.all([
+      bucket.deleteFiles({ prefix: `providers/${eventId}/` }),
+      eventRef.delete(),
+    ]);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting selection event:', error);
+    return { success: false, error: error.message };
+  }
+}
