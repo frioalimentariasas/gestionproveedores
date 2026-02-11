@@ -363,7 +363,6 @@ export default function ProviderForm() {
         ...values,
         ...updatedFileUrls,
         id: user.uid,
-        email: user.email, // Ensure login email is saved
         formLocked: true,
       };
 
@@ -372,10 +371,12 @@ export default function ProviderForm() {
       await setDoc(providerDocRef, dataToSave, { merge: true });
       
       // Notify admin about the form update (fire-and-forget)
-      notifyAdminOfFormUpdate({
-        businessName: dataToSave.businessName,
-        email: dataToSave.email!,
-      }).catch(console.error);
+      if(providerData?.email) {
+          notifyAdminOfFormUpdate({
+            businessName: dataToSave.businessName,
+            email: providerData.email,
+          }).catch(console.error);
+      }
 
 
       // Clear autosaved data on successful submission
@@ -948,13 +949,12 @@ export default function ProviderForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email de Inicio de Sesión</FormLabel>
+                  <FormLabel>Email para Notificaciones</FormLabel>
                   <FormControl>
                     <Input {...field} disabled />
                   </FormControl>
                   <FormDescription>
-                    Este es el email asociado a tu cuenta y no se puede
-                    modificar.
+                    Este es el email principal para notificaciones y no puede ser modificado.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
