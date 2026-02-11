@@ -175,6 +175,10 @@ export default function ProviderForm() {
     'implementsEnvironmentalMeasures'
   );
   const watchedPersonType = form.watch('personType');
+  const watchedTaxRegimeType = form.watch('taxRegimeType');
+  const watchedIsLargeTaxpayer = form.watch('isLargeTaxpayer');
+  const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
+  const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
 
   // Check for auto-saved data on initial load
   useEffect(() => {
@@ -954,11 +958,10 @@ export default function ProviderForm() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>2. Información Tributaria</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <CardHeader>
+              <CardTitle>2. Información Tributaria</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <FormField
                 control={form.control}
                 name="taxRegimeType"
@@ -987,210 +990,235 @@ export default function ProviderForm() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="isLargeTaxpayer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gran Contribuyente</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLocked}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {yesNoOptions.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="largeTaxpayerResolution"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resolución No</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
-                control={form.control}
-                name="isIncomeSelfRetainer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Autorretenedor Renta</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLocked}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {yesNoOptions.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="incomeSelfRetainerResolution"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Resolución No</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
-                control={form.control}
-                name="isIcaSelfRetainer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Autorretenedor ICA</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLocked}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {yesNoOptions.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="icaSelfRetainerMunicipality"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Indique municipio</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="icaSelfRetainerResolution"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resolución No</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="ciiuCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código actividad económica CIIU</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} type="number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="icaCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código actividad económica ICA</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} type="number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="declarationCity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ciudad donde declara</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isLocked} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="icaPercentage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Porcentaje según ICA (%)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={isLocked}
-                        type="number"
-                        step="0.01"
+
+              {watchedTaxRegimeType === 'Común' && (
+                <div className="space-y-6 pt-4 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <FormField
+                      control={form.control}
+                      name="isLargeTaxpayer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gran Contribuyente</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLocked}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {yesNoOptions.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {watchedIsLargeTaxpayer === 'Sí' && (
+                      <FormField
+                        control={form.control}
+                        name="largeTaxpayerResolution"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Resolución No</FormLabel>
+                            <FormControl>
+                              <Input {...field} disabled={isLocked} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                    )}
+                  </div>
+
+                  {watchedPersonType === 'Persona Jurídica' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                      <FormField
+                        control={form.control}
+                        name="isIncomeSelfRetainer"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Autorretenedor Renta</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isLocked}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {yesNoOptions.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {watchedIsIncomeSelfRetainer === 'Sí' && (
+                        <FormField
+                          control={form.control}
+                          name="incomeSelfRetainerResolution"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Resolución No</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled={isLocked} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {watchedIsLargeTaxpayer === 'Sí' && (
+                    <div className="space-y-6 pt-4 border-t">
+                      <FormField
+                          control={form.control}
+                          name="isIcaSelfRetainer"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Autorretenedor ICA</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isLocked}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {yesNoOptions.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                      {watchedIsIcaSelfRetainer === 'Sí' && (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <FormField
+                                control={form.control}
+                                name="icaSelfRetainerMunicipality"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Indique municipio</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} disabled={isLocked} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="icaSelfRetainerResolution"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Resolución No</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} disabled={isLocked} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                                control={form.control}
+                                name="icaCode"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Código actividad económica ICA</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} disabled={isLocked} type="number" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            <FormField
+                                control={form.control}
+                                name="icaPercentage"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Porcentaje según ICA (%)</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        disabled={isLocked}
+                                        type="number"
+                                        step="0.01"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                  <FormField
+                    control={form.control}
+                    name="ciiuCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Código actividad económica CIIU</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isLocked} type="number" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="declarationCity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ciudad donde declara</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isLocked} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
+
+            </CardContent>
+          </Card>
 
         <Card>
           <CardHeader>
