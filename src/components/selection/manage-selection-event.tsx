@@ -4,8 +4,13 @@ import {
   useDoc,
   useFirestore,
   useMemoFirebase,
+  errorEmitter,
 } from '@/firebase';
-import { doc, Timestamp } from 'firebase/firestore';
+import {
+  doc,
+  Timestamp,
+  updateDoc,
+} from 'firebase/firestore';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '../ui/button';
@@ -16,9 +21,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { useState, useEffect } from 'react';
+import { CriteriaManager } from './criteria-manager';
+import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { CompetitorsManager } from './competitors-manager';
+import { ResultsManager } from './results-manager';
 
 // Matching the schema in backend.json
-interface Competitor {
+export interface Competitor {
   id: string;
   name: string;
   quoteUrl?: string;
@@ -27,13 +38,14 @@ interface Competitor {
   isWinner?: boolean;
 }
 
-interface Criterion {
+export interface Criterion {
   id: string;
   label: string;
   weight: number;
 }
 
-interface SelectionEvent {
+export interface SelectionEvent {
+  id: string;
   name: string;
   type: 'Bienes' | 'Servicios (Contratista)';
   status: 'Abierto' | 'Cerrado';
@@ -45,12 +57,50 @@ interface SelectionEvent {
 
 export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
   const firestore = useFirestore();
+  const { toast } = useToast();
+
   const eventDocRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'selection_events', eventId) : null),
     [firestore, eventId]
   );
 
-  const { data: event, isLoading, error } = useDoc<SelectionEvent>(eventDocRef);
+  const { data: initialEvent, isLoading, error } = useDoc<SelectionEvent>(eventDocRef);
+
+  const [event, setEvent] = useState<SelectionEvent | null>(initialEvent);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialEvent) {
+      setEvent(initialEvent);
+    }
+  }, [initialEvent]);
+
+  const handleUpdateEvent = async (updatedData: Partial<SelectionEvent>) => {
+    if (!eventDocRef) return;
+    setIsSaving(true);
+    try {
+      await updateDoc(eventDocRef, updatedData);
+      setEvent((prev) => (prev ? { ...prev, ...updatedData } : null));
+      toast({
+        title: 'Proceso Actualizado',
+        description: 'Los cambios han sido guardados correctamente.',
+      });
+    } catch (e) {
+      console.error('Error updating event:', e);
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: eventDocRef.path,
+          operation: 'update',
+          requestResourceData: updatedData,
+        })
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const isLocked = event?.status === 'Cerrado';
 
   if (isLoading) {
     return (
@@ -76,6 +126,9 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
       </div>
     );
   }
+  
+  const defaultAccordionValue = !event.criteria || event.criteria.length === 0 ? "step-1" :
+                                !event.competitors || event.competitors.length === 0 ? "step-2" : "step-3";
 
   return (
     <div>
@@ -95,43 +148,67 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
               >
                 {event.status}
               </Badge>
+              {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             </div>
           </div>
         </div>
-        {/* Actions can go here */}
       </div>
 
-      <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="step-1">
+      <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultAccordionValue}>
         <AccordionItem value="step-1" className="border-b-0">
-          <AccordionTrigger className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline">
+          <AccordionTrigger
+            className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline"
+            disabled={isSaving}
+          >
             Paso 1: Definir Criterios de Evaluación
           </AccordionTrigger>
           <AccordionContent className="p-4 pt-0">
-             <div className="p-6 border rounded-b-md">
-                <p>Aquí irá el gestor de criterios.</p>
-             </div>
+            <div className="p-6 border rounded-b-md">
+              <CriteriaManager
+                criteria={event.criteria || []}
+                onSave={(newCriteria) => handleUpdateEvent({ criteria: newCriteria })}
+                isLocked={isLocked}
+              />
+            </div>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="step-2" className="border-b-0">
-          <AccordionTrigger className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline">
+          <AccordionTrigger
+            className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline"
+            disabled={isSaving}
+          >
             Paso 2: Añadir Competidores y Puntajes
           </AccordionTrigger>
           <AccordionContent className="p-4 pt-0">
-             <div className="p-6 border rounded-b-md">
-                <p>Aquí irá el gestor de competidores y la tabla de puntuación.</p>
-             </div>
+            <div className="p-6 border rounded-b-md">
+                <CompetitorsManager
+                    eventId={event.id}
+                    criteria={event.criteria || []}
+                    competitors={event.competitors || []}
+                    onSave={(newCompetitors) => handleUpdateEvent({competitors: newCompetitors})}
+                    isLocked={isLocked}
+                />
+            </div>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="step-3" className="border-b-0">
-          <AccordionTrigger className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline">
+          <AccordionTrigger
+            className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline"
+            disabled={isSaving}
+          >
             Paso 3: Ver Resultados y Seleccionar Ganador
           </AccordionTrigger>
           <AccordionContent className="p-4 pt-0">
-             <div className="p-6 border rounded-b-md">
-                <p>Aquí se mostrarán los resultados finales y se podrá declarar un ganador.</p>
-             </div>
+            <div className="p-6 border rounded-b-md">
+                <ResultsManager
+                    competitors={event.competitors || []}
+                    onDeclareWinner={(winnerId) => handleUpdateEvent({ winnerId, status: 'Cerrado' })}
+                    winnerId={event.winnerId}
+                    isLocked={isLocked}
+                />
+            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
