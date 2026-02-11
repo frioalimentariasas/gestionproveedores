@@ -118,6 +118,8 @@ const initialFormValues: ProviderFormValues = {
   camaraComercioFileUrl: '',
   cedulaRepresentanteLegalFileUrl: '',
   certificacionBancariaFileUrl: '',
+  estadosFinancierosFileUrl: '',
+  declaracionRentaFileUrl: '',
 };
 
 const documentTypes = ['NIT', 'CC', 'CE', 'Pasaporte'];
@@ -328,6 +330,8 @@ export default function ProviderForm() {
         'camaraComercioFile',
         'cedulaRepresentanteLegalFile',
         'certificacionBancariaFile',
+        'estadosFinancierosFile',
+        'declaracionRentaFile',
       ];
 
       const fileNames: { [key: string]: string } = {
@@ -335,6 +339,8 @@ export default function ProviderForm() {
         camaraComercioFile: 'camara_comercio.pdf',
         cedulaRepresentanteLegalFile: 'cedula_representante.pdf',
         certificacionBancariaFile: 'certificacion_bancaria.pdf',
+        estadosFinancierosFile: 'estados_financieros.pdf',
+        declaracionRentaFile: 'declaracion_renta.pdf',
       };
 
       for (const field of fileFields) {
@@ -1450,7 +1456,7 @@ export default function ProviderForm() {
               {watchedPersonType === 'Persona Jurídica' ? '6' : '5'}. Documentos
             </CardTitle>
             <CardDescription>
-              Adjunta los siguientes documentos en formato PDF (máximo 2MB cada
+              Adjunta los siguientes documentos en formato PDF (máximo 5MB cada
               uno).
             </CardDescription>
           </CardHeader>
@@ -1459,6 +1465,8 @@ export default function ProviderForm() {
               [
                 'rutFile',
                 'camaraComercioFile',
+                'estadosFinancierosFile',
+                'declaracionRentaFile',
                 'cedulaRepresentanteLegalFile',
                 'certificacionBancariaFile',
               ] as const
@@ -1468,6 +1476,8 @@ export default function ProviderForm() {
                 camaraComercioFile: 'Cámara de Comercio',
                 cedulaRepresentanteLegalFile: 'Cédula Representante Legal',
                 certificacionBancariaFile: 'Certificación Bancaria',
+                estadosFinancierosFile: 'Estados Financieros',
+                declaracionRentaFile: 'Declaración de Renta',
               };
               const urlField = `${fieldName}Url` as keyof ProviderFormValues;
               const fileUrl = providerData?.[urlField];

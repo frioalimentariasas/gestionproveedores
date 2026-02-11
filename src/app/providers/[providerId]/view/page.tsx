@@ -160,6 +160,8 @@ export default function ProviderViewPage() {
       { Section: '6. Documentos' },
       { Section: '', Field: 'RUT', Value: providerData.rutFileUrl },
       { Section: '', Field: 'Cámara de Comercio', Value: providerData.camaraComercioFileUrl },
+      { Section: '', Field: 'Estados Financieros', Value: providerData.estadosFinancierosFileUrl },
+      { Section: '', Field: 'Declaración de Renta', Value: providerData.declaracionRentaFileUrl },
       { Section: '', Field: 'Cédula Representante Legal', Value: providerData.cedulaRepresentanteLegalFileUrl },
       { Section: '', Field: 'Certificación Bancaria', Value: providerData.certificacionBancariaFileUrl },
       
@@ -356,6 +358,8 @@ export default function ProviderViewPage() {
             { title: `${providerData.personType === 'Persona Jurídica' ? '6' : '5'}. Documentos`, fields: [
                 { label: "RUT", value: providerData.rutFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
                 { label: "Cámara de Comercio", value: providerData.camaraComercioFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Estados Financieros", value: providerData.estadosFinancierosFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "Declaración de Renta", value: providerData.declaracionRentaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
                 { label: "Cédula Representante Legal", value: providerData.cedulaRepresentanteLegalFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
                 { label: "Certificación Bancaria", value: providerData.certificacionBancariaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
             ] },
@@ -700,6 +704,14 @@ export default function ProviderViewPage() {
                 <FileLinkField
                   label="Cámara de Comercio"
                   url={providerData.camaraComercioFileUrl}
+                />
+                <FileLinkField
+                  label="Estados Financieros"
+                  url={providerData.estadosFinancierosFileUrl}
+                />
+                <FileLinkField
+                  label="Declaración de Renta"
+                  url={providerData.declaracionRentaFileUrl}
                 />
                 <FileLinkField
                   label="Cédula Representante Legal"

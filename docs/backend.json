@@ -74,6 +74,16 @@
           "description": "URL of the Certificacion Bancaria (Bank Certification) file stored in cloud storage.",
           "format": "uri"
         },
+        "estadosFinancierosFileUrl": {
+          "type": "string",
+          "description": "URL of the Estados Financieros (Financial Statements) file stored in cloud storage.",
+          "format": "uri"
+        },
+        "declaracionRentaFileUrl": {
+          "type": "string",
+          "description": "URL of the Declaracion de Renta (Tax Declaration) file stored in cloud storage.",
+          "format": "uri"
+        },
         "sarlaftAccepted": {
           "type": "boolean",
           "description": "Indicates whether the provider has accepted the SARLAFT terms and conditions."
