@@ -38,22 +38,29 @@ export async function toggleUserStatus(uid: string, disabled: boolean) {
 }
 
 
-export async function getProviderDataByEmail(email: string) {
+export async function getProviderDataByNit(nit: string) {
   try {
     const providersRef = admin.firestore().collection('providers');
-    const snapshot = await providersRef.where('email', '==', email).limit(1).get();
+    const snapshot = await providersRef.where('documentNumber', '==', nit).limit(1).get();
 
     if (snapshot.empty) {
-      return { success: false, error: 'No provider found with that email.' };
+      return { success: false, error: 'No provider found with that NIT.' };
     }
 
     const providerDoc = snapshot.docs[0];
     const providerData = providerDoc.data();
     
-    return { success: true, data: { businessName: providerData.businessName } };
+    // Return the data needed for the reactivation request
+    return { 
+        success: true, 
+        data: { 
+            businessName: providerData.businessName,
+            email: providerData.email 
+        } 
+    };
 
   } catch (error: any) {
-    console.error('Error fetching provider data by email:', error);
+    console.error('Error fetching provider data by NIT:', error);
     return { success: false, error: error.message };
   }
 }

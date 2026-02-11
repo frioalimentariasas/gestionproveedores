@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { EVALUATION_CRITERIA } from './evaluations';
 
 export const loginSchema = z.object({
-  email: z
+  nit: z
     .string()
-    .min(1, 'El email es requerido.')
-    .email('El email no es válido.'),
+    .min(1, 'El NIT es requerido.')
+    .regex(/^[0-9]{1,10}$/, 'El NIT debe ser un número de máximo 10 dígitos.'),
   password: z.string().min(1, 'La contraseña es requerida.'),
 });
 
@@ -29,6 +29,17 @@ export const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden.',
     path: ['confirmPassword'],
+  })
+  .superRefine((data, ctx) => {
+    if (data.documentType === 'NIT') {
+      if (!/^[0-9]{10}$/.test(data.documentNumber)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El NIT debe ser un número de 10 dígitos.',
+          path: ['documentNumber'],
+        });
+      }
+    }
   });
 
 export const updateNameSchema = z.object({
@@ -50,7 +61,7 @@ export const updatePasswordSchema = z
     path: ['confirmPassword'],
   });
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_FILE_TYPES = ['application/pdf'];
 
 const fileSchema = z
@@ -58,7 +69,7 @@ const fileSchema = z
   .refine((files) => files?.length === 1, 'El archivo es requerido.')
   .refine(
     (files) => files?.[0]?.size <= MAX_FILE_SIZE,
-    `El tamaño máximo del archivo es de 2MB.`
+    `El tamaño máximo del archivo es de 5MB.`
   )
   .refine(
     (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
@@ -74,7 +85,7 @@ const fileSchemaOptional = z
       files.length === 0 ||
       (files?.[0]?.size <= MAX_FILE_SIZE &&
         ACCEPTED_FILE_TYPES.includes(files?.[0]?.type)),
-    'El archivo debe ser un PDF de menos de 2MB.'
+    'El archivo debe ser un PDF de menos de 5MB.'
   );
 
 export const providerFormSchema = z

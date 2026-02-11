@@ -61,22 +61,25 @@ export function RegisterForm() {
     if (!auth || !firestore) return;
     setIsSubmitting(true);
     try {
+      // Use the NIT (documentNumber) to create a synthetic email for auth
+      const syntheticEmail = `${values.documentNumber}@proveedores.frioalimentaria.com.co`;
+      
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        values.email,
+        syntheticEmail,
         values.password
       );
       const user = userCredential.user;
 
-      // Create a partial provider profile in Firestore
+      // Create a partial provider profile in Firestore, storing the REAL email here
       await setDoc(
         doc(firestore, 'providers', user.uid),
         {
           id: user.uid,
-          email: values.email,
+          email: values.email, // Real email for communication
           businessName: values.businessName,
           documentType: values.documentType,
-          documentNumber: values.documentNumber,
+          documentNumber: values.documentNumber, // This is the NIT, used as username
           formLocked: false,
         },
         { merge: true }
@@ -101,7 +104,7 @@ export function RegisterForm() {
         title: 'Error en el registro',
         description:
           error.code === 'auth/email-already-in-use'
-            ? 'El correo electrónico ya está en uso.'
+            ? 'El NIT ya se encuentra registrado.'
             : 'Ha ocurrido un error inesperado.',
       });
     } finally {
@@ -154,9 +157,9 @@ export function RegisterForm() {
           name="documentNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de Documento</FormLabel>
+              <FormLabel>Número de Documento (Será tu usuario)</FormLabel>
               <FormControl>
-                <Input placeholder="Tu número de documento" {...field} />
+                <Input placeholder="Tu número de documento (sin dígito de verif.)" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -167,7 +170,7 @@ export function RegisterForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email (Para notificaciones)</FormLabel>
               <FormControl>
                 <Input
                   placeholder="tu@email.com"

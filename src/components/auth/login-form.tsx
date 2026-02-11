@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { notifyAdminOfReactivationRequest } from '@/actions/email';
-import { getProviderDataByEmail } from '@/actions/user-management';
+import { getProviderDataByNit } from '@/actions/user-management';
 
 export function LoginForm() {
   const { toast } = useToast();
@@ -41,12 +41,12 @@ export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [showDisabledDialog, setShowDisabledDialog] = useState(false);
-  const [attemptedEmail, setAttemptedEmail] = useState('');
+  const [attemptedNit, setAttemptedNit] = useState('');
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      nit: '',
       password: '',
     },
   });
@@ -55,7 +55,8 @@ export function LoginForm() {
     if (!auth) return;
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const syntheticEmail = `${values.nit}@proveedores.frioalimentaria.com.co`;
+      await signInWithEmailAndPassword(auth, syntheticEmail, values.password);
       toast({
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
@@ -63,7 +64,7 @@ export function LoginForm() {
       router.push('/');
     } catch (error: any) {
       if (error.code === 'auth/user-disabled') {
-        setAttemptedEmail(values.email);
+        setAttemptedNit(values.nit);
         setShowDisabledDialog(true);
       } else {
         toast({
@@ -81,13 +82,13 @@ export function LoginForm() {
   }
 
   const handleReactivationRequest = async () => {
-    if (!attemptedEmail) return;
+    if (!attemptedNit) return;
 
     setIsReactivating(true);
 
-    const providerDataResult = await getProviderDataByEmail(attemptedEmail);
+    const providerDataResult = await getProviderDataByNit(attemptedNit);
 
-    if (!providerDataResult.success || !providerDataResult.data?.businessName) {
+    if (!providerDataResult.success || !providerDataResult.data?.businessName || !providerDataResult.data?.email) {
       toast({
         variant: 'destructive',
         title: 'Error al obtener datos',
@@ -98,9 +99,9 @@ export function LoginForm() {
       return;
     }
 
-    const businessName = providerDataResult.data.businessName;
+    const { businessName, email } = providerDataResult.data;
     
-    const result = await notifyAdminOfReactivationRequest({ providerEmail: attemptedEmail, businessName });
+    const result = await notifyAdminOfReactivationRequest({ providerEmail: email, businessName });
     
     setShowDisabledDialog(false);
     setIsReactivating(false);
@@ -125,16 +126,16 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="email"
+            name="nit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>NIT (Sin dígito de verificación)</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="tu@email.com"
+                    placeholder="Tu NIT de 10 dígitos"
                     {...field}
-                    type="email"
-                    autoComplete="email"
+                    type="text"
+                    autoComplete="username"
                   />
                 </FormControl>
                 <FormMessage />

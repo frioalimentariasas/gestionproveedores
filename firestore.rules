@@ -101,7 +101,6 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
-
     /**
      * @description Rules for the `providers` collection. A provider can manage their own
      *              document, and administrators have read and update access to all documents.
