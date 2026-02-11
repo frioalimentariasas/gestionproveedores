@@ -4,11 +4,9 @@ import {
   useFirestore,
   useCollection,
   useMemoFirebase,
-  errorEmitter,
-  FirestorePermissionError,
 } from '@/firebase';
 import { collection, query, doc, deleteDoc } from 'firebase/firestore';
-import { Loader2, PlusCircle, Trash2, Pencil } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Pencil, FileUp, FileDown, Printer } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -39,6 +37,9 @@ import {
 import { useState } from 'react';
 import { CategoryModal } from './category-modal';
 import { Badge } from '../ui/badge';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import { CategoryImportModal } from './category-import-modal';
 
 interface Category {
   id: string;
@@ -55,6 +56,7 @@ export default function CategoriesTable() {
     category: Category | null;
   }>({ isOpen: false, category: null });
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const categoriesQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'categories')) : null),
@@ -89,6 +91,75 @@ export default function CategoriesTable() {
     setDeleteTarget(null);
   };
 
+  const handleExportExcel = () => {
+    if (!categories || categories.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No hay datos',
+        description: 'No hay categorías para exportar.',
+      });
+      return;
+    }
+    const dataToExport = categories.map(({ name, description, categoryType }) => ({
+      Nombre: name,
+      Descripción: description || '',
+      Tipo: categoryType || '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Categorías");
+    XLSX.writeFile(workbook, "Categorias_Proveedores.xlsx");
+    toast({ title: 'Exportación Exitosa', description: 'Las categorías se han exportado a Excel.' });
+  };
+
+  const handleExportPdf = async () => {
+    if (!categories || categories.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No hay datos',
+        description: 'No hay categorías para exportar.',
+      });
+      return;
+    }
+
+    const doc = new jsPDF();
+    const margin = 15;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPos = margin;
+
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text('Listado de Categorías', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    categories.forEach(cat => {
+        if (yPos > doc.internal.pageSize.getHeight() - 20) {
+            doc.addPage();
+            yPos = margin;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(cat.name, margin, yPos);
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(150);
+        doc.text(`Tipo: ${cat.categoryType || 'N/A'}`, margin, yPos + 5);
+        
+        doc.setTextColor(0);
+        const descLines = doc.splitTextToSize(cat.description || 'Sin descripción.', pageWidth - (margin * 2));
+        doc.text(descLines, margin, yPos + 12);
+        
+        yPos += 12 + (descLines.length * 5) + 5;
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yPos - 2, pageWidth - margin, yPos - 2);
+    });
+
+    doc.save('Categorias.pdf');
+    toast({ title: 'Exportación Exitosa', description: 'Las categorías se han exportado a PDF.' });
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -111,7 +182,19 @@ export default function CategoriesTable() {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-2 flex-wrap">
+        <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+          <FileUp className="mr-2 h-4 w-4" />
+          Importar
+        </Button>
+        <Button variant="outline" onClick={handleExportExcel}>
+          <FileDown className="mr-2 h-4 w-4" />
+          Exportar Excel
+        </Button>
+        <Button variant="outline" onClick={handleExportPdf}>
+          <Printer className="mr-2 h-4 w-4" />
+          Exportar PDF
+        </Button>
         <Button onClick={() => setModalState({ isOpen: true, category: null })}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nueva Categoría
@@ -190,6 +273,11 @@ export default function CategoriesTable() {
         isOpen={modalState.isOpen}
         onClose={() => setModalState({ isOpen: false, category: null })}
         category={modalState.category}
+      />
+
+      <CategoryImportModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
 
       <AlertDialog
