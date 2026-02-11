@@ -46,7 +46,7 @@ export function LoginForm() {
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      nit: '',
+      identifier: '',
       password: '',
     },
   });
@@ -55,16 +55,28 @@ export function LoginForm() {
     if (!auth) return;
     setIsSubmitting(true);
     try {
-      const syntheticEmail = `${values.nit}@proveedores.frioalimentaria.com.co`;
-      await signInWithEmailAndPassword(auth, syntheticEmail, values.password);
+      let loginEmail: string;
+      const isEmail = values.identifier.includes('@');
+
+      if (isEmail) {
+        // User is logging in with an email (likely an admin)
+        loginEmail = values.identifier;
+      } else {
+        // User is logging in with a NIT, create the synthetic email
+        loginEmail = `${values.identifier}@proveedores.frioalimentaria.com.co`;
+      }
+      
+      await signInWithEmailAndPassword(auth, loginEmail, values.password);
+
       toast({
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
       router.push('/');
     } catch (error: any) {
-      if (error.code === 'auth/user-disabled') {
-        setAttemptedNit(values.nit);
+      const isEmail = values.identifier.includes('@');
+      if (error.code === 'auth/user-disabled' && !isEmail) {
+        setAttemptedNit(values.identifier);
         setShowDisabledDialog(true);
       } else {
         toast({
@@ -126,13 +138,13 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="nit"
+            name="identifier"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>NIT (Sin dígito de verificación)</FormLabel>
+                <FormLabel>NIT o Email</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Tu NIT de 10 dígitos"
+                    placeholder="Tu NIT o tu Email"
                     {...field}
                     type="text"
                     autoComplete="username"

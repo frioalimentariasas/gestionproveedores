@@ -2,10 +2,7 @@ import { z } from 'zod';
 import { EVALUATION_CRITERIA } from './evaluations';
 
 export const loginSchema = z.object({
-  nit: z
-    .string()
-    .min(1, 'El NIT es requerido.')
-    .regex(/^[0-9]{1,10}$/, 'El NIT debe ser un número de máximo 10 dígitos.'),
+  identifier: z.string().min(1, 'El NIT o Email es requerido.'),
   password: z.string().min(1, 'La contraseña es requerida.'),
 });
 
