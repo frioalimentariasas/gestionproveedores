@@ -33,9 +33,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { providerFormSchema } from '@/lib/schemas';
 import { Country, State, City, IState, ICity } from 'country-state-city';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { useState, useEffect, useCallback } from 'react';
+import {
+  useFirestore,
+  useUser,
+  useDoc,
+  useMemoFirebase,
+  useCollection,
+} from '@/firebase';
+import { doc, setDoc, collection, query } from 'firebase/firestore';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Info, Loader2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -52,12 +58,19 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { notifyAdminOfFormUpdate } from '@/actions/email';
+import { MultiSelect, type Option } from '../ui/multi-select';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
+interface Category {
+  id: string;
+  name: string;
+  categoryType: 'Bienes' | 'Servicios (Contratista)';
+}
+
 const initialFormValues: ProviderFormValues = {
-  serviceDescription: '',
   providerType: [],
+  categoryIds: [],
   documentType: '',
   documentNumber: '',
   businessName: '',
@@ -141,6 +154,13 @@ export default function ProviderForm() {
   const { data: providerData, isLoading: isProviderDataLoading } =
     useDoc<ProviderFormValues>(providerDocRef);
 
+  const categoriesQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'categories')) : null),
+    [firestore]
+  );
+  const { data: categories, isLoading: isCategoriesLoading } =
+    useCollection<Category>(categoriesQuery);
+
   const isLocked = providerData?.formLocked ?? false;
 
   const form = useForm<ProviderFormValues>({
@@ -149,6 +169,7 @@ export default function ProviderForm() {
   });
   const { reset } = form;
 
+  const watchedProviderType = form.watch('providerType');
   const watchedImplementsEnvironmentalMeasures = form.watch(
     'implementsEnvironmentalMeasures'
   );
@@ -216,6 +237,38 @@ export default function ProviderForm() {
       stableReset({ ...initialFormValues, ...providerData });
     }
   }, [providerData, stableReset]);
+
+  // Filter categories based on provider type selection
+  const categoryOptions = useMemo(
+    () =>
+      categories
+        ? categories.map((c) => ({ value: c.id, label: c.name, type: c.categoryType }))
+        : [],
+    [categories]
+  );
+  
+  const filteredCategoryOptions = useMemo(() => {
+    if (!watchedProviderType || watchedProviderType.length === 0) {
+      return [];
+    }
+    if (watchedProviderType.length === 2) {
+      return categoryOptions; // Both selected, show all
+    }
+    const selectedType = watchedProviderType[0];
+    return categoryOptions.filter((opt) => opt.type === selectedType);
+  }, [watchedProviderType, categoryOptions]);
+
+  // Clear selected categories if they are no longer in the filtered list
+  useEffect(() => {
+    const currentCategoryIds = form.getValues('categoryIds');
+    if (currentCategoryIds && currentCategoryIds.length > 0) {
+      const filteredIds = new Set(filteredCategoryOptions.map(opt => opt.value));
+      const newCategoryIds = currentCategoryIds.filter(id => filteredIds.has(id));
+      if (newCategoryIds.length !== currentCategoryIds.length) {
+        form.setValue('categoryIds', newCategoryIds);
+      }
+    }
+  }, [filteredCategoryOptions, form]);
 
 
   const uploadFile = async (
@@ -395,35 +448,6 @@ export default function ProviderForm() {
           </Alert>
         )}
 
-        <div>
-          <div className="bg-primary text-primary-foreground font-bold text-center p-3 rounded-t-lg">
-            OBLIGATORIO DILIGENCIAMIENTO POR PARTE DEL PROVEEDOR
-          </div>
-          <Card className="rounded-t-none">
-            <CardContent className="pt-6">
-              <FormField
-                control={form.control}
-                name="serviceDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Breve descripción del bien y/o servicio ofrecido:
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Detalla los productos o servicios que tu empresa provee..."
-                        {...field}
-                        disabled={isLocked}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
         <Card>
           <CardHeader>
             <CardTitle>1. Información del Proveedor</CardTitle>
@@ -559,6 +583,28 @@ export default function ProviderForm() {
                 </FormItem>
               )}
             />
+            
+            {(watchedProviderType && watchedProviderType.length > 0) && (
+            <FormField
+              control={form.control}
+              name="categoryIds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categorías</FormLabel>
+                   <MultiSelect
+                      options={filteredCategoryOptions}
+                      selected={categoryOptions.filter(opt => field.value?.includes(opt.value))}
+                      onChange={(newSelectedOptions) => field.onChange(newSelectedOptions.map(opt => opt.value))}
+                      placeholder='Selecciona categorías...'
+                      isLoading={isCategoriesLoading}
+                      className={isLocked ? 'pointer-events-none opacity-50' : ''}
+                   />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {isLocked ? (

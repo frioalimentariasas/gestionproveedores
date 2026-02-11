@@ -310,11 +310,20 @@
         "description": {
           "type": "string",
           "description": "A brief description of the category."
+        },
+        "categoryType": {
+          "type": "string",
+          "description": "The type of provider this category applies to.",
+          "enum": [
+            "Bienes",
+            "Servicios (Contratista)"
+          ]
         }
       },
       "required": [
         "id",
-        "name"
+        "name",
+        "categoryType"
       ]
     }
   },

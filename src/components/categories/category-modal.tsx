@@ -28,11 +28,13 @@ import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { categorySchema } from '@/lib/schemas';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 interface Category {
   id: string;
   name: string;
   description?: string;
+  categoryType?: 'Bienes' | 'Servicios (Contratista)';
 }
 
 interface CategoryModalProps {
@@ -58,6 +60,7 @@ export function CategoryModal({
     defaultValues: {
       name: '',
       description: '',
+      categoryType: 'Bienes',
     },
   });
 
@@ -67,11 +70,13 @@ export function CategoryModal({
         form.reset({
           name: category.name,
           description: category.description || '',
+          categoryType: category.categoryType || 'Bienes',
         });
       } else {
         form.reset({
           name: '',
           description: '',
+          categoryType: 'Bienes',
         });
       }
     }
@@ -148,6 +153,38 @@ export function CategoryModal({
                       placeholder="Describe para qué se usa esta categoría"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="categoryType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Tipo de Categoría</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Bienes" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Bienes</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Servicios (Contratista)" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Servicios (Contratista)
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

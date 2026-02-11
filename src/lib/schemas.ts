@@ -87,13 +87,11 @@ const fileSchemaOptional = z
 
 export const providerFormSchema = z
   .object({
-    serviceDescription: z
-      .string()
-      .min(1, 'La descripción del bien y/o servicio es requerida.'),
     // Section 1
     providerType: z.array(z.string()).refine((value) => value.length > 0, {
       message: 'Debes seleccionar al menos un tipo de proveedor.',
     }),
+    categoryIds: z.array(z.string()).min(1, 'Debes seleccionar al menos una categoría.'),
     documentType: z.string().min(1, 'El tipo de documento es requerido.'),
     documentNumber: z
       .string()
@@ -182,8 +180,6 @@ export const providerFormSchema = z
     // Status fields
     formLocked: z.boolean().optional(),
     disabled: z.boolean().optional(),
-    // New field
-    categoryIds: z.array(z.string()).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.personType === 'Persona Jurídica') {
@@ -222,4 +218,5 @@ export const evaluationSchema = z.object({
 export const categorySchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().optional(),
+  categoryType: z.string().min(1, 'El tipo de categoría es requerido.'),
 });

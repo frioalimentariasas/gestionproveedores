@@ -38,11 +38,13 @@ import {
 } from '../ui/alert-dialog';
 import { useState } from 'react';
 import { CategoryModal } from './category-modal';
+import { Badge } from '../ui/badge';
 
 interface Category {
   id: string;
   name: string;
   description?: string;
+  categoryType?: 'Bienes' | 'Servicios (Contratista)';
 }
 
 export default function CategoriesTable() {
@@ -121,13 +123,14 @@ export default function CategoriesTable() {
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(!categories || categories.length === 0) ? (
                  <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                         No hay categorías registradas.
                     </TableCell>
                 </TableRow>
@@ -136,6 +139,11 @@ export default function CategoriesTable() {
                 <TableRow key={category.id}>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell>{category.description || 'N/A'}</TableCell>
+                    <TableCell>
+                      {category.categoryType ? (
+                        <Badge variant="secondary">{category.categoryType}</Badge>
+                      ) : 'N/A'}
+                    </TableCell>
                     <TableCell className="text-right">
                     <TooltipProvider>
                         <Tooltip>
