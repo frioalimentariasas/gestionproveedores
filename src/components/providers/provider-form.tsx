@@ -57,7 +57,7 @@ type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
 const initialFormValues: ProviderFormValues = {
   serviceDescription: '',
-  providerType: '',
+  providerType: [],
   documentType: '',
   documentNumber: '',
   businessName: '',
@@ -112,6 +112,12 @@ const personTypes = ['Persona Natural', 'Persona Jurídica'];
 const taxRegimeTypes = ['Simplificado', 'Común'];
 const yesNoOptions = ['Sí', 'No'];
 const legalRepDocTypes = ['CC', 'CE', 'Pasaporte'];
+
+const providerTypeOptions = [
+  { id: 'Bienes', label: 'Bienes' },
+  { id: 'Servicios (Contratista)', label: 'Servicios (Contratista)' },
+] as const;
+
 
 export default function ProviderForm() {
   const { toast } = useToast();
@@ -525,31 +531,30 @@ export default function ProviderForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Proveedor</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex items-center space-x-4"
-                      disabled={isLocked}
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
+                  <div className="flex flex-col space-y-2 pt-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+                    {providerTypeOptions.map((item) => (
+                      <FormItem
+                        key={item.id}
+                        className="flex flex-row items-center space-x-2 space-y-0"
+                      >
                         <FormControl>
-                          <RadioGroupItem value="Insumos y/o Materiales" />
+                          <Checkbox
+                            checked={(field.value as string[])?.includes(item.id)}
+                            onCheckedChange={(checked) => {
+                              const currentValue = (field.value as string[]) || [];
+                              return checked
+                                ? field.onChange([...currentValue, item.id])
+                                : field.onChange(
+                                    currentValue.filter((value) => value !== item.id)
+                                  );
+                            }}
+                            disabled={isLocked}
+                          />
                         </FormControl>
-                        <FormLabel className="font-normal">
-                          Insumos y/o Materiales
-                        </FormLabel>
+                        <FormLabel className="font-normal">{item.label}</FormLabel>
                       </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="Servicios (Contratista)" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Servicios (Contratista)
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

@@ -94,7 +94,9 @@ export const providerFormSchema = z
       .string()
       .min(1, 'La descripción del bien y/o servicio es requerida.'),
     // Section 1
-    providerType: z.string().min(1, 'El tipo de proveedor es requerido.'),
+    providerType: z.array(z.string()).refine((value) => value.length > 0, {
+      message: 'Debes seleccionar al menos un tipo de proveedor.',
+    }),
     documentType: z.string().min(1, 'El tipo de documento es requerido.'),
     documentNumber: z
       .string()

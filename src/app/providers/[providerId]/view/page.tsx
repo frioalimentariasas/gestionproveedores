@@ -109,7 +109,7 @@ export default function ProviderViewPage() {
 
       { Section: '1. Información del Proveedor' },
       { Section: '', Field: 'Razón social o nombre', Value: providerData.businessName },
-      { Section: '', Field: 'Tipo de Proveedor', Value: providerData.providerType },
+      { Section: '', Field: 'Tipo de Proveedor', Value: providerData.providerType?.join(', ') },
       { Section: '', Field: 'Tipo de Documento', Value: providerData.documentType },
       { Section: '', Field: 'Número', Value: providerData.documentNumber },
       { Section: '', Field: 'Tipo de Persona', Value: providerData.personType },
@@ -305,7 +305,7 @@ export default function ProviderViewPage() {
             { title: "DESCRIPCIÓN DEL BIEN Y/O SERVICIO", fields: [{ label: '', value: providerData.serviceDescription }] },
             { title: "1. Información del Proveedor", fields: [
                 { label: "Razón Social o nombre", value: providerData.businessName },
-                { label: "Tipo de Proveedor", value: providerData.providerType },
+                { label: "Tipo de Proveedor", value: providerData.providerType?.join(', ') },
                 { label: "Tipo de Documento", value: providerData.documentType },
                 { label: "Número", value: providerData.documentNumber },
                 { label: "Tipo de Persona", value: providerData.personType },
@@ -508,7 +508,7 @@ export default function ProviderViewPage() {
                 />
                  <InfoField
                   label="Tipo de Proveedor"
-                  value={providerData.providerType}
+                  value={providerData.providerType?.join(', ')}
                 />
                 <InfoField
                   label="Tipo de Documento"

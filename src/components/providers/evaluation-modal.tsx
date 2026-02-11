@@ -40,7 +40,7 @@ import {
 interface EvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  provider: { id: string; businessName: string; providerType?: string } | null;
+  provider: { id: string; businessName: string; providerType?: string[] } | null;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -95,16 +95,20 @@ export function EvaluationModal({
   const [totalScore, setTotalScore] = useState(0);
 
   const availableEvaluationTypes = useMemo(() => {
-    if (!provider?.providerType) {
+    if (!provider?.providerType || !Array.isArray(provider.providerType) || provider.providerType.length === 0) {
       return [];
     }
-    if (provider.providerType === 'Insumos y/o Materiales') {
-      return ['provider_selection', 'provider_performance'] as EvaluationType[];
+
+    const types: EvaluationType[] = [];
+
+    if (provider.providerType.includes('Bienes')) {
+        types.push('provider_selection', 'provider_performance');
     }
-    if (provider.providerType === 'Servicios (Contratista)') {
-      return ['contractor_evaluation'] as EvaluationType[];
+    if (provider.providerType.includes('Servicios (Contratista)')) {
+        types.push('contractor_evaluation');
     }
-    return [];
+    
+    return [...new Set(types)];
   }, [provider]);
   
   const evaluationSchema = useMemo(() => {

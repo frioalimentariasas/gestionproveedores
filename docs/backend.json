@@ -11,12 +11,15 @@
           "description": "Unique identifier for the Provider entity."
         },
         "providerType": {
-          "type": "string",
-          "description": "Define si el proveedor es de insumos y materiales o de servicios (contratista).",
-          "enum": [
-            "Insumos y/o Materiales",
-            "Servicios (Contratista)"
-          ]
+          "type": "array",
+          "description": "Define si el proveedor es de Bienes, Servicios (Contratista), o ambos.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Bienes",
+              "Servicios (Contratista)"
+            ]
+          }
         },
         "documentType": {
           "type": "string",
