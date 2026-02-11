@@ -6,6 +6,7 @@ import {
   useMemoFirebase,
   errorEmitter,
   FirestorePermissionError,
+  useUser,
 } from '@/firebase';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import {
@@ -19,6 +20,7 @@ import {
   ClipboardList,
   PlusCircle,
   Tag,
+  Trash2,
 } from 'lucide-react';
 import {
   Table,
@@ -53,6 +55,7 @@ import { useState } from 'react';
 import {
   resetUserPassword,
   toggleUserStatus,
+  deleteProvider,
 } from '@/actions/user-management';
 import {
   notifyProviderFormUnlocked,
@@ -78,6 +81,7 @@ interface Provider {
 export default function ProvidersTable() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user } = useUser();
 
   const [actionState, setActionState] = useState<{
     [key: string]: boolean;
@@ -90,6 +94,10 @@ export default function ProvidersTable() {
 
   const [evaluationTarget, setEvaluationTarget] = useState<Provider | null>(null);
   const [assignCategoriesTarget, setAssignCategoriesTarget] = useState<Provider | null>(null);
+  const [deleteDialogState, setDeleteDialogState] = useState<{
+    isOpen: boolean;
+    provider: Provider | null;
+  }>({ isOpen: false, provider: null });
 
 
   const providersQuery = useMemoFirebase(
@@ -203,6 +211,29 @@ export default function ProvidersTable() {
     } finally {
       setActionLoading(provider.id, false);
       setDialogState({ type: null, provider: null });
+    }
+  };
+
+  const handleDeleteProvider = async () => {
+    const provider = deleteDialogState.provider;
+    if (!provider) return;
+
+    setActionLoading(provider.id, true);
+    const result = await deleteProvider(provider.id);
+    setActionLoading(provider.id, false);
+    setDeleteDialogState({ isOpen: false, provider: null });
+
+    if (result.success) {
+      toast({
+        title: 'Proveedor Eliminado',
+        description: `El proveedor ${provider.businessName} y todos sus datos han sido eliminados.`,
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Error al eliminar',
+        description: result.error || 'Ocurrió un error inesperado al eliminar el proveedor.',
+      });
     }
   };
 
@@ -340,6 +371,23 @@ export default function ProvidersTable() {
                         </TooltipTrigger>
                         <TooltipContent><p>{provider.disabled ? 'Activar Proveedor' : 'Desactivar Proveedor'}</p></TooltipContent>
                       </Tooltip>
+                      {user?.email === 'sistemas@frioalimentaria.com.co' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteDialogState({ isOpen: true, provider: provider })}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Eliminar Proveedor (Permanente)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </TooltipProvider>
                     </div>
                   )}
@@ -443,6 +491,31 @@ export default function ProvidersTable() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleToggleStatus}>
               {dialogState.provider?.disabled ? 'Activar' : 'Desactivar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deleteDialogState.isOpen}
+        onOpenChange={(open) => !open && setDeleteDialogState({ isOpen: false, provider: null })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente al proveedor{' '}
+              <strong>{deleteDialogState.provider?.businessName}</strong>, su cuenta, sus
+              evaluaciones y todos los documentos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteProvider}
+            >
+              Sí, eliminar permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

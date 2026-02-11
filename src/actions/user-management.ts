@@ -97,3 +97,30 @@ export async function migrateUserToNitLogin(uid: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function deleteProvider(uid: string) {
+  try {
+    const bucket = admin.storage().bucket();
+    const providerRef = admin.firestore().collection('providers').doc(uid);
+
+    // Concurrently delete Storage files and Firestore documents
+    await Promise.all([
+      bucket.deleteFiles({ prefix: `providers/${uid}/` }),
+      admin.firestore().recursiveDelete(providerRef),
+    ]);
+    
+    // Finally, delete the auth user
+    await admin.auth().deleteUser(uid);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting provider:', error);
+    // If the user is not found in auth, it might have been deleted already.
+    // We can consider this a success for the cleanup operation.
+    if (error.code === 'auth/user-not-found') {
+      console.warn(`Auth user with UID ${uid} not found. It might have been deleted previously.`);
+      return { success: true };
+    }
+    return { success: false, error: error.message };
+  }
+}
