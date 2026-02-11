@@ -46,18 +46,6 @@ interface EvaluationModalProps {
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_FILE_TYPES = ['application/pdf'];
 
-const fileSchema = z
-  .any()
-  .refine((files) => files?.length === 1, 'El archivo es requerido.')
-  .refine(
-    (files) => files?.[0]?.size <= MAX_FILE_SIZE,
-    `El tamaño máximo del archivo es de 5MB.`
-  )
-  .refine(
-    (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
-    'Solo se aceptan archivos .pdf'
-  );
-
 const fileSchemaOptional = z
   .any()
   .optional()
@@ -73,9 +61,10 @@ const fileSchemaOptional = z
 const baseEvaluationSchema = z.object({
   scores: z.record(z.number().min(1).max(5)),
   comments: z.string().optional(),
-  quotationNumber: z.string().optional(),
   fracttalOrderIds: z.string().optional(),
 });
+
+const evaluationSchema = baseEvaluationSchema.extend({ evidenceFile: fileSchemaOptional });
 
 type EvaluationFormValues = z.infer<typeof evaluationSchema>;
 
@@ -102,7 +91,7 @@ export function EvaluationModal({
     const types: EvaluationType[] = [];
 
     if (provider.providerType.includes('Bienes')) {
-        types.push('provider_selection', 'provider_performance');
+        types.push('provider_performance');
     }
     if (provider.providerType.includes('Servicios (Contratista)')) {
         types.push('contractor_evaluation');
@@ -110,14 +99,6 @@ export function EvaluationModal({
     
     return [...new Set(types)];
   }, [provider]);
-  
-  const evaluationSchema = useMemo(() => {
-    if (['provider_selection', 'contractor_evaluation'].includes(selectedType || '')) {
-      return baseEvaluationSchema.extend({ evidenceFile: fileSchema });
-    }
-    return baseEvaluationSchema.extend({ evidenceFile: fileSchemaOptional });
-  }, [selectedType]);
-
 
   const criteria = useMemo(
     () => (selectedType ? EVALUATION_CRITERIA[selectedType] : []),
@@ -134,7 +115,6 @@ export function EvaluationModal({
     defaultValues: {
       scores: defaultScores,
       comments: '',
-      quotationNumber: '',
       fracttalOrderIds: '',
     },
   });
@@ -162,7 +142,6 @@ export function EvaluationModal({
     form.reset({
       scores: newScores,
       comments: '',
-      quotationNumber: '',
       fracttalOrderIds: '',
     });
 
@@ -251,7 +230,6 @@ export function EvaluationModal({
       comments: values.comments || '',
       createdAt: serverTimestamp(),
       ...(evidenceFileUrl && { evidenceFileUrl }),
-      ...(values.quotationNumber && { quotationNumber: values.quotationNumber }),
       ...(values.fracttalOrderIds && { fracttalOrderIds: values.fracttalOrderIds }),
     };
 
@@ -314,10 +292,10 @@ export function EvaluationModal({
                   key={key}
                   variant="outline"
                   className="justify-start h-auto py-3 text-left"
-                  onClick={() => setSelectedType(key)}
+                  onClick={() => setSelectedType(key as EvaluationType)}
                 >
                   <span className="font-semibold">
-                    {EVALUATION_TYPE_NAMES[key]}
+                    {EVALUATION_TYPE_NAMES[key as EvaluationType]}
                   </span>
                 </Button>
               ))}
@@ -354,32 +332,19 @@ export function EvaluationModal({
                   {/* --- Evidence Fields --- */}
                   <div className="space-y-4 rounded-md border bg-muted/50 p-4">
                     <h4 className="font-semibold text-sm mb-2">Soportes de la Evaluación</h4>
-                    {['provider_selection', 'contractor_evaluation'].includes(selectedType) && (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="quotationNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Número de Cotización (Opcional)</FormLabel>
-                              <FormControl><Input placeholder="Ej: COT-2024-001" {...field} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                     {selectedType === 'contractor_evaluation' && (
                         <FormField
                           control={form.control}
                           name="evidenceFile"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Adjuntar Cotización (PDF)</FormLabel>
+                              <FormLabel>Adjuntar Soporte (Opcional)</FormLabel>
                               <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </>
-                    )}
+                     )}
                      {selectedType === 'provider_performance' && (
                        <>
                         <FormField
@@ -488,5 +453,3 @@ export function EvaluationModal({
     </Dialog>
   );
 }
-
-    

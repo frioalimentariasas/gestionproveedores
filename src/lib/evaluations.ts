@@ -1,13 +1,5 @@
 
 export const EVALUATION_CRITERIA = {
-  provider_selection: [
-    { id: 'quality', label: 'Calidad del producto', weight: 0.20 },
-    { id: 'price', label: 'Precio', weight: 0.15 },
-    { id: 'deliveryTime', label: 'Tiempo de entrega', weight: 0.20 },
-    { id: 'paymentConditions', label: 'Condiciones de pago', weight: 0.15 },
-    { id: 'reputation', label: 'Reputación/referencias', weight: 0.20 },
-    { id: 'afterSalesService', label: 'Soporte y servicio Post venta', weight: 0.10 },
-  ],
   provider_performance: [
     { id: 'price', label: 'Precio', weight: 0.10 },
     { id: 'creditPolicies', label: 'Políticas de crédito y descuento', weight: 0.10 },
@@ -30,7 +22,6 @@ export const EVALUATION_CRITERIA = {
 export type EvaluationType = keyof typeof EVALUATION_CRITERIA;
 
 export const EVALUATION_TYPE_NAMES: { [key in EvaluationType]: string } = {
-  provider_selection: 'Evaluación de Selección de Proveedor',
   provider_performance: 'Evaluación de Desempeño de Proveedor',
   contractor_evaluation: 'Evaluación y Selección de Contratista',
 };

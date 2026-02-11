@@ -65,7 +65,6 @@ interface Evaluation {
   comments: string;
   createdAt: Timestamp;
   evidenceFileUrl?: string;
-  quotationNumber?: string;
   fracttalOrderIds?: string;
 }
 
@@ -249,20 +248,12 @@ export default function ProviderEvaluationsPage() {
                   </p>
                 </CardContent>
                 {(evaluation.evidenceFileUrl ||
-                  evaluation.quotationNumber ||
                   evaluation.fracttalOrderIds) && (
                   <CardFooter className="flex-col items-start gap-3 bg-muted/50 pt-4">
                     <h4 className="font-semibold text-sm">
                       Soportes de la Evaluación
                     </h4>
                     <div className="space-y-2 text-sm w-full">
-                      {evaluation.quotationNumber && (
-                        <div className="flex items-center gap-2">
-                          <FileBadge className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Nº Cotización:</span>
-                          <span>{evaluation.quotationNumber}</span>
-                        </div>
-                      )}
                       {evaluation.fracttalOrderIds && (
                         <div>
                           <span className="font-medium flex items-center gap-2">
@@ -311,5 +302,3 @@ export default function ProviderEvaluationsPage() {
     </AuthGuard>
   );
 }
-
-    

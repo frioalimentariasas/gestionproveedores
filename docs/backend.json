@@ -259,7 +259,6 @@
         "evaluationType": {
           "type": "string",
           "enum": [
-            "provider_selection",
             "provider_performance",
             "contractor_evaluation"
           ]
@@ -284,10 +283,6 @@
           "type": "string",
           "format": "uri",
           "description": "URL to a supporting document like a quotation PDF."
-        },
-        "quotationNumber": {
-          "type": "string",
-          "description": "The quotation number or identifier for a selection evaluation."
         },
         "fracttalOrderIds": {
           "type": "string",
