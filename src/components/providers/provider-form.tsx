@@ -58,7 +58,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { notifyAdminOfFormUpdate } from '@/actions/email';
-import { MultiSelect, type Option } from '../ui/multi-select';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -583,27 +582,52 @@ export default function ProviderForm() {
               )}
             />
             
-            {(watchedProviderType && watchedProviderType.length > 0) && (
             <FormField
               control={form.control}
               name="categoryIds"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categorías</FormLabel>
-                   <MultiSelect
-                      options={filteredCategoryOptions}
-                      selected={categoryOptions.filter(opt => field.value?.includes(opt.value))}
-                      onChange={(newSelectedOptions) => field.onChange(newSelectedOptions.map(opt => opt.value))}
-                      placeholder='Selecciona categorías...'
-                      isLoading={isCategoriesLoading}
-                      className={isLocked ? 'pointer-events-none opacity-50' : ''}
-                   />
+                  <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
+                    {filteredCategoryOptions.length > 0 ? (
+                      filteredCategoryOptions.map((option) => (
+                        <FormItem
+                          key={option.value}
+                          className="flex flex-row items-start space-x-3 space-y-0"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(option.value)}
+                              onCheckedChange={(checked) => {
+                                const currentValue = field.value || [];
+                                return checked
+                                  ? field.onChange([...currentValue, option.value])
+                                  : field.onChange(
+                                      currentValue.filter(
+                                        (value) => value !== option.value
+                                      )
+                                    );
+                              }}
+                              disabled={isLocked}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            {option.label}
+                          </FormLabel>
+                        </FormItem>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center">
+                        {isCategoriesLoading
+                          ? 'Cargando categorías...'
+                          : 'Selecciona un Tipo de Proveedor para ver las categorías.'}
+                      </p>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            )}
-
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {isLocked ? (
