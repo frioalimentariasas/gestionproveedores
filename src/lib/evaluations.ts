@@ -23,5 +23,5 @@ export type EvaluationType = keyof typeof EVALUATION_CRITERIA;
 
 export const EVALUATION_TYPE_NAMES: { [key in EvaluationType]: string } = {
   provider_performance: 'Evaluación de Desempeño de Proveedor',
-  contractor_evaluation: 'Evaluación y Selección de Contratista',
+  contractor_evaluation: 'Evaluación de Desempeño de Contratista',
 };
