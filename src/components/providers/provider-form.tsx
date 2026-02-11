@@ -865,7 +865,7 @@ export default function ProviderForm() {
               name="providerContactName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre del contacto del proveedor</FormLabel>
+                  <FormLabel>Contacto Comercial del proveedor</FormLabel>
                   <FormControl>
                     <Input {...field} disabled={isLocked} />
                   </FormControl>

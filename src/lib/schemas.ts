@@ -62,18 +62,6 @@ export const updatePasswordSchema = z
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_FILE_TYPES = ['application/pdf'];
 
-const fileSchema = z
-  .any()
-  .refine((files) => files?.length === 1, 'El archivo es requerido.')
-  .refine(
-    (files) => files?.[0]?.size <= MAX_FILE_SIZE,
-    `El tamaño máximo del archivo es de 5MB.`
-  )
-  .refine(
-    (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
-    'Solo se aceptan archivos .pdf'
-  );
-
 const fileSchemaOptional = z
   .any()
   .optional()
@@ -118,11 +106,11 @@ export const providerFormSchema = z
       .or(z.literal('')),
     providerContactName: z
       .string()
-      .min(1, 'El nombre de contacto es requerido.'),
+      .min(1, 'El contacto comercial es requerido.'),
     providerContactTitle: z
       .string()
       .min(1, 'El cargo del contacto es requerido.'),
-    providerContactEmail: z.string().email('Email de contacto no válido.'),
+    providerContactEmail: z.string().email('Email de contacto no válido.').min(1, 'El email de contacto es requerido.'),
     paymentContactName: z
       .string()
       .min(1, 'El nombre de la persona para notificar pago es requerido.'),
@@ -131,7 +119,7 @@ export const providerFormSchema = z
       .min(1, 'El cargo de la persona para notificar pago es requerido.'),
     paymentContactEmail: z
       .string()
-      .email('El email para notificación de pago no es válido.'),
+      .email('El email para notificación de pago no es válido.').min(1, 'El email para notificación de pago es requerido.'),
     email: z.string().email('Email no válido.'),
 
     // Section 2 - Tributaria
@@ -149,7 +137,7 @@ export const providerFormSchema = z
     icaPercentage: z.string().optional(),
 
     // Section 3 - Ambiental
-    implementsEnvironmentalMeasures: z.string().optional(),
+    implementsEnvironmentalMeasures: z.string().min(1, 'Este campo es requerido.'),
     environmentalMeasuresDescription: z.string().optional(),
 
     // Section 4 - Representante Legal
@@ -179,7 +167,7 @@ export const providerFormSchema = z
     estadosFinancierosFileUrl: z.string().optional(),
     declaracionRentaFileUrl: z.string().optional(),
     // Section 7 - HSEQ
-    hseqSgsst: z.string().optional(),
+    hseqSgsst: z.string().min(1, 'Este campo es requerido.'),
     // Section 8 - SARLAFT
     sarlaftAccepted: z
       .boolean()
@@ -189,7 +177,7 @@ export const providerFormSchema = z
     disabled: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
-    // Legal Representative validation
+    // Section 4: Legal Representative validation
     if (data.personType === 'Persona Jurídica') {
       if (!data.legalRepresentativeName) {
         ctx.addIssue({
@@ -214,7 +202,7 @@ export const providerFormSchema = z
       }
     }
 
-    // Tax Information validation
+    // Section 2: Tax Information validation
     if (data.taxRegimeType === 'Común') {
       if (!data.isLargeTaxpayer) {
         ctx.addIssue({
@@ -291,7 +279,44 @@ export const providerFormSchema = z
         }
       }
     }
+    
+    // Section 3: Environmental validation
+    if (data.implementsEnvironmentalMeasures === 'Sí' && !data.environmentalMeasuresDescription) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Debe describir las medidas ambientales.',
+            path: ['environmentalMeasuresDescription'],
+        });
+    }
+
+    // Section 6: Document validation
+    const checkFile = (field: keyof typeof data, name: string) => {
+        const fileList = data[field] as FileList | undefined;
+        const urlField = `${String(field)}Url` as keyof typeof data;
+        const url = data[urlField] as string | undefined;
+
+        if (!url && (!fileList || fileList.length === 0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `El archivo de ${name} es requerido.`,
+            path: [field as string],
+          });
+        }
+    }
+
+    if (data.personType === 'Persona Jurídica') {
+      checkFile('rutFile', 'RUT');
+      checkFile('camaraComercioFile', 'Cámara de Comercio');
+      checkFile('estadosFinancierosFile', 'Estados Financieros');
+      checkFile('declaracionRentaFile', 'Declaración de Renta');
+      checkFile('cedulaRepresentanteLegalFile', 'Cédula Representante Legal');
+      checkFile('certificacionBancariaFile', 'Certificación Bancaria');
+    } else if (data.personType === 'Persona Natural') {
+      checkFile('rutFile', 'RUT');
+      checkFile('certificacionBancariaFile', 'Certificación Bancaria');
+    }
   });
+
 
 // Schema for evaluation form
 const baseScores = z.record(z.string(), z.number().min(1).max(5));
