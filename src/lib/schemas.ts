@@ -29,10 +29,11 @@ export const registerSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.documentType === 'NIT') {
-      if (!/^[0-9]{10}$/.test(data.documentNumber)) {
+      if (!/^[0-9]{9}$/.test(data.documentNumber)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'El NIT debe ser un número de 10 dígitos.',
+          message:
+            'El NIT debe ser un número de 9 dígitos (sin dígito de verificación).',
           path: ['documentNumber'],
         });
       }
@@ -91,7 +92,9 @@ export const providerFormSchema = z
     providerType: z.array(z.string()).refine((value) => value.length > 0, {
       message: 'Debes seleccionar al menos un tipo de proveedor.',
     }),
-    categoryIds: z.array(z.string()).min(1, 'Debes seleccionar al menos una categoría.'),
+    categoryIds: z
+      .array(z.string())
+      .min(1, 'Debes seleccionar al menos una categoría.'),
     documentType: z.string().min(1, 'El tipo de documento es requerido.'),
     documentNumber: z
       .string()
@@ -210,44 +213,83 @@ export const providerFormSchema = z
         });
       }
     }
-    
+
     // Tax Information validation
     if (data.taxRegimeType === 'Común') {
-        if (!data.isLargeTaxpayer) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es requerido.', path: ['isLargeTaxpayer'] });
-        }
-        if (data.isLargeTaxpayer === 'Sí' && !data.largeTaxpayerResolution) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'La resolución es requerida.', path: ['largeTaxpayerResolution'] });
-        }
+      if (!data.isLargeTaxpayer) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Este campo es requerido.',
+          path: ['isLargeTaxpayer'],
+        });
+      }
+      if (data.isLargeTaxpayer === 'Sí' && !data.largeTaxpayerResolution) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La resolución es requerida.',
+          path: ['largeTaxpayerResolution'],
+        });
+      }
 
-        if (data.personType === 'Persona Jurídica') {
-            if (!data.isIncomeSelfRetainer) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es requerido.', path: ['isIncomeSelfRetainer'] });
-            }
-            if (data.isIncomeSelfRetainer === 'Sí' && !data.incomeSelfRetainerResolution) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'La resolución es requerida.', path: ['incomeSelfRetainerResolution'] });
-            }
+      if (data.personType === 'Persona Jurídica') {
+        if (!data.isIncomeSelfRetainer) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Este campo es requerido.',
+            path: ['isIncomeSelfRetainer'],
+          });
         }
-        
-        if (data.isLargeTaxpayer === 'Sí') {
-            if (!data.isIcaSelfRetainer) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es requerido.', path: ['isIcaSelfRetainer'] });
-            }
-            if (data.isIcaSelfRetainer === 'Sí') {
-                if (!data.icaSelfRetainerMunicipality) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El municipio es requerido.', path: ['icaSelfRetainerMunicipality'] });
-                }
-                if (!data.icaSelfRetainerResolution) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'La resolución es requerida.', path: ['icaSelfRetainerResolution'] });
-                }
-                if (!data.icaCode) {
-                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El código ICA es requerido.', path: ['icaCode'] });
-                }
-                if (!data.icaPercentage) {
-                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El porcentaje ICA es requerido.', path: ['icaPercentage'] });
-                }
-            }
+        if (
+          data.isIncomeSelfRetainer === 'Sí' &&
+          !data.incomeSelfRetainerResolution
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'La resolución es requerida.',
+            path: ['incomeSelfRetainerResolution'],
+          });
         }
+      }
+
+      if (data.isLargeTaxpayer === 'Sí') {
+        if (!data.isIcaSelfRetainer) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Este campo es requerido.',
+            path: ['isIcaSelfRetainer'],
+          });
+        }
+        if (data.isIcaSelfRetainer === 'Sí') {
+          if (!data.icaSelfRetainerMunicipality) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'El municipio es requerido.',
+              path: ['icaSelfRetainerMunicipality'],
+            });
+          }
+          if (!data.icaSelfRetainerResolution) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'La resolución es requerida.',
+              path: ['icaSelfRetainerResolution'],
+            });
+          }
+          if (!data.icaCode) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'El código ICA es requerido.',
+              path: ['icaCode'],
+            });
+          }
+          if (!data.icaPercentage) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'El porcentaje ICA es requerido.',
+              path: ['icaPercentage'],
+            });
+          }
+        }
+      }
     }
   });
 
