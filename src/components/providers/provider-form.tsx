@@ -251,11 +251,10 @@ export default function ProviderForm() {
     if (!watchedProviderType || watchedProviderType.length === 0) {
       return [];
     }
-    if (watchedProviderType.length === 2) {
-      return categoryOptions; // Both selected, show all
-    }
-    const selectedType = watchedProviderType[0];
-    return categoryOptions.filter((opt) => opt.type === selectedType);
+    // Filter categories where the category's type is included in the array of selected provider types.
+    return categoryOptions.filter(
+      (opt) => opt.type && watchedProviderType.includes(opt.type)
+    );
   }, [watchedProviderType, categoryOptions]);
 
   // Clear selected categories if they are no longer in the filtered list
