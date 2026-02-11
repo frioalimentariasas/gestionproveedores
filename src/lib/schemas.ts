@@ -340,14 +340,15 @@ export const selectionEventSchema = z.object({
 });
 
 export const criterionSchema = z.object({
+  id: z.string(),
   label: z.string().min(1, 'El nombre del criterio es requerido.'),
-  weight: z.coerce.number().min(1, 'El peso debe ser al menos 1.').max(100, 'El peso no puede ser mayor a 100.'),
+  weight: z.coerce.number().min(0, 'El peso no puede ser negativo.').max(100, 'El peso no puede ser mayor a 100.'),
 });
 
 export const criteriaListSchema = z.object({
   criteria: z.array(criterionSchema)
 }).refine(data => {
-    const totalWeight = data.criteria.reduce((sum, crit) => sum + crit.weight, 0);
+    const totalWeight = data.criteria.reduce((sum, crit) => sum + (Number(crit.weight) || 0), 0);
     return totalWeight === 100;
 }, {
     message: 'La suma de los pesos de todos los criterios debe ser exactamente 100%.',
