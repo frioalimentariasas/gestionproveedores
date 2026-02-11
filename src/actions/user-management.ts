@@ -64,3 +64,36 @@ export async function getProviderDataByNit(nit: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function migrateUserToNitLogin(uid: string) {
+  try {
+    const providerDocRef = admin.firestore().collection('providers').doc(uid);
+    const providerDoc = await providerDocRef.get();
+
+    if (!providerDoc.exists) {
+      throw new Error('Documento del proveedor no encontrado.');
+    }
+
+    const providerData = providerDoc.data();
+    const nit = providerData?.documentNumber;
+
+    if (!nit) {
+      throw new Error('El documento del proveedor no tiene NIT (documentNumber).');
+    }
+
+    const syntheticEmail = `${nit}@proveedores.frioalimentaria.com.co`;
+
+    // Update the Firebase Auth user's email
+    await admin.auth().updateUser(uid, {
+      email: syntheticEmail,
+    });
+    
+    // Optionally, flag the user as migrated in Firestore
+    await providerDocRef.update({ nitLoginMigrated: true });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error migrating user to NIT login:', error);
+    return { success: false, error: error.message };
+  }
+}
