@@ -4,7 +4,6 @@ import {
   useFirestore,
   useCollection,
   useMemoFirebase,
-  WithId,
 } from '@/firebase';
 import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { Loader2, PlusCircle, ChevronRight } from 'lucide-react';
@@ -90,21 +89,31 @@ export default function SelectionEventsList() {
                 </TableRow>
             ) : (
                 events.map((event) => (
-                <TableRow key={event.id}>
-                    <TableCell className="font-medium">{event.name}</TableCell>
-                    <TableCell>
-                        <Badge variant="secondary">{event.type}</Badge>
+                <TableRow key={event.id} className="hover:bg-muted/50 cursor-pointer">
+                    <TableCell className="font-medium">
+                        <Link href={`/selection/${event.id}`} className="block w-full h-full">
+                            {event.name}
+                        </Link>
                     </TableCell>
                     <TableCell>
-                        <Badge variant={event.status === 'Abierto' ? 'default' : 'outline'}>{event.status}</Badge>
+                        <Link href={`/selection/${event.id}`} className="block w-full h-full">
+                            <Badge variant="secondary">{event.type}</Badge>
+                        </Link>
                     </TableCell>
                     <TableCell>
-                        {event.createdAt ? format(event.createdAt.toDate(), 'dd MMMM, yyyy', { locale: es }) : 'N/A'}
+                         <Link href={`/selection/${event.id}`} className="block w-full h-full">
+                            <Badge variant={event.status === 'Abierto' ? 'default' : 'outline'}>{event.status}</Badge>
+                        </Link>
+                    </TableCell>
+                    <TableCell>
+                        <Link href={`/selection/${event.id}`} className="block w-full h-full">
+                            {event.createdAt ? format(event.createdAt.toDate(), 'dd MMMM, yyyy', { locale: es }) : 'N/A'}
+                        </Link>
                     </TableCell>
                     <TableCell className="text-right">
-                       <Button variant="outline" size="sm" asChild>
+                       <Button variant="ghost" size="icon" asChild>
                            <Link href={`/selection/${event.id}`}>
-                               Gestionar <ChevronRight className="h-4 w-4 ml-2" />
+                               <ChevronRight className="h-4 w-4" />
                            </Link>
                        </Button>
                     </TableCell>
@@ -117,5 +126,3 @@ export default function SelectionEventsList() {
     </>
   );
 }
-
-    
