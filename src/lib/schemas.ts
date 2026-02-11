@@ -331,3 +331,12 @@ export const categorySchema = z.object({
   description: z.string().optional(),
   categoryType: z.string().min(1, 'El tipo de categoría es requerido.'),
 });
+
+export const selectionEventSchema = z.object({
+  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+  type: z.enum(['Bienes', 'Servicios (Contratista)'], {
+    required_error: 'Debes seleccionar un tipo.',
+  }),
+});
+
+    

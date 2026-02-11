@@ -29,6 +29,7 @@ import { useRole } from '@/hooks/use-role';
 const adminNavLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/providers', label: 'Gestión de Proveedores' },
+  { href: '/selection', label: 'Selección' },
   { href: '/categories', label: 'Categorías' },
 ];
 
@@ -147,3 +148,5 @@ export default function Header() {
     </header>
   );
 }
+
+    

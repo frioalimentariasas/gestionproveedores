@@ -173,5 +173,14 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+    
+    /**
+     * @description Rules for the `selection_events` collection. Only admins can manage these.
+     * @path /selection_events/{eventId}
+     */
+    match /selection_events/{eventId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
+    
