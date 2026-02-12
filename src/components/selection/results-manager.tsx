@@ -13,13 +13,17 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { Crown, Trophy } from 'lucide-react';
+import { Crown, Trophy, Mail, Copy, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { notifyWinnerOfSelection } from '@/actions/email';
 
 interface ResultsManagerProps {
+  eventId: string;
+  eventName: string;
   competitors: Competitor[];
   onSelectCompetitor: (competitor: Competitor, justification: string) => void;
   selectedCompetitorId?: string;
@@ -28,6 +32,8 @@ interface ResultsManagerProps {
 }
 
 export function ResultsManager({
+  eventId,
+  eventName,
   competitors,
   onSelectCompetitor,
   selectedCompetitorId,
@@ -35,6 +41,8 @@ export function ResultsManager({
   isLocked
 }: ResultsManagerProps) {
   
+  const { toast } = useToast();
+  const [isResending, setIsResending] = useState(false);
   const [dialogState, setDialogState] = useState<{ isOpen: boolean; competitor: Competitor | null; justification: string }>({ isOpen: false, competitor: null, justification: '' });
 
   const sortedCompetitors = useMemo(() => {
@@ -84,6 +92,53 @@ export function ResultsManager({
     }
   }
 
+   const handleResendEmail = async () => {
+      if (!selectedCompetitor) return;
+      setIsResending(true);
+      try {
+        const result = await notifyWinnerOfSelection({
+            competitorEmail: selectedCompetitor.email,
+            competitorName: selectedCompetitor.name,
+            selectionProcessName: eventName,
+            eventId: eventId,
+        });
+
+        if (result.success) {
+            toast({
+                title: 'Correo Reenviado',
+                description: `Se ha enviado nuevamente la notificación a ${selectedCompetitor.name}.`,
+            });
+        } else {
+            throw new Error(result.error || 'Error desconocido');
+        }
+      } catch (error: any) {
+         toast({
+            variant: 'destructive',
+            title: 'Error al Reenviar',
+            description: error.message || 'No se pudo reenviar el correo de notificación.',
+         });
+      } finally {
+        setIsResending(false);
+      }
+  };
+
+  const handleCopyLink = () => {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://6000-firebase-studio-1768965044439.cluster-hlmk2l2htragyudeyf6f3tzsi6.cloudworkstations.dev';
+    const registrationUrl = `${baseUrl}/auth/register?eventId=${eventId}`;
+    navigator.clipboard.writeText(registrationUrl).then(() => {
+        toast({
+            title: 'Enlace Copiado',
+            description: 'El enlace de registro ha sido copiado al portapapeles.',
+        });
+    }, (err) => {
+        toast({
+            variant: 'destructive',
+            title: 'Error al Copiar',
+            description: 'No se pudo copiar el enlace.',
+        });
+    });
+  };
+
   return (
     <div className="space-y-8">
       <Card>
@@ -118,13 +173,23 @@ export function ResultsManager({
                     <Trophy className="h-4 w-4 !text-yellow-600" />
                     <AlertTitle className="text-yellow-800 font-bold">Proveedor Seleccionado</AlertTitle>
                     <AlertDescription className="text-yellow-700 space-y-2">
-                       <p>El proveedor seleccionado de este proceso es <strong>{selectedCompetitor.name}</strong>. El proceso está cerrado.</p>
+                       <p>El proveedor seleccionado de este proceso es <strong>{selectedCompetitor.name}</strong>. El proceso está cerrado y se ha enviado una invitación por correo para que complete su registro.</p>
                        {justification && (
                           <div className="mt-2 pt-2 border-t border-yellow-400/50">
                             <p className="font-semibold text-xs text-yellow-800">Justificación:</p>
                             <p className="text-xs italic">"{justification}"</p>
                           </div>
                        )}
+                       <div className="mt-4 pt-4 border-t border-yellow-400/50 flex items-center gap-2">
+                          <Button size="sm" variant="outline" className="border-yellow-500/50 hover:bg-yellow-100/50 text-yellow-800 hover:text-yellow-900" onClick={handleResendEmail} disabled={isResending}>
+                              {isResending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                              Reenviar Email
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-yellow-500/50 hover:bg-yellow-100/50 text-yellow-800 hover:text-yellow-900" onClick={handleCopyLink}>
+                              <Copy className="h-4 w-4" />
+                              Copiar Enlace
+                          </Button>
+                      </div>
                     </AlertDescription>
                 </Alert>
             )}
@@ -143,7 +208,7 @@ export function ResultsManager({
                             Seleccionar
                         </Button>
                      )}
-                     {c.id === selectedCompetitorId && <Trophy className="h-6 w-6 text-yellow-500" />}
+                     {c.id === selectedCompetitorId && !selectedCompetitor && <Trophy className="h-6 w-6 text-yellow-500" />}
                 </div>
             ))}
         </CardContent>

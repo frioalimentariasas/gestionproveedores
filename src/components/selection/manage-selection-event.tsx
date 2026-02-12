@@ -288,6 +288,8 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
           <AccordionContent className="p-4 pt-0">
             <div className="p-6 border rounded-b-md">
                 <ResultsManager
+                    eventId={event.id}
+                    eventName={event.name}
                     competitors={event.competitors || []}
                     onSelectCompetitor={handleSelectCompetitor}
                     selectedCompetitorId={event.selectedCompetitorId}
