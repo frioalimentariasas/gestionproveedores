@@ -262,8 +262,8 @@ export async function notifyWinnerOfSelection({
   eventId: string;
 }) {
   const subject = `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
-  // The registration URL should point to the correct page.
-  const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/auth/register?eventId=${eventId}`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://6000-firebase-studio-1768965044439.cluster-hlmk2l2htragyudeyf6f3tzsi6.cloudworkstations.dev';
+  const registrationUrl = `${baseUrl}/auth/register?eventId=${eventId}`;
   
   const htmlContent = `
     <h1>Hola, ${competitorName}</h1>
@@ -283,5 +283,3 @@ export async function notifyWinnerOfSelection({
     htmlContent,
   });
 }
-
-    

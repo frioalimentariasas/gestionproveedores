@@ -31,6 +31,7 @@ const adminNavLinks = [
   { href: '/selection', label: 'Selección Proveedor' },
   { href: '/providers', label: 'Gestión de Proveedores' },
   { href: '/categories', label: 'Gestión Categorias' },
+  { href: '/comparison', label: 'Comparador' },
 ];
 
 const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];
