@@ -93,6 +93,11 @@ export default function Header() {
               height={40}
             />
           </Link>
+          {isAdmin && !loading && (
+             <h1 className="hidden lg:block text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Gestión de Proveedores
+            </h1>
+          )}
           {user && !loading && (
             <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
               {navLinks.map((link) => (
