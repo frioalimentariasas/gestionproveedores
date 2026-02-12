@@ -2,6 +2,8 @@
 
 import { RegisterForm } from '@/components/auth/register-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
 
 export default function RegisterPage() {
   return (
@@ -13,7 +15,15 @@ export default function RegisterPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <RegisterForm />
+          <Suspense
+            fallback={
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            }
+          >
+            <RegisterForm />
+          </Suspense>
         </CardContent>
       </Card>
     </div>
