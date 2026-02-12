@@ -13,22 +13,51 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { selectionEventSchema } from '@/lib/schemas';
-import { useFirestore } from '@/firebase';
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+} from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Loader2, ChevronsUpDown, Check } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '../ui/card';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+
+interface ProcessName {
+  id: string;
+  name: string;
+}
 
 export default function CreateSelectionForm() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const form = useForm<z.infer<typeof selectionEventSchema>>({
     resolver: zodResolver(selectionEventSchema),
@@ -38,24 +67,45 @@ export default function CreateSelectionForm() {
     },
   });
 
+  const processNamesQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'selection_process_names') : null),
+    [firestore]
+  );
+  const { data: processNames, isLoading: isLoadingNames } =
+    useCollection<ProcessName>(processNamesQuery);
+
   async function onSubmit(values: z.infer<typeof selectionEventSchema>) {
     if (!firestore) return;
     setIsSubmitting(true);
-    
+
     try {
-      const newEventRef = await addDoc(collection(firestore, 'selection_events'), {
-        ...values,
-        status: 'Abierto',
-        createdAt: serverTimestamp(),
-      });
-      
+      // Check if the name exists and save it if it's new
+      const isNewName =
+        values.name &&
+        !processNames?.some(
+          (pn) => pn.name.toLowerCase() === values.name.toLowerCase()
+        );
+      if (isNewName) {
+        await addDoc(collection(firestore, 'selection_process_names'), {
+          name: values.name,
+        });
+      }
+
+      const newEventRef = await addDoc(
+        collection(firestore, 'selection_events'),
+        {
+          ...values,
+          status: 'Abierto',
+          createdAt: serverTimestamp(),
+        }
+      );
+
       toast({
         title: 'Proceso Creado',
         description: 'Ahora puedes añadir criterios y competidores.',
       });
 
       router.push(`/selection/${newEventRef.id}`);
-
     } catch (error) {
       console.error(error);
       toast({
@@ -72,7 +122,8 @@ export default function CreateSelectionForm() {
       <CardHeader>
         <CardTitle>1. Definir el Proceso</CardTitle>
         <CardDescription>
-          Dale un nombre a este proceso de selección y define qué tipo de adquisición es.
+          Dale un nombre a este proceso de selección y define qué tipo de
+          adquisición es.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -82,13 +133,69 @@ export default function CreateSelectionForm() {
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Nombre del Proceso de Selección</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Compra de portátiles para oficina 2024" {...field} />
-                  </FormControl>
+                  <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            'w-full justify-between',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value
+                            ? field.value
+                            : 'Selecciona o crea un nombre'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-full p-0"
+                      style={{ width: 'var(--radix-popover-trigger-width)' }}
+                    >
+                      <Command>
+                        <CommandInput
+                          placeholder="Busca o crea un nombre..."
+                          value={field.value || ''}
+                          onValueChange={field.onChange}
+                        />
+                        <CommandList>
+                          <CommandEmpty>
+                            No se encontraron nombres. Pulsa "Enter" para crear uno nuevo.
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {processNames?.map((proc) => (
+                              <CommandItem
+                                value={proc.name}
+                                key={proc.id}
+                                onSelect={() => {
+                                  form.setValue('name', proc.name);
+                                  setIsPopoverOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    field.value === proc.name
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {proc.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormDescription>
-                    Un nombre descriptivo que te ayude a identificarlo.
+                    Selecciona un nombre existente o escribe uno nuevo para
+                    guardarlo para el futuro.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -127,15 +234,15 @@ export default function CreateSelectionForm() {
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                    'Siguiente: Definir Criterios'
+                  'Siguiente: Definir Criterios'
                 )}
-                </Button>
+              </Button>
             </div>
           </form>
         </Form>
