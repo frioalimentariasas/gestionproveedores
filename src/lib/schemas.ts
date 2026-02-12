@@ -1,5 +1,5 @@
+
 import { z } from 'zod';
-import { EVALUATION_CRITERIA } from './evaluations';
 
 export const loginSchema = z.object({
   identifier: z.string().min(1, 'El NIT o Email es requerido.'),
@@ -317,15 +317,6 @@ export const providerFormSchema = z
     }
   });
 
-
-// Schema for evaluation form
-const baseScores = z.record(z.string(), z.number().min(1).max(5));
-
-export const evaluationSchema = z.object({
-  scores: baseScores,
-  comments: z.string().optional(),
-});
-
 export const categorySchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().optional(),
@@ -362,4 +353,20 @@ export const competitorSchema = z.object({
   email: z.string().email('Por favor, ingresa un email válido.'),
   quoteFile: fileSchemaOptional,
 });
+
+export const criteriaWeightsSchema = z.object({
+  criteria: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    weight: z.coerce.number().min(0, "Debe ser >= 0").max(100, "Debe ser <= 100"),
+  }))
+}).refine(data => {
+    const totalWeight = data.criteria.reduce((sum, crit) => sum + (Number(crit.weight) || 0), 0);
+    // Use a small epsilon for floating point comparison to handle potential floating point inaccuracies
+    return Math.abs(totalWeight - 100) < 0.01;
+}, {
+    message: 'La suma de los pesos debe ser exactamente 100%.',
+    path: ['criteria'],
+});
     
+

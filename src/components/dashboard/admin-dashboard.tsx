@@ -41,7 +41,7 @@ import {
 } from '@/components/ui/table';
 import { Loader2, Users } from 'lucide-react';
 import { useMemo } from 'react';
-import { EVALUATION_TYPE_NAMES, EvaluationType } from '@/lib/evaluations';
+import { EVALUATION_TYPES, EvaluationType } from '@/lib/evaluations';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
@@ -307,7 +307,7 @@ export default function AdminDashboard() {
                         </p>
                       </TableCell>
                       <TableCell className="text-xs">
-                        {EVALUATION_TYPE_NAMES[ev.evaluationType]}
+                        {EVALUATION_TYPES[ev.evaluationType]}
                       </TableCell>
                       <TableCell className="text-right font-bold">
                         {ev.totalScore.toFixed(2)}

@@ -19,8 +19,8 @@ import {
 } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import {
-  EVALUATION_TYPE_NAMES,
-  EVALUATION_CRITERIA,
+  EVALUATION_TYPES,
+  getCriteriaForType,
   type EvaluationType,
 } from '@/lib/evaluations';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
@@ -97,14 +97,14 @@ const EvaluationScoreCard = ({ evaluations }: { evaluations: WithId<Evaluation>[
         const evaluation = latestEvaluations[type];
         if (!evaluation) return null;
         
-        const chartData = EVALUATION_CRITERIA[type].map(crit => ({
+        const chartData = getCriteriaForType(type).map(crit => ({
             name: crit.label,
             Puntaje: evaluation.scores[crit.id] || 0
         }));
 
         return (
           <div key={type}>
-            <h4 className="font-semibold text-sm mb-2">{EVALUATION_TYPE_NAMES[type]}</h4>
+            <h4 className="font-semibold text-sm mb-2">{EVALUATION_TYPES[type]}</h4>
             <div className="flex items-end gap-2 mb-2">
                  <p className="text-2xl font-bold text-primary">{evaluation.totalScore.toFixed(2)}</p>
                  <p className="text-sm text-muted-foreground -translate-y-0.5">/ 5.00</p>

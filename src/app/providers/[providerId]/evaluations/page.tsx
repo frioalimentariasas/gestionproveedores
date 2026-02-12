@@ -28,7 +28,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  EVALUATION_TYPE_NAMES,
+  EVALUATION_TYPES,
   type EvaluationType,
 } from '@/lib/evaluations';
 import {
@@ -182,7 +182,7 @@ export default function ProviderEvaluationsPage() {
                 <CardHeader>
                   <CardTitle className="flex justify-between items-start">
                     <div>
-                      {EVALUATION_TYPE_NAMES[evaluation.evaluationType]}
+                      {EVALUATION_TYPES[evaluation.evaluationType]}
                       <div className="flex items-center text-yellow-500 mt-1">
                         {[...Array(5)].map((_, i) => (
                           <Star
