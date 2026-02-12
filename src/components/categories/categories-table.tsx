@@ -82,6 +82,7 @@ export default function CategoriesTable() {
         cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cat.sequenceId?.includes(searchTerm)
     );
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
     return { filteredCategories: filtered, hasMissingIds: hasMissing };
 }, [categories, searchTerm]);
 
@@ -116,7 +117,8 @@ export default function CategoriesTable() {
       });
       return;
     }
-    const dataToExport = categories.map(({ sequenceId, name, description, categoryType }) => ({
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    const dataToExport = sortedCategories.map(({ sequenceId, name, description, categoryType }) => ({
       ID: sequenceId || '',
       Nombre: name,
       Descripción: description || '',
@@ -149,7 +151,9 @@ export default function CategoriesTable() {
     doc.text('Listado de Categorías', pageWidth / 2, yPos, { align: 'center' });
     yPos += 15;
 
-    categories.forEach(cat => {
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedCategories.forEach(cat => {
         if (yPos > doc.internal.pageSize.getHeight() - 20) {
             doc.addPage();
             yPos = margin;
