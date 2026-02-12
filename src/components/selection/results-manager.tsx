@@ -123,7 +123,7 @@ export function ResultsManager({
   };
 
   const handleCopyLink = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://6000-firebase-studio-1768965044439.cluster-hlmk2l2htragyudeyf6f3tzsi6.cloudworkstations.dev';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
     const registrationUrl = `${baseUrl}/auth/register?eventId=${eventId}`;
     navigator.clipboard.writeText(registrationUrl).then(() => {
         toast({
