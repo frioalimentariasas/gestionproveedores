@@ -62,7 +62,7 @@ export function CompetitorsManager({
 
   const form = useForm<AddCompetitorFormValues>({
     resolver: zodResolver(competitorSchema),
-    defaultValues: { name: '' },
+    defaultValues: { name: '', nit: '', email: '' },
   });
 
   const handleAddCompetitor = async (values: AddCompetitorFormValues) => {
@@ -102,6 +102,8 @@ export function CompetitorsManager({
     const newCompetitor: Competitor = {
       id: crypto.randomUUID(),
       name: values.name,
+      nit: values.nit,
+      email: values.email,
       quoteUrl: quoteUrl || undefined,
       scores: {},
       totalScore: 0,
@@ -153,13 +155,13 @@ export function CompetitorsManager({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleAddCompetitor)}
-            className="flex flex-col md:flex-row items-start gap-4 p-4 border rounded-lg"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-start gap-4 p-4 border rounded-lg"
           >
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem className="flex-1 w-full">
+                <FormItem>
                   <FormLabel>Nombre del Competidor</FormLabel>
                   <FormControl>
                     <Input placeholder="Ej: Proveedor S.A.S." {...field} disabled={noCriteria} />
@@ -168,27 +170,53 @@ export function CompetitorsManager({
                 </FormItem>
               )}
             />
-            <FormField
+             <FormField
               control={form.control}
-              name="quoteFile"
+              name="nit"
               render={({ field }) => (
-                <FormItem className="flex-1 w-full">
-                  <FormLabel>Cotización (PDF)</FormLabel>
+                <FormItem>
+                  <FormLabel>NIT del Competidor</FormLabel>
                   <FormControl>
-                    <Input type="file" accept="application/pdf" {...form.register('quoteFile')} disabled={noCriteria} />
+                    <Input placeholder="Ej: 900123456" {...field} disabled={noCriteria} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="w-full md:w-auto self-end">
+             <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email del Competidor</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="Ej: contacto@proveedor.com" {...field} disabled={noCriteria} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="quoteFile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cotización (PDF)</FormLabel>
+                    <FormControl>
+                      <Input type="file" accept="application/pdf" {...form.register('quoteFile')} disabled={noCriteria} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <Button type="submit" disabled={noCriteria || isUploading} className="w-full">
                 {isUploading ? (
                   <Loader2 className="mr-2 animate-spin" />
                 ) : (
                   <PlusCircle className="mr-2" />
                 )}
-                Añadir
+                Añadir Competidor
               </Button>
             </div>
           </form>
@@ -200,7 +228,7 @@ export function CompetitorsManager({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[200px]">Competidor</TableHead>
+                <TableHead className="min-w-[250px]">Competidor</TableHead>
                 {criteria.map((c) => (
                   <TableHead key={c.id} className="text-center min-w-[150px]">{c.label} ({c.weight}%)</TableHead>
                 ))}
@@ -211,12 +239,15 @@ export function CompetitorsManager({
             <TableBody>
               {localCompetitors.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">
-                    {c.name}
+                  <TableCell>
+                    <div className="font-bold">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">{c.nit}</div>
+                    <div className="text-xs text-muted-foreground">{c.email}</div>
                     {c.quoteUrl && (
-                      <Button variant="link" asChild className="p-0 h-auto ml-2">
+                      <Button variant="link" asChild className="p-0 h-auto text-xs -translate-x-1">
                         <a href={c.quoteUrl} target="_blank" rel="noopener noreferrer">
-                          <FileText className="h-3 w-3" />
+                          <FileText className="h-3 w-3 mr-1" />
+                          Ver Cotización
                         </a>
                       </Button>
                     )}

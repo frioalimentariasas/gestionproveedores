@@ -245,3 +245,39 @@ export async function notifyAdminOfReactivationRequest({
     replyTo: { email: providerEmail, name: businessName },
   });
 }
+
+
+/**
+ * Notifies a competitor that they have won a selection process and invites them to register.
+ */
+export async function notifyWinnerOfSelection({
+  competitorEmail,
+  competitorName,
+  selectionProcessName,
+}: {
+  competitorEmail: string;
+  competitorName: string;
+  selectionProcessName: string;
+}) {
+  const subject = `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
+  // The registration URL should point to the correct page.
+  const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/auth/register`;
+  
+  const htmlContent = `
+    <h1>Hola, ${competitorName}</h1>
+    <p>Nos complace informarte que has sido seleccionado como el proveedor ganador para el proceso de selección: <strong>${selectionProcessName}</strong>.</p>
+    <p>El siguiente paso es completar tu registro en nuestro portal de proveedores. Por favor, haz clic en el siguiente enlace para comenzar:</p>
+    <p><a href="${registrationUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Registrarse como Proveedor</a></p>
+    <p>Si el botón no funciona, puedes copiar y pegar la siguiente URL en tu navegador:</p>
+    <p>${registrationUrl}</p>
+    <br>
+    <p>¡Esperamos trabajar contigo!</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: competitorEmail, name: competitorName }],
+    subject,
+    htmlContent,
+  });
+}

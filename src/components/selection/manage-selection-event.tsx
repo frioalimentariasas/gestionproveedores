@@ -27,11 +27,14 @@ import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { CompetitorsManager } from './competitors-manager';
 import { ResultsManager } from './results-manager';
+import { notifyWinnerOfSelection } from '@/actions/email';
 
 // Matching the schema in backend.json
 export interface Competitor {
   id: string;
   name: string;
+  nit: string;
+  email: string;
   quoteUrl?: string;
   scores?: Record<string, number>;
   totalScore?: number;
@@ -99,6 +102,56 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
       setIsSaving(false);
     }
   };
+
+  const handleDeclareWinner = async (winner: Competitor) => {
+    if (!eventDocRef || !event) return;
+
+    setIsSaving(true);
+    const updatedData: Partial<SelectionEvent> = {
+        winnerId: winner.id,
+        status: 'Cerrado',
+    };
+
+    try {
+        // First, update the document in Firestore
+        await updateDoc(eventDocRef, updatedData);
+
+        // Then, send the notification email (fire-and-forget)
+        notifyWinnerOfSelection({
+            competitorEmail: winner.email,
+            competitorName: winner.name,
+            selectionProcessName: event.name,
+        }).catch(err => {
+            // Log if email fails, but don't block the UI toast
+            console.error("Failed to send winner notification email:", err);
+        });
+
+        // Update local state and show success toast
+        setEvent((prev) => (prev ? { ...prev, ...updatedData } : null));
+        toast({
+            title: '¡Ganador Declarado!',
+            description: `${winner.name} ha sido seleccionado y notificado. El proceso se ha cerrado.`,
+        });
+    } catch (e) {
+        console.error('Error declaring winner:', e);
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: eventDocRef.path,
+                operation: 'update',
+                requestResourceData: updatedData,
+            })
+        );
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se pudo declarar al ganador.',
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
 
   const isLocked = event?.status === 'Cerrado';
 
@@ -204,7 +257,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             <div className="p-6 border rounded-b-md">
                 <ResultsManager
                     competitors={event.competitors || []}
-                    onDeclareWinner={(winnerId) => handleUpdateEvent({ winnerId, status: 'Cerrado' })}
+                    onDeclareWinner={handleDeclareWinner}
                     winnerId={event.winnerId}
                     isLocked={isLocked}
                 />

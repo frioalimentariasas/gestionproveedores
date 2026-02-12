@@ -358,6 +358,8 @@ export const criteriaListSchema = z.object({
 
 export const competitorSchema = z.object({
   name: z.string().min(1, 'El nombre del competidor es requerido.'),
+  nit: z.string().min(1, 'El NIT es requerido.').regex(/^[0-9]+$/, 'El NIT solo debe contener números.'),
+  email: z.string().email('Por favor, ingresa un email válido.'),
   quoteFile: fileSchemaOptional,
 });
     

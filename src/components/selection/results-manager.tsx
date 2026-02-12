@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface ResultsManagerProps {
   competitors: Competitor[];
-  onDeclareWinner: (winnerId: string) => void;
+  onDeclareWinner: (winner: Competitor) => void;
   winnerId?: string;
   isLocked: boolean;
 }
@@ -135,7 +135,7 @@ export function ResultsManager({
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => onDeclareWinner(c.id)}>
+                                    <AlertDialogAction onClick={() => onDeclareWinner(c)}>
                                         Sí, declarar ganador
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
