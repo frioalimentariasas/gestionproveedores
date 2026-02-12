@@ -191,3 +191,23 @@ export async function assignCategorySequenceIds() {
     return { success: false, error: error.message };
   }
 }
+
+export async function linkProviderToSelectionEvent(nit: string, eventId: string) {
+  try {
+    const providersRef = admin.firestore().collection('providers');
+    const snapshot = await providersRef.where('documentNumber', '==', nit).limit(1).get();
+
+    if (snapshot.empty) {
+      // No provider found, nothing to do. The user will register via the winner notification link.
+      return { success: true, message: 'No existing provider to link.' };
+    }
+
+    const providerDoc = snapshot.docs[0];
+    await providerDoc.ref.update({ originSelectionEventId: eventId });
+
+    return { success: true, message: 'Successfully linked existing provider.' };
+  } catch (error: any) {
+    console.error('Error linking provider to selection event:', error);
+    return { success: false, error: error.message };
+  }
+}

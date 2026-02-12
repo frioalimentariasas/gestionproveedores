@@ -28,6 +28,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { CompetitorsManager } from './competitors-manager';
 import { ResultsManager } from './results-manager';
 import { notifyWinnerOfSelection } from '@/actions/email';
+import { linkProviderToSelectionEvent } from '@/actions/user-management';
 
 // Matching the schema in backend.json
 export interface Competitor {
@@ -123,15 +124,23 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
     if (!eventDocRef || !event) return;
 
     setIsSaving(true);
+    
+    const updatedCompetitors = event.competitors?.map(c => ({
+        ...c,
+        isSelected: c.id === competitor.id
+    })) || [];
+
     const updatedData: Partial<SelectionEvent> = {
         selectedCompetitorId: competitor.id,
         status: 'Cerrado',
         justification,
+        competitors: updatedCompetitors,
     };
 
     try {
         await updateDoc(eventDocRef, updatedData);
 
+        // Notify the winner via email
         notifyWinnerOfSelection({
             competitorEmail: competitor.email,
             competitorName: competitor.name,
@@ -139,6 +148,12 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             eventId: event.id,
         }).catch(err => {
             console.error("Failed to send winner notification email:", err);
+        });
+
+        // Attempt to link the selected competitor to an existing provider by NIT
+        linkProviderToSelectionEvent(competitor.nit, event.id).catch(err => {
+            // This is a non-critical operation, so we just log a warning if it fails.
+            console.warn("Could not retroactively link provider by NIT:", err);
         });
 
         setEvent((prev) => (prev ? { ...prev, ...updatedData } : null));
@@ -286,5 +301,3 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
     </div>
   );
 }
-
-    
