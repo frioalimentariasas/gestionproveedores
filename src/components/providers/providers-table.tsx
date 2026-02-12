@@ -21,6 +21,7 @@ import {
   PlusCircle,
   Tag,
   Trash2,
+  FileClock,
 } from 'lucide-react';
 import {
   Table,
@@ -76,6 +77,7 @@ interface Provider {
   disabled?: boolean;
   categoryIds?: string[];
   providerType?: string;
+  originSelectionEventId?: string;
 }
 
 export default function ProvidersTable() {
@@ -311,6 +313,18 @@ export default function ProvidersTable() {
                   ) : (
                     <div className="flex items-center justify-end gap-1">
                     <TooltipProvider>
+                      {provider.originSelectionEventId && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link href={`/selection/${provider.originSelectionEventId}`}>
+                                <FileClock className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Ver Proceso de Selección Origen</p></TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="ghost" size="icon" asChild>
@@ -523,3 +537,5 @@ export default function ProvidersTable() {
     </>
   );
 }
+
+    

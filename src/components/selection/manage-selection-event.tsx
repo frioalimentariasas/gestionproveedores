@@ -136,6 +136,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             competitorEmail: competitor.email,
             competitorName: competitor.name,
             selectionProcessName: event.name,
+            eventId: event.id,
         }).catch(err => {
             console.error("Failed to send winner notification email:", err);
         });
@@ -285,3 +286,5 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
     </div>
   );
 }
+
+    

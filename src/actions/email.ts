@@ -254,14 +254,16 @@ export async function notifyWinnerOfSelection({
   competitorEmail,
   competitorName,
   selectionProcessName,
+  eventId,
 }: {
   competitorEmail: string;
   competitorName: string;
   selectionProcessName: string;
+  eventId: string;
 }) {
   const subject = `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
   // The registration URL should point to the correct page.
-  const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/auth/register`;
+  const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/auth/register?eventId=${eventId}`;
   
   const htmlContent = `
     <h1>Hola, ${competitorName}</h1>
@@ -281,3 +283,5 @@ export async function notifyWinnerOfSelection({
     htmlContent,
   });
 }
+
+    

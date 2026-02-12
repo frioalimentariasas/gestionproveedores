@@ -25,7 +25,7 @@ import { registerSchema } from '@/lib/schemas';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -43,6 +43,7 @@ export function RegisterForm() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof registerSchema>>({
@@ -60,6 +61,8 @@ export function RegisterForm() {
   async function onSubmit(values: z.infer<typeof registerSchema>) {
     if (!auth || !firestore) return;
     setIsSubmitting(true);
+    const eventId = searchParams.get('eventId');
+
     try {
       // Use the NIT (documentNumber) to create a synthetic email for auth
       const syntheticEmail = `${values.documentNumber}@proveedores.frioalimentaria.com.co`;
@@ -71,17 +74,23 @@ export function RegisterForm() {
       );
       const user = userCredential.user;
 
-      // Create a partial provider profile in Firestore, storing the REAL email here
+      const providerData: any = {
+        id: user.uid,
+        email: values.email, // Real email for communication
+        businessName: values.businessName,
+        documentType: values.documentType,
+        documentNumber: values.documentNumber, // This is the NIT, used as username
+        formLocked: false,
+      };
+
+      if (eventId) {
+        providerData.originSelectionEventId = eventId;
+      }
+
+      // Create a partial provider profile in Firestore
       await setDoc(
         doc(firestore, 'providers', user.uid),
-        {
-          id: user.uid,
-          email: values.email, // Real email for communication
-          businessName: values.businessName,
-          documentType: values.documentType,
-          documentNumber: values.documentNumber, // This is the NIT, used as username
-          formLocked: false,
-        },
+        providerData,
         { merge: true }
       );
       
@@ -231,3 +240,5 @@ export function RegisterForm() {
     </Form>
   );
 }
+
+    
