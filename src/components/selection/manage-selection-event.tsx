@@ -21,13 +21,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CriteriaManager } from './criteria-manager';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { CompetitorsManager } from './competitors-manager';
 import { ResultsManager } from './results-manager';
 import { notifyWinnerOfSelection } from '@/actions/email';
+import { useSearchParams } from 'next/navigation';
 
 // Matching the schema in backend.json
 export interface Competitor {
@@ -62,6 +63,7 @@ export interface SelectionEvent {
 export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const eventDocRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'selection_events', eventId) : null),
@@ -74,21 +76,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
   const [isSaving, setIsSaving] = useState(false);
   const [activeStep, setActiveStep] = useState('step-1');
 
-  useEffect(() => {
-    if (initialEvent) {
-      setEvent(initialEvent);
-      // Logic to set the initial open accordion item
-      if (!initialEvent.criteria || initialEvent.criteria.length === 0) {
-        setActiveStep('step-1');
-      } else if (!initialEvent.competitors || initialEvent.competitors.length === 0) {
-        setActiveStep('step-2');
-      } else {
-        setActiveStep('step-3');
-      }
-    }
-  }, [initialEvent]);
-
-  const handleUpdateEvent = async (updatedData: Partial<SelectionEvent>) => {
+  const handleUpdateEvent = useCallback(async (updatedData: Partial<SelectionEvent>, nextStep?: string) => {
     if (!eventDocRef) return;
     setIsSaving(true);
     try {
@@ -99,7 +87,9 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
         description: 'Los cambios han sido guardados correctamente.',
       });
       // Automatically navigate to the next step
-      if (updatedData.criteria) {
+      if (nextStep) {
+        setActiveStep(nextStep);
+      } else if (updatedData.criteria) {
         setActiveStep('step-2');
       } else if (updatedData.competitors) {
         setActiveStep('step-3');
@@ -117,7 +107,46 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [eventDocRef, toast]);
+
+  useEffect(() => {
+    if (initialEvent) {
+      setEvent(initialEvent);
+
+      const competitorName = searchParams.get('name');
+      const competitorNit = searchParams.get('nit');
+      const competitorEmail = searchParams.get('email');
+
+      // Prefill competitor if coming from comparison page and no competitors exist yet
+      if (
+        competitorName &&
+        competitorNit &&
+        competitorEmail &&
+        (!initialEvent.competitors || initialEvent.competitors.length === 0)
+      ) {
+          const newCompetitor: Competitor = {
+            id: crypto.randomUUID(),
+            name: competitorName,
+            nit: competitorNit,
+            email: competitorEmail,
+            scores: {},
+            totalScore: 0,
+          };
+          // Call update and specify the next step explicitly
+          handleUpdateEvent({ competitors: [newCompetitor] }, 'step-2');
+      } else {
+        // Logic to set the initial open accordion item if not prefilling
+        if (!initialEvent.criteria || initialEvent.criteria.length === 0) {
+          setActiveStep('step-1');
+        } else if (!initialEvent.competitors || initialEvent.competitors.length === 0) {
+          setActiveStep('step-2');
+        } else {
+          setActiveStep('step-3');
+        }
+      }
+    }
+  }, [initialEvent, searchParams, handleUpdateEvent]);
+
 
   const handleSelectCompetitor = async (competitor: Competitor, justification: string) => {
     if (!eventDocRef || !event) return;

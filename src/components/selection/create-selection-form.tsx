@@ -21,7 +21,7 @@ import {
   useMemoFirebase,
 } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import {
@@ -56,6 +56,7 @@ export default function CreateSelectionForm() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -100,12 +101,26 @@ export default function CreateSelectionForm() {
         }
       );
 
+      const competitorName = searchParams.get('name');
+      const competitorNit = searchParams.get('nit');
+      const competitorEmail = searchParams.get('email');
+
+      let redirectUrl = `/selection/${newEventRef.id}`;
+      if (competitorName && competitorNit && competitorEmail) {
+        const query = new URLSearchParams({
+            name: competitorName,
+            nit: competitorNit,
+            email: competitorEmail,
+        }).toString();
+        redirectUrl += `?${query}`;
+      }
+
       toast({
         title: 'Proceso Creado',
         description: 'Ahora puedes añadir criterios y competidores.',
       });
 
-      router.push(`/selection/${newEventRef.id}`);
+      router.push(redirectUrl);
     } catch (error) {
       console.error(error);
       toast({
@@ -250,5 +265,3 @@ export default function CreateSelectionForm() {
     </Card>
   );
 }
-
-    

@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import {
@@ -23,11 +24,15 @@ import {
   type EvaluationType,
 } from '@/lib/evaluations';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 interface Provider {
   id: string;
   businessName: string;
   categoryIds?: string[];
+  documentNumber: string;
+  email: string;
 }
 
 interface Evaluation {
@@ -127,15 +132,22 @@ const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) =>
   } = useProviderEvaluations(provider.id);
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>{provider.businessName}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
         {isLoading && <Loader2 className="h-6 w-6 animate-spin" />}
         {error && <p className="text-destructive text-sm">Error al cargar evaluaciones.</p>}
         {!isLoading && !error && <EvaluationScoreCard evaluations={evaluations} />}
       </CardContent>
+       <CardFooter>
+        <Button asChild className="w-full">
+          <Link href={`/selection/new?name=${encodeURIComponent(provider.businessName)}&nit=${provider.documentNumber}&email=${provider.email}`}>
+            Iniciar Proceso de Selección
+          </Link>
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
