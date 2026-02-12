@@ -150,10 +150,10 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             console.error("Failed to send winner notification email:", err);
         });
 
-        // Attempt to link the selected competitor to an existing provider by NIT
-        linkProviderToSelectionEvent(competitor.nit, event.id).catch(err => {
+        // Attempt to link the selected competitor to an existing provider by NIT or Email
+        linkProviderToSelectionEvent(competitor.nit, competitor.email, event.id).catch(err => {
             // This is a non-critical operation, so we just log a warning if it fails.
-            console.warn("Could not retroactively link provider by NIT:", err);
+            console.warn("Could not retroactively link provider:", err);
         });
 
         setEvent((prev) => (prev ? { ...prev, ...updatedData } : null));

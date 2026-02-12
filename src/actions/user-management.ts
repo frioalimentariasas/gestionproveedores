@@ -192,10 +192,17 @@ export async function assignCategorySequenceIds() {
   }
 }
 
-export async function linkProviderToSelectionEvent(nit: string, eventId: string) {
+export async function linkProviderToSelectionEvent(nit: string, email: string, eventId: string) {
   try {
     const providersRef = admin.firestore().collection('providers');
-    const snapshot = await providersRef.where('documentNumber', '==', nit).limit(1).get();
+    
+    // Try to find by NIT first
+    let snapshot = await providersRef.where('documentNumber', '==', nit).limit(1).get();
+
+    // If not found by NIT, try by email
+    if (snapshot.empty) {
+      snapshot = await providersRef.where('email', '==', email).limit(1).get();
+    }
 
     if (snapshot.empty) {
       // No provider found, nothing to do. The user will register via the winner notification link.
