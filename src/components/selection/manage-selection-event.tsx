@@ -28,7 +28,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { CompetitorsManager } from './competitors-manager';
 import { ResultsManager } from './results-manager';
 import { notifyWinnerOfSelection } from '@/actions/email';
-import { linkProviderToSelectionEvent } from '@/actions/user-management';
 
 // Matching the schema in backend.json
 export interface Competitor {
@@ -148,18 +147,19 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             eventId: event.id,
         }).catch(err => {
             console.error("Failed to send winner notification email:", err);
-        });
-
-        // Attempt to link the selected competitor to an existing provider by NIT or Email
-        linkProviderToSelectionEvent(competitor.nit, competitor.email, event.id).catch(err => {
-            // This is a non-critical operation, so we just log a warning if it fails.
-            console.warn("Could not retroactively link provider:", err);
+            // Optionally, show a toast to the admin that email failed
+            toast({
+                variant: "destructive",
+                title: "Error de Notificación",
+                description: "No se pudo enviar el correo de notificación al proveedor seleccionado.",
+            });
         });
 
         setEvent((prev) => (prev ? { ...prev, ...updatedData } : null));
         toast({
             title: '¡Proveedor Seleccionado!',
-            description: `${competitor.name} ha sido seleccionado y notificado. El proceso se ha cerrado.`,
+            description: `${competitor.name} ha sido notificado. El proveedor debe usar el enlace en el correo para registrarse y asegurar la trazabilidad.`,
+            duration: 9000,
         });
     } catch (e) {
         console.error('Error declaring winner:', e);
