@@ -72,10 +72,19 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
 
   const [event, setEvent] = useState<SelectionEvent | null>(initialEvent);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeStep, setActiveStep] = useState('step-1');
 
   useEffect(() => {
     if (initialEvent) {
       setEvent(initialEvent);
+      // Logic to set the initial open accordion item
+      if (!initialEvent.criteria || initialEvent.criteria.length === 0) {
+        setActiveStep('step-1');
+      } else if (!initialEvent.competitors || initialEvent.competitors.length === 0) {
+        setActiveStep('step-2');
+      } else {
+        setActiveStep('step-3');
+      }
     }
   }, [initialEvent]);
 
@@ -89,6 +98,12 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
         title: 'Proceso Actualizado',
         description: 'Los cambios han sido guardados correctamente.',
       });
+      // Automatically navigate to the next step
+      if (updatedData.criteria) {
+        setActiveStep('step-2');
+      } else if (updatedData.competitors) {
+        setActiveStep('step-3');
+      }
     } catch (e) {
       console.error('Error updating event:', e);
       errorEmitter.emit(
@@ -178,9 +193,6 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
     );
   }
   
-  const defaultAccordionValue = !event.criteria || event.criteria.length === 0 ? "step-1" :
-                                !event.competitors || event.competitors.length === 0 ? "step-2" : "step-3";
-
   return (
     <div>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
@@ -205,7 +217,13 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
         </div>
       </div>
 
-      <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultAccordionValue}>
+      <Accordion 
+        type="single" 
+        collapsible 
+        className="w-full space-y-4" 
+        value={activeStep} 
+        onValueChange={setActiveStep}
+      >
         <AccordionItem value="step-1" className="border-b-0">
           <AccordionTrigger
             className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline"
