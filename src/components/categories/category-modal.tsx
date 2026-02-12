@@ -35,12 +35,14 @@ interface Category {
   name: string;
   description?: string;
   categoryType?: 'Bienes' | 'Servicios (Contratista)';
+  sequenceId?: string;
 }
 
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: Category | null;
+  categories: Category[];
 }
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -49,6 +51,7 @@ export function CategoryModal({
   isOpen,
   onClose,
   category,
+  categories,
 }: CategoryModalProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -95,11 +98,29 @@ export function CategoryModal({
           description: `La categoría "${values.name}" se ha actualizado.`,
         });
       } else {
+        // Find the highest current sequence ID
+        let maxId = 0;
+        if (categories && categories.length > 0) {
+            for (const cat of categories) {
+                if (cat.sequenceId) {
+                    const idNum = parseInt(cat.sequenceId, 10);
+                    if (idNum > maxId) {
+                        maxId = idNum;
+                    }
+                }
+            }
+        }
+        const nextId = maxId + 1;
+        const newSequenceId = String(nextId).padStart(4, '0');
+
         const categoriesCollection = collection(firestore, 'categories');
-        await addDoc(categoriesCollection, values);
+        await addDoc(categoriesCollection, {
+            ...values,
+            sequenceId: newSequenceId
+        });
         toast({
           title: 'Categoría Creada',
-          description: `La categoría "${values.name}" se ha creado.`,
+          description: `La categoría "${values.name}" se ha creado con el ID ${newSequenceId}.`,
         });
       }
       onClose();

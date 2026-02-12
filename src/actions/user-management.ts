@@ -143,3 +143,51 @@ export async function deleteSelectionEvent(eventId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function assignCategorySequenceIds() {
+  try {
+    const categoriesRef = admin.firestore().collection('categories');
+    const snapshot = await categoriesRef.get();
+
+    const categoriesWithId: any[] = [];
+    const categoriesWithoutId: any[] = [];
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.sequenceId) {
+        categoriesWithId.push({ id: doc.id, ...data });
+      } else {
+        categoriesWithoutId.push({ id: doc.id, ...data });
+      }
+    });
+
+    if (categoriesWithoutId.length === 0) {
+      return { success: true, message: 'No categories needed an ID.' };
+    }
+
+    let maxId = 0;
+    if (categoriesWithId.length > 0) {
+      maxId = Math.max(...categoriesWithId.map(c => parseInt(c.sequenceId, 10)));
+    }
+
+    // Sort categories without an ID alphabetically by name
+    categoriesWithoutId.sort((a, b) => a.name.localeCompare(b.name));
+
+    const batch = admin.firestore().batch();
+    let currentId = maxId + 1;
+
+    categoriesWithoutId.forEach(category => {
+      const categoryRef = categoriesRef.doc(category.id);
+      const newSequenceId = String(currentId).padStart(4, '0');
+      batch.update(categoryRef, { sequenceId: newSequenceId });
+      currentId++;
+    });
+
+    await batch.commit();
+
+    return { success: true, count: categoriesWithoutId.length };
+  } catch (error: any) {
+    console.error('Error assigning category sequence IDs:', error);
+    return { success: false, error: error.message };
+  }
+}

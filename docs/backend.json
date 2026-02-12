@@ -307,6 +307,10 @@
           "type": "string",
           "description": "Unique identifier for the category."
         },
+        "sequenceId": {
+          "type": "string",
+          "description": "A sequential 4-digit identifier (e.g., '0001') for the category, used for ordering and reference."
+        },
         "name": {
           "type": "string",
           "description": "The name of the category."
