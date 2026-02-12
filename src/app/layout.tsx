@@ -15,6 +15,9 @@ const fontSans = Inter({
 export const metadata: Metadata = {
   title: 'Gestión de Proveedores',
   description: 'Plataforma de gestión de proveedores para Frio Alimentaria.',
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
