@@ -262,7 +262,7 @@ export async function notifyWinnerOfSelection({
   eventId: string;
 }) {
   const subject = `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
-  const baseUrl = 'https://app.gestionproveedores.frioalimentaria.com.co';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
   const registrationUrl = `${baseUrl}/auth/register?eventId=${eventId}`;
   
   const htmlContent = `
