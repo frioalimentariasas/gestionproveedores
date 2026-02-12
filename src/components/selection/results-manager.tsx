@@ -23,6 +23,7 @@ interface ResultsManagerProps {
   competitors: Competitor[];
   onSelectCompetitor: (competitor: Competitor, justification: string) => void;
   selectedCompetitorId?: string;
+  justification?: string;
   isLocked: boolean;
 }
 
@@ -30,6 +31,7 @@ export function ResultsManager({
   competitors,
   onSelectCompetitor,
   selectedCompetitorId,
+  justification,
   isLocked
 }: ResultsManagerProps) {
   
@@ -114,9 +116,15 @@ export function ResultsManager({
             {selectedCompetitor && (
                  <Alert className="border-yellow-500 text-yellow-700">
                     <Trophy className="h-4 w-4 !text-yellow-600" />
-                    <AlertTitle className="text-yellow-800 font-bold">¡Proveedor Seleccionado!</AlertTitle>
-                    <AlertDescription className="text-yellow-700">
-                       El proveedor seleccionado de este proceso es <strong>{selectedCompetitor.name}</strong>. El proceso está cerrado.
+                    <AlertTitle className="text-yellow-800 font-bold">Proveedor Seleccionado</AlertTitle>
+                    <AlertDescription className="text-yellow-700 space-y-2">
+                       <p>El proveedor seleccionado de este proceso es <strong>{selectedCompetitor.name}</strong>. El proceso está cerrado.</p>
+                       {justification && (
+                          <div className="mt-2 pt-2 border-t border-yellow-400/50">
+                            <p className="font-semibold text-xs text-yellow-800">Justificación:</p>
+                            <p className="text-xs italic">"{justification}"</p>
+                          </div>
+                       )}
                     </AlertDescription>
                 </Alert>
             )}

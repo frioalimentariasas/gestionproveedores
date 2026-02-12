@@ -275,6 +275,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
                     competitors={event.competitors || []}
                     onSelectCompetitor={handleSelectCompetitor}
                     selectedCompetitorId={event.selectedCompetitorId}
+                    justification={event.justification}
                     isLocked={isLocked}
                 />
             </div>
