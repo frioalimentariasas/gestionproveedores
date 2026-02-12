@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: 'Gestión de Proveedores',
   description: 'Plataforma de gestión de proveedores para Frio Alimentaria.',
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.png?v=1',
   },
 };
 
