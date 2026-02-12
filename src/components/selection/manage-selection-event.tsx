@@ -38,7 +38,7 @@ export interface Competitor {
   quoteUrl?: string;
   scores?: Record<string, number>;
   totalScore?: number;
-  isWinner?: boolean;
+  isSelected?: boolean;
 }
 
 export interface Criterion {
@@ -53,7 +53,8 @@ export interface SelectionEvent {
   type: 'Bienes' | 'Servicios (Contratista)';
   status: 'Abierto' | 'Cerrado';
   createdAt: Timestamp;
-  winnerId?: string;
+  selectedCompetitorId?: string;
+  justification?: string;
   criteria?: Criterion[];
   competitors?: Competitor[];
 }
@@ -103,34 +104,31 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
     }
   };
 
-  const handleDeclareWinner = async (winner: Competitor) => {
+  const handleSelectCompetitor = async (competitor: Competitor, justification: string) => {
     if (!eventDocRef || !event) return;
 
     setIsSaving(true);
     const updatedData: Partial<SelectionEvent> = {
-        winnerId: winner.id,
+        selectedCompetitorId: competitor.id,
         status: 'Cerrado',
+        justification,
     };
 
     try {
-        // First, update the document in Firestore
         await updateDoc(eventDocRef, updatedData);
 
-        // Then, send the notification email (fire-and-forget)
         notifyWinnerOfSelection({
-            competitorEmail: winner.email,
-            competitorName: winner.name,
+            competitorEmail: competitor.email,
+            competitorName: competitor.name,
             selectionProcessName: event.name,
         }).catch(err => {
-            // Log if email fails, but don't block the UI toast
             console.error("Failed to send winner notification email:", err);
         });
 
-        // Update local state and show success toast
         setEvent((prev) => (prev ? { ...prev, ...updatedData } : null));
         toast({
-            title: '¡Ganador Declarado!',
-            description: `${winner.name} ha sido seleccionado y notificado. El proceso se ha cerrado.`,
+            title: '¡Proveedor Seleccionado!',
+            description: `${competitor.name} ha sido seleccionado y notificado. El proceso se ha cerrado.`,
         });
     } catch (e) {
         console.error('Error declaring winner:', e);
@@ -145,7 +143,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: 'No se pudo declarar al ganador.',
+            description: 'No se pudo seleccionar el proveedor.',
         });
     } finally {
         setIsSaving(false);
@@ -251,14 +249,14 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline"
             disabled={isSaving}
           >
-            Paso 3: Ver Resultados y Seleccionar Ganador
+            Paso 3: Ver Resultados y Seleccionar Proveedor
           </AccordionTrigger>
           <AccordionContent className="p-4 pt-0">
             <div className="p-6 border rounded-b-md">
                 <ResultsManager
                     competitors={event.competitors || []}
-                    onDeclareWinner={handleDeclareWinner}
-                    winnerId={event.winnerId}
+                    onSelectCompetitor={handleSelectCompetitor}
+                    selectedCompetitorId={event.selectedCompetitorId}
                     isLocked={isLocked}
                 />
             </div>

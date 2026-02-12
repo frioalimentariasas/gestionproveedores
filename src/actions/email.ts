@@ -248,7 +248,7 @@ export async function notifyAdminOfReactivationRequest({
 
 
 /**
- * Notifies a competitor that they have won a selection process and invites them to register.
+ * Notifies a competitor that they have been selected in a selection process and invites them to register.
  */
 export async function notifyWinnerOfSelection({
   competitorEmail,
@@ -265,7 +265,7 @@ export async function notifyWinnerOfSelection({
   
   const htmlContent = `
     <h1>Hola, ${competitorName}</h1>
-    <p>Nos complace informarte que has sido seleccionado como el proveedor ganador para el proceso de selección: <strong>${selectionProcessName}</strong>.</p>
+    <p>Nos complace informarte que has sido seleccionado para el proceso de selección: <strong>${selectionProcessName}</strong>.</p>
     <p>El siguiente paso es completar tu registro en nuestro portal de proveedores. Por favor, haz clic en el siguiente enlace para comenzar:</p>
     <p><a href="${registrationUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Registrarse como Proveedor</a></p>
     <p>Si el botón no funciona, puedes copiar y pegar la siguiente URL en tu navegador:</p>

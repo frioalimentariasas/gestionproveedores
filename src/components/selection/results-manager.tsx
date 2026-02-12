@@ -16,30 +16,34 @@ import { Button } from '../ui/button';
 import { Crown, Trophy } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
 
 interface ResultsManagerProps {
   competitors: Competitor[];
-  onDeclareWinner: (winner: Competitor) => void;
-  winnerId?: string;
+  onSelectCompetitor: (competitor: Competitor, justification: string) => void;
+  selectedCompetitorId?: string;
   isLocked: boolean;
 }
 
 export function ResultsManager({
   competitors,
-  onDeclareWinner,
-  winnerId,
+  onSelectCompetitor,
+  selectedCompetitorId,
   isLocked
 }: ResultsManagerProps) {
+  
+  const [dialogState, setDialogState] = useState<{ isOpen: boolean; competitor: Competitor | null; justification: string }>({ isOpen: false, competitor: null, justification: '' });
 
   const sortedCompetitors = useMemo(() => {
     if (!competitors) return [];
     return [...competitors].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
   }, [competitors]);
 
-  const winner = useMemo(() => {
-    if (!winnerId) return null;
-    return competitors.find(c => c.id === winnerId);
-  }, [competitors, winnerId]);
+  const selectedCompetitor = useMemo(() => {
+    if (!selectedCompetitorId) return null;
+    return competitors.find(c => c.id === selectedCompetitorId);
+  }, [competitors, selectedCompetitorId]);
 
 
   if (competitors.length === 0) {
@@ -56,7 +60,7 @@ export function ResultsManager({
   const chartData = sortedCompetitors.map(c => ({
     name: c.name,
     Puntaje: c.totalScore?.toFixed(2) || 0,
-    isWinner: c.id === winnerId,
+    isSelected: c.id === selectedCompetitorId,
   }));
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -70,6 +74,13 @@ export function ResultsManager({
     }
     return null;
   };
+
+  const handleSelectClick = () => {
+    if (dialogState.competitor) {
+      onSelectCompetitor(dialogState.competitor, dialogState.justification);
+      setDialogState({ isOpen: false, competitor: null, justification: '' });
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -86,7 +97,7 @@ export function ResultsManager({
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
               <Bar dataKey="Puntaje" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.isWinner ? 'hsl(var(--accent))' : 'hsl(var(--primary))'} />
+                  <Cell key={`cell-${index}`} fill={entry.isSelected ? 'hsl(var(--accent))' : 'hsl(var(--primary))'} />
                 ))}
               </Bar>
             </BarChart>
@@ -97,15 +108,15 @@ export function ResultsManager({
       <Card>
         <CardHeader>
             <CardTitle>Resultados Finales</CardTitle>
-            <CardDescription>Lista de competidores ordenados por puntaje. Selecciona un ganador para cerrar el proceso.</CardDescription>
+            <CardDescription>Lista de competidores ordenados por puntaje. Selecciona un proveedor para cerrar el proceso.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-            {winner && (
+            {selectedCompetitor && (
                  <Alert className="border-yellow-500 text-yellow-700">
                     <Trophy className="h-4 w-4 !text-yellow-600" />
-                    <AlertTitle className="text-yellow-800 font-bold">¡Ganador Declarado!</AlertTitle>
+                    <AlertTitle className="text-yellow-800 font-bold">¡Proveedor Seleccionado!</AlertTitle>
                     <AlertDescription className="text-yellow-700">
-                       El ganador de este proceso de selección es <strong>{winner.name}</strong>. El proceso está cerrado.
+                       El proveedor seleccionado de este proceso es <strong>{selectedCompetitor.name}</strong>. El proceso está cerrado.
                     </AlertDescription>
                 </Alert>
             )}
@@ -119,35 +130,46 @@ export function ResultsManager({
                         </div>
                     </div>
                      {!isLocked && (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                 <Button size="sm">
-                                    <Crown className="mr-2 h-4 w-4"/>
-                                    Declarar Ganador
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Confirmar Ganador?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Estás a punto de declarar a <strong>{c.name}</strong> como el ganador. Esta acción cerrará el proceso de selección y no se podrá revertir.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => onDeclareWinner(c)}>
-                                        Sí, declarar ganador
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        <Button size="sm" onClick={() => setDialogState({ isOpen: true, competitor: c, justification: '' })}>
+                            <Crown className="mr-2 h-4 w-4"/>
+                            Seleccionar
+                        </Button>
                      )}
-                     {c.id === winnerId && <Trophy className="h-6 w-6 text-yellow-500" />}
+                     {c.id === selectedCompetitorId && <Trophy className="h-6 w-6 text-yellow-500" />}
                 </div>
             ))}
         </CardContent>
       </Card>
-
+      
+      <AlertDialog open={dialogState.isOpen} onOpenChange={(isOpen) => setDialogState(prev => ({...prev, isOpen}))}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>¿Confirmar Selección?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Estás a punto de seleccionar a <strong>{dialogState.competitor?.name}</strong>. Por favor, argumenta tu decisión. Esta acción cerrará el proceso.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-2 py-2">
+                <Label htmlFor="justification">Justificación de la Selección</Label>
+                <Textarea
+                  id="justification"
+                  placeholder="Escribe la justificación de por qué este proveedor fue seleccionado..."
+                  value={dialogState.justification}
+                  onChange={(e) => setDialogState(prev => ({ ...prev, justification: e.target.value }))}
+                  className="min-h-[100px]"
+                />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDialogState({ isOpen: false, competitor: null, justification: '' })}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={handleSelectClick}
+                    disabled={!dialogState.justification.trim()}
+                >
+                    Sí, seleccionar
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </div>
   );
 }

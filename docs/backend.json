@@ -361,9 +361,13 @@
           "type": "string",
           "format": "date-time"
         },
-        "winnerId": {
+        "selectedCompetitorId": {
           "type": "string",
-          "description": "The ID of the winning competitor."
+          "description": "The ID of the selected competitor."
+        },
+        "justification": {
+          "type": "string",
+          "description": "Justification for choosing the selected competitor."
         },
         "criteria": {
           "type": "array",
@@ -412,8 +416,9 @@
               "totalScore": {
                 "type": "number"
               },
-              "isWinner": {
-                "type": "boolean"
+              "isSelected": {
+                "type": "boolean",
+                "description": "Indicates if this competitor was selected."
               }
             }
           }
