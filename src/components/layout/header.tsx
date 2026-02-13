@@ -81,6 +81,10 @@ export default function Header() {
     }
   };
 
+  const displayName = !isAdmin && providerData?.businessName 
+    ? providerData.businessName 
+    : (user?.displayName || user?.email);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-24 items-center justify-between px-4">
@@ -124,7 +128,7 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  {providerData?.businessName || user.displayName || user.email}
+                  {displayName}
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
