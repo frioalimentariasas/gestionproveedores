@@ -4,13 +4,11 @@ import {
   useFirestore,
   useCollection,
   useMemoFirebase,
-  WithId,
 } from '@/firebase';
 import {
   collection,
   collectionGroup,
   query,
-  orderBy,
   limit,
   Timestamp,
 } from 'firebase/firestore';
@@ -23,6 +21,9 @@ import {
   Tooltip,
   Legend,
   CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import {
   Card,
@@ -39,7 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { EVALUATION_TYPES, EvaluationType } from '@/lib/evaluations';
 import { format } from 'date-fns';
@@ -66,26 +67,6 @@ interface Evaluation {
   createdAt: Timestamp;
 }
 
-// Sub-component for KPI cards
-const KpiCard = ({
-  title,
-  value,
-  icon: Icon,
-}: {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-}) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-    </CardContent>
-  </Card>
-);
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
@@ -112,7 +93,6 @@ export default function AdminDashboard() {
       firestore
         ? query(
             collectionGroup(firestore, 'evaluations'),
-            // orderBy('createdAt', 'desc'), // This requires a composite index. We will sort on the client.
             limit(20) // Fetch a larger batch to sort on client
           )
         : null,
@@ -121,14 +101,18 @@ export default function AdminDashboard() {
   const { data: recentEvaluations, isLoading: evaluationsLoading } =
     useCollection<Evaluation>(recentEvaluationsQuery);
 
-  // Memoize calculations
-  const kpiData = useMemo(() => {
-    if (!providers) return { total: 0, active: 0, inactive: 0 };
-    const total = providers.length;
-    const active = providers.filter((p) => !p.disabled).length;
-    const inactive = total - active;
-    return { total, active, inactive };
+  const providerStatusData = useMemo(() => {
+    if (!providers) return [];
+    const active = providers.filter(p => !p.disabled).length;
+    const inactive = providers.length - active;
+    return [
+      { name: 'Activos', value: active },
+      { name: 'Inactivos', value: inactive },
+    ];
   }, [providers]);
+
+  const totalProviders = useMemo(() => providers?.length || 0, [providers]);
+  const COLORS = ['hsl(var(--primary))', 'hsl(var(--muted))'];
 
   const providersByCategoryData = useMemo(() => {
     if (!providers || !categories) return [];
@@ -138,7 +122,6 @@ export default function AdminDashboard() {
     );
     const counts = new Map<string, number>();
 
-    // Count providers for each category
     for (const provider of providers) {
       if (provider.categoryIds) {
         for (const catId of provider.categoryIds) {
@@ -150,7 +133,6 @@ export default function AdminDashboard() {
       }
     }
 
-    // Only return categories that have one or more providers
     return Array.from(counts.entries()).map(([name, value]) => ({
       name,
       proveedores: value,
@@ -160,17 +142,14 @@ export default function AdminDashboard() {
   const evaluationsWithProviderNames = useMemo(() => {
     if (!recentEvaluations || !providers) return [];
 
-    // Sort evaluations by date descending on the client
     const sortedEvaluations = [...recentEvaluations].sort((a, b) => {
       const dateA = a.createdAt?.toDate() ?? new Date(0);
       const dateB = b.createdAt?.toDate() ?? new Date(0);
       return dateB.getTime() - dateA.getTime();
     });
 
-    // Take the top 5 most recent evaluations
     const top5 = sortedEvaluations.slice(0, 5);
     
-    // Map provider names to the top 5
     return top5.map((ev) => {
       const provider = providers.find((p) => p.id === ev.providerId);
       return {
@@ -201,25 +180,47 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
-        <KpiCard
-          title="Total Proveedores"
-          value={kpiData.total}
-          icon={Users}
-        />
-        <KpiCard
-          title="Proveedores Activos"
-          value={kpiData.active}
-          icon={Users}
-        />
-        <KpiCard
-          title="Proveedores Inactivos"
-          value={kpiData.inactive}
-          icon={Users}
-        />
-      </div>
-
       <div className="grid gap-8 lg:grid-cols-5">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Resumen de Proveedores</CardTitle>
+            <CardDescription>Total de {totalProviders} proveedores registrados.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {totalProviders > 0 ? (
+               <ResponsiveContainer width="100%" height={350}>
+                <PieChart>
+                  <Pie
+                    data={providerStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {providerStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                   <Tooltip
+                    cursor={{ fill: 'hsl(var(--muted))' }}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+                <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+                    No hay proveedores para mostrar.
+                </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Proveedores por Categoría</CardTitle>
@@ -268,8 +269,9 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
-
-        <Card className="lg:col-span-2">
+      </div>
+      
+      <Card className="mt-8">
           <CardHeader>
             <CardTitle>Evaluaciones Recientes</CardTitle>
             <CardDescription>
@@ -313,13 +315,12 @@ export default function AdminDashboard() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+              <div className="flex h-[200px] items-center justify-center text-muted-foreground">
                 No se han realizado evaluaciones.
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }
