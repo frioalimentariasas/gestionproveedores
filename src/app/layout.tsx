@@ -12,13 +12,17 @@ const fontSans = Inter({
   variable: '--font-sans',
 });
 
+// Using an inline SVG data URI to force browsers to ignore cached favicons.
+const faviconHref = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>";
+
+
 export const metadata: Metadata = {
   title: 'Gestión de Proveedores',
   description: 'Plataforma de gestión de proveedores para Frio Alimentaria.',
   icons: {
-    icon: '/icon.png?v=2',
-    apple: '/icon.png?v=2',
-    shortcut: '/icon.png?v=2',
+    icon: faviconHref,
+    apple: faviconHref,
+    shortcut: faviconHref,
   },
 };
 
