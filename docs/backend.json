@@ -452,25 +452,6 @@
         "status",
         "createdAt"
       ]
-    },
-    "SelectionProcessName": {
-      "title": "Selection Process Name",
-      "type": "object",
-      "description": "Represents a standardized name for a selection process.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the process name."
-        },
-        "name": {
-          "type": "string",
-          "description": "The standardized name of the selection process."
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
     }
   },
   "auth": {
@@ -561,22 +542,6 @@
             {
               "name": "eventId",
               "description": "The unique ID for the selection event."
-            }
-          ]
-        }
-      },
-      {
-        "path": "selection_process_names/{nameId}",
-        "definition": {
-          "entityName": "SelectionProcessName",
-          "schema": {
-            "$ref": "#/backend/entities/SelectionProcessName"
-          },
-          "description": "Stores standardized names for selection processes for future use. Only admins can access.",
-          "params": [
-            {
-              "name": "nameId",
-              "description": "The unique ID for the standardized process name."
             }
           ]
         }

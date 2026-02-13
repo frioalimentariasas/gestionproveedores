@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -15,15 +14,11 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { selectionEventSchema } from '@/lib/schemas';
-import {
-  useFirestore,
-  useCollection,
-  useMemoFirebase,
-} from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -32,25 +27,7 @@ import {
   CardDescription,
 } from '../ui/card';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { cn } from '@/lib/utils';
-
-interface ProcessName {
-  id: string;
-  name: string;
-}
+import { Input } from '../ui/input';
 
 export default function CreateSelectionForm() {
   const { toast } = useToast();
@@ -58,7 +35,6 @@ export default function CreateSelectionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const form = useForm<z.infer<typeof selectionEventSchema>>({
     resolver: zodResolver(selectionEventSchema),
@@ -68,30 +44,11 @@ export default function CreateSelectionForm() {
     },
   });
 
-  const processNamesQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'selection_process_names') : null),
-    [firestore]
-  );
-  const { data: processNames, isLoading: isLoadingNames } =
-    useCollection<ProcessName>(processNamesQuery);
-
   async function onSubmit(values: z.infer<typeof selectionEventSchema>) {
     if (!firestore) return;
     setIsSubmitting(true);
 
     try {
-      // Check if the name exists and save it if it's new
-      const isNewName =
-        values.name &&
-        !processNames?.some(
-          (pn) => pn.name.toLowerCase() === values.name.toLowerCase()
-        );
-      if (isNewName) {
-        await addDoc(collection(firestore, 'selection_process_names'), {
-          name: values.name,
-        });
-      }
-
       const newEventRef = await addDoc(
         collection(firestore, 'selection_events'),
         {
@@ -108,9 +65,9 @@ export default function CreateSelectionForm() {
       let redirectUrl = `/selection/${newEventRef.id}`;
       if (competitorName && competitorNit && competitorEmail) {
         const query = new URLSearchParams({
-            name: competitorName,
-            nit: competitorNit,
-            email: competitorEmail,
+          name: competitorName,
+          nit: competitorNit,
+          email: competitorEmail,
         }).toString();
         redirectUrl += `?${query}`;
       }
@@ -148,70 +105,14 @@ export default function CreateSelectionForm() {
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                   <FormLabel>Nombre del Proceso de Selección</FormLabel>
-                  <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            'w-full justify-between',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                        >
-                          {field.value
-                            ? field.value
-                            : 'Selecciona o crea un nombre'}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-full p-0"
-                      style={{ width: 'var(--radix-popover-trigger-width)' }}
-                    >
-                      <Command>
-                        <CommandInput
-                          placeholder="Busca o crea un nombre..."
-                          value={field.value || ''}
-                          onValueChange={field.onChange}
-                        />
-                        <CommandList>
-                          <CommandEmpty>
-                            No se encontraron nombres. Pulsa "Enter" para crear uno nuevo.
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {processNames?.map((proc) => (
-                              <CommandItem
-                                value={proc.name}
-                                key={proc.id}
-                                onSelect={() => {
-                                  form.setValue('name', proc.name);
-                                  setIsPopoverOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    field.value === proc.name
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                                {proc.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Selecciona un nombre existente o escribe uno nuevo para
-                    guardarlo para el futuro.
-                  </FormDescription>
+                  <FormControl>
+                    <Input
+                      placeholder="Ej: Compra de papelería para oficina"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

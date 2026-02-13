@@ -181,15 +181,5 @@ service cloud.firestore {
     match /selection_events/{eventId} {
       allow read, write: if isAdmin();
     }
-
-    /**
-     * @description Rules for storing and retrieving standardized selection process names. Admins only.
-     * @path /selection_process_names/{nameId}
-     */
-    match /selection_process_names/{nameId} {
-      allow read, write: if isAdmin();
-    }
   }
 }
-
-    
