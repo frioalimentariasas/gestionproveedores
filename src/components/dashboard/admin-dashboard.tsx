@@ -138,6 +138,7 @@ export default function AdminDashboard() {
     );
     const counts = new Map<string, number>();
 
+    // Count providers for each category
     for (const provider of providers) {
       if (provider.categoryIds) {
         for (const catId of provider.categoryIds) {
@@ -148,13 +149,8 @@ export default function AdminDashboard() {
         }
       }
     }
-    // Add categories with 0 providers
-    for (const catName of categoryMap.values()) {
-      if (!counts.has(catName)) {
-        counts.set(catName, 0);
-      }
-    }
 
+    // Only return categories that have one or more providers
     return Array.from(counts.entries()).map(([name, value]) => ({
       name,
       proveedores: value,
