@@ -7,6 +7,7 @@ import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 const ADMIN_EMAILS = [
   'sistemas@frioalimentaria.com.co',
   'asistente@frioalimentaria.com.co',
+  'logistica@frioalimentaria.com.co',
 ];
 
 /**

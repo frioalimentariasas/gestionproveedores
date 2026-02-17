@@ -62,7 +62,7 @@ service cloud.firestore {
      */
     function isAdmin() {
       return isSignedIn() &&
-        (request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co']
+        (request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co', 'logistica@frioalimentaria.com.co']
         || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)));
     }
 
