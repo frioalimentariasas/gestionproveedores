@@ -19,8 +19,8 @@ import {
   FileText,
   Loader2,
   Trash2,
-  Upload,
   Save,
+  AlertCircle,
 } from 'lucide-react';
 import type { Competitor, Criterion } from './manage-selection-event';
 import { competitorSchema } from '@/lib/schemas';
@@ -34,6 +34,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
+import { cn } from '@/lib/utils';
 
 interface CompetitorsManagerProps {
   eventId: string;
@@ -100,7 +101,6 @@ export function CompetitorsManager({
     
     setIsUploading(false);
     
-    // Create the competitor object without undefined fields to avoid Firebase errors
     const newCompetitor: Competitor = {
       id: crypto.randomUUID(),
       name: values.name,
@@ -119,12 +119,20 @@ export function CompetitorsManager({
   };
 
   const handleScoreChange = (competitorId: string, criterionId: string, value: string) => {
-    const score = parseInt(value, 10);
-    if (isNaN(score) || score < 1 || score > 5) return;
+    // Allow empty string for clearing or numbers
+    if (value !== '' && !/^\d+$/.test(value)) return;
+
+    const score = value === '' ? undefined : parseInt(value, 10);
 
     setLocalCompetitors(prev => prev.map(comp => {
         if (comp.id === competitorId) {
-            const newScores = { ...(comp.scores || {}), [criterionId]: score };
+            const newScores = { ...(comp.scores || {}) };
+            if (score === undefined) {
+                delete newScores[criterionId];
+            } else {
+                newScores[criterionId] = score;
+            }
+            
             const totalScore = criteria.reduce((total, crit) => {
                 const s = newScores[crit.id] || 0;
                 return total + (s * (crit.weight / 100));
@@ -138,6 +146,21 @@ export function CompetitorsManager({
   const handleRemoveCompetitor = (competitorId: string) => {
     setLocalCompetitors(prev => prev.filter(c => c.id !== competitorId));
   }
+
+  const isSaveDisabled = useMemo(() => {
+    if (localCompetitors.length === 0) return true;
+    
+    // Check if every competitor has valid scores (1-5) for all criteria with weight > 0
+    return localCompetitors.some(comp => 
+      criteria.some(crit => {
+        if (crit.weight > 0) {
+          const score = comp.scores?.[crit.id];
+          return score === undefined || score === null || isNaN(score) || score < 1 || score > 5;
+        }
+        return false;
+      })
+    );
+  }, [localCompetitors, criteria]);
 
   const noCriteria = !criteria || criteria.length === 0;
 
@@ -258,19 +281,29 @@ export function CompetitorsManager({
                       </Button>
                     )}
                   </TableCell>
-                  {criteria.map(crit => (
-                    <TableCell key={crit.id} className="text-center">
-                        <Input
-                            type="number"
-                            min="1"
-                            max="5"
-                            className="w-20 mx-auto text-center"
-                            value={c.scores?.[crit.id] || ''}
-                            onChange={(e) => handleScoreChange(c.id, crit.id, e.target.value)}
-                            disabled={isLocked}
-                        />
-                    </TableCell>
-                  ))}
+                  {criteria.map(crit => {
+                    const score = c.scores?.[crit.id];
+                    const isRequired = crit.weight > 0;
+                    const isInvalid = isRequired && (score === undefined || score < 1 || score > 5);
+                    
+                    return (
+                      <TableCell key={crit.id} className="text-center">
+                          <Input
+                              type="number"
+                              min="1"
+                              max="5"
+                              placeholder={isRequired ? "1-5" : "N/A"}
+                              className={cn(
+                                "w-20 mx-auto text-center",
+                                isInvalid && !isLocked && "border-destructive focus-visible:ring-destructive"
+                              )}
+                              value={score ?? ''}
+                              onChange={(e) => handleScoreChange(c.id, crit.id, e.target.value)}
+                              disabled={isLocked}
+                          />
+                      </TableCell>
+                    );
+                  })}
                   <TableCell className="text-right font-bold text-lg">
                     {c.totalScore?.toFixed(2) || '0.00'}
                   </TableCell>
@@ -289,8 +322,14 @@ export function CompetitorsManager({
       )}
 
       {!isLocked && localCompetitors.length > 0 && (
-         <div className="flex justify-end">
-          <Button onClick={() => onSave(localCompetitors)}>
+         <div className="flex flex-col items-end gap-2">
+          {isSaveDisabled && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              Asigna una puntuación del 1 al 5 en todos los criterios con porcentaje mayor a 0%.
+            </p>
+          )}
+          <Button onClick={() => onSave(localCompetitors)} disabled={isSaveDisabled}>
             <Save className="mr-2" />
             Guardar Puntajes
           </Button>
