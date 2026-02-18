@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+const ADMIN_EMAILS = [
+  'sistemas@frioalimentaria.com.co',
+  'asistente@frioalimentaria.com.co',
+  'logistica@frioalimentaria.com.co',
+];
+
 export const loginSchema = z.object({
   identifier: z.string().min(1, 'El NIT o Email es requerido.'),
   password: z.string().min(1, 'La contraseña es requerido.'),
@@ -16,7 +22,10 @@ export const registerSchema = z
     email: z
       .string()
       .min(1, 'El email es requerido.')
-      .email('El email no es válido.'),
+      .email('El email no es válido.')
+      .refine((email) => !ADMIN_EMAILS.includes(email.toLowerCase()), {
+        message: 'Este correo electrónico está reservado para uso administrativo y no puede ser usado para registro de proveedores.',
+      }),
     password: z
       .string()
       .min(6, 'La contraseña debe tener al menos 6 caracteres.'),
