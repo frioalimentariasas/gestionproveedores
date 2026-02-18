@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -34,6 +33,7 @@ const adminNavLinks = [
   { href: '/categories', label: 'Gestión Categorias' },
   { href: '/comparison', label: 'Comparador' },
   { href: '/parametrizacion', label: 'Parametrización' },
+  { href: '/admin/form-preview', label: 'Modelo Formulario' },
 ];
 
 const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];

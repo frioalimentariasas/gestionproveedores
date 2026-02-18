@@ -42,7 +42,7 @@ import {
 } from '@/firebase';
 import { doc, setDoc, collection, query } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Info, Loader2, Search } from 'lucide-react';
+import { Eye, Info, Loader2, Search } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -134,7 +134,7 @@ const providerTypeOptions = [
 ] as const;
 
 
-export default function ProviderForm() {
+export default function ProviderForm({ previewMode = false }: { previewMode?: boolean }) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -150,9 +150,9 @@ export default function ProviderForm() {
     `provider-form-autosave-${userId}`;
 
   const providerDocRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
+    if (!user || !firestore || previewMode) return null;
     return doc(firestore, 'providers', user.uid);
-  }, [user, firestore]);
+  }, [user, firestore, previewMode]);
 
   const { data: providerData, isLoading: isProviderDataLoading } =
     useDoc<ProviderFormValues>(providerDocRef);
@@ -164,7 +164,7 @@ export default function ProviderForm() {
   const { data: categories, isLoading: isCategoriesLoading } =
     useCollection<Category>(categoriesQuery);
 
-  const isLocked = providerData?.formLocked ?? false;
+  const isLocked = previewMode ? false : (providerData?.formLocked ?? false);
 
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerFormSchema),
@@ -184,7 +184,7 @@ export default function ProviderForm() {
 
   // Check for auto-saved data on initial load
   useEffect(() => {
-    if (user && !isProviderDataLoading && !providerData?.formLocked) {
+    if (user && !isProviderDataLoading && !providerData?.formLocked && !previewMode) {
       const autoSaveKey = getAutoSaveKey(user.uid);
       const savedDataString = localStorage.getItem(autoSaveKey);
       if (savedDataString) {
@@ -198,12 +198,12 @@ export default function ProviderForm() {
         }
       }
     }
-  }, [user, isProviderDataLoading, providerData]);
+  }, [user, isProviderDataLoading, providerData, previewMode]);
 
   // Auto-save form data to local storage
   const watchedValues = form.watch();
   useEffect(() => {
-    if (isLocked || !user) {
+    if (isLocked || !user || previewMode) {
       return;
     }
 
@@ -221,12 +221,12 @@ export default function ProviderForm() {
     return () => {
       clearTimeout(handler);
     };
-  }, [watchedValues, isLocked, user]);
+  }, [watchedValues, isLocked, user, previewMode]);
 
   // Effect to populate form with data from Firestore
   const stableReset = useCallback(reset, []);
   useEffect(() => {
-    if (providerData) {
+    if (providerData && !previewMode) {
       const { country, department } = providerData;
       if (country) {
         const countryData = Country.getAllCountries().find(c => c.name === country);
@@ -243,7 +243,7 @@ export default function ProviderForm() {
       }
       stableReset({ ...initialFormValues, ...providerData });
     }
-  }, [providerData, stableReset]);
+  }, [providerData, stableReset, previewMode]);
 
   // Filter categories based on provider type selection
   const categoryOptions = useMemo(
@@ -312,6 +312,7 @@ export default function ProviderForm() {
   };
 
   async function onSubmit(values: ProviderFormValues) {
+    if (previewMode) return;
     if (!user || !providerDocRef) {
       toast({
         variant: 'destructive',
@@ -428,7 +429,7 @@ export default function ProviderForm() {
     setShowRestoreDialog(false);
   };
 
-  if (isProviderDataLoading) {
+  if (isProviderDataLoading && !previewMode) {
     return (
       <div className="flex justify-center items-center p-8">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -460,7 +461,7 @@ export default function ProviderForm() {
       </AlertDialog>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {isLocked && (
+        {isLocked && !previewMode && (
           <Alert>
             <Info className="h-4 w-4" />
             <AlertTitle>Formulario Bloqueado</AlertTitle>
@@ -468,6 +469,16 @@ export default function ProviderForm() {
               Tus datos ya han sido guardados. Para realizar modificaciones, por
               favor contacta a un administrador para que habilite la edición de
               tu formulario.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {previewMode && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <Eye className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">Modo Vista Previa (Administrador)</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              Estás visualizando la estructura completa del formulario. Los datos ingresados aquí no se guardarán. Puedes cambiar el "Tipo de Persona" para ver las secciones condicionales.
             </AlertDescription>
           </Alert>
         )}
@@ -670,7 +681,7 @@ export default function ProviderForm() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {isLocked ? (
+              {isLocked && !previewMode ? (
                 <>
                   <FormItem>
                     <FormLabel>País</FormLabel>
@@ -954,11 +965,13 @@ export default function ProviderForm() {
                 <FormItem>
                   <FormLabel>Email para Notificaciones</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled />
+                    <Input {...field} disabled={!previewMode} />
                   </FormControl>
-                  <FormDescription>
-                    Este es el email principal para notificaciones y no puede ser modificado.
-                  </FormDescription>
+                  {!previewMode && (
+                    <FormDescription>
+                      Este es el email principal para notificaciones y no puede ser modificado.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -1483,7 +1496,7 @@ export default function ProviderForm() {
                 declaracionRentaFile: 'Declaración de Renta',
               };
               const urlField = `${fieldName}Url` as keyof ProviderFormValues;
-              const fileUrl = providerData?.[urlField];
+              const fileUrl = !previewMode ? providerData?.[urlField] : null;
               return (
                 <FormField
                   key={fieldName}
@@ -1655,7 +1668,7 @@ export default function ProviderForm() {
           </CardContent>
         </Card>
 
-        {!isLocked && (
+        {!isLocked && !previewMode && (
           <Button
             type="submit"
             className="w-full md:w-auto"
