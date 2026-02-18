@@ -28,8 +28,8 @@ import { useRole } from '@/hooks/use-role';
 
 const adminNavLinks = [
   { href: '/', label: 'Dashboard' },
-  { href: '/selection', label: 'Selección Proveedor' },
-  { href: '/providers', label: 'Gestión de Proveedores' },
+  { href: '/selection', label: 'Selección' },
+  { href: '/providers', label: 'Gestión' },
   { href: '/categories', label: 'Gestión Categorias' },
   { href: '/comparison', label: 'Comparador' },
   { href: '/parametrizacion', label: 'Parametrización' },

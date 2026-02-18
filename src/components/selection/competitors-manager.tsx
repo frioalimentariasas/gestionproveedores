@@ -99,15 +99,21 @@ export function CompetitorsManager({
     }
     
     setIsUploading(false);
+    
+    // Create the competitor object without undefined fields to avoid Firebase errors
     const newCompetitor: Competitor = {
       id: crypto.randomUUID(),
       name: values.name,
       nit: values.nit,
       email: values.email,
-      quoteUrl: quoteUrl || undefined,
       scores: {},
       totalScore: 0,
     };
+
+    if (quoteUrl) {
+      newCompetitor.quoteUrl = quoteUrl;
+    }
+
     setLocalCompetitors((prev) => [...prev, newCompetitor]);
     form.reset();
   };
