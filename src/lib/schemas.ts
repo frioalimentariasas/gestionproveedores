@@ -147,7 +147,11 @@ export const providerFormSchema = z
     // Section 5 - Financiera
     bankName: z.string().min(1, 'El nombre del banco es requerido.'),
     accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
-    accountNumber: z.string().min(1, 'El número de cuenta es requerido.'),
+    accountNumber: z
+      .string()
+      .min(1, 'El número de cuenta es requerido.')
+      .regex(/^[0-9]+$/, 'El número de cuenta solo debe contener números.')
+      .max(20, 'El número de cuenta no puede tener más de 20 dígitos.'),
     beneficiaryName: z
       .string()
       .min(1, 'El nombre del titular es requerido.')

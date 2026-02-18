@@ -1443,7 +1443,15 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                   <FormItem>
                     <FormLabel>No de cuenta:</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={isLocked} />
+                      <Input 
+                        {...field} 
+                        disabled={isLocked} 
+                        maxLength={20}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          field.onChange(value);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
