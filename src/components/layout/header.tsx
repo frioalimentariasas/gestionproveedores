@@ -89,23 +89,25 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl h-24 items-center justify-between px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex-shrink-0">
-            <Image
-              src="/logo.png"
-              alt="Frio Alimentaria Logo"
-              width={140}
-              height={40}
-              priority
-            />
-          </Link>
-          
-          <div className="flex items-center gap-6">
+          {/* Logo and Title Stack */}
+          <div className="flex flex-col items-center shrink-0">
+            <Link href="/" className="flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Frio Alimentaria Logo"
+                width={130}
+                height={36}
+                priority
+              />
+            </Link>
             {isAdmin && !loading && (
-              <h1 className="hidden xl:block text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase">
+              <h1 className="text-[10px] font-bold tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase mt-1 leading-none text-center w-full">
                 Gestión de Proveedores
               </h1>
             )}
-            
+          </div>
+          
+          <div className="flex items-center gap-6">
             {user && !loading && (
               <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
                 {navLinks.map((link) => (
@@ -127,7 +129,7 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 ml-4">
+        <div className="flex items-center gap-4 ml-4 shrink-0">
           {loading ? (
             <Skeleton className="h-9 w-28" />
           ) : user ? (
