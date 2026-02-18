@@ -21,11 +21,9 @@ export const registerSchema = z
       .regex(/^[0-9]+$/, 'El número de documento solo debe contener números.'),
     email: z
       .string()
+      .trim()
       .min(1, 'El email es requerido.')
-      .email('El email no es válido.')
-      .refine((email) => !ADMIN_EMAILS.includes(email.toLowerCase()), {
-        message: 'Este correo electrónico está reservado para uso administrativo y no puede ser usado para registro de proveedores.',
-      }),
+      .email('El email no es válido.'),
     password: z
       .string()
       .min(6, 'La contraseña debe tener al menos 6 caracteres.'),
@@ -36,6 +34,15 @@ export const registerSchema = z
     path: ['confirmPassword'],
   })
   .superRefine((data, ctx) => {
+    // Check if email is an admin email
+    if (ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase() === data.email.toLowerCase())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Este correo electrónico está reservado para uso administrativo y no puede ser usado para proveedores.',
+        path: ['email'],
+      });
+    }
+
     if (data.documentType === 'NIT') {
       if (!/^[0-9]{9}$/.test(data.documentNumber)) {
         ctx.addIssue({
@@ -128,7 +135,7 @@ export const providerFormSchema = z
     paymentContactEmail:
       z.string()
       .email('El email para notificación de pago no es válido.').min(1, 'El email para notificación de pago es requerido.'),
-    email: z.string().email('Email no válido.'),
+    email: z.string().trim().email('Email no válido.'),
 
     // Section 2 - Tributaria
     taxRegimeType: z.string().min(1, 'El tipo de régimen es requerido.'),
@@ -190,6 +197,15 @@ export const providerFormSchema = z
     disabled: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
+    // Check if email is an admin email in the main form too
+    if (ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase() === data.email.toLowerCase())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Este correo electrónico está reservado para uso administrativo.',
+        path: ['email'],
+      });
+    }
+
     // Section 4: Legal Representative validation
     if (data.personType === 'Persona Jurídica') {
       if (!data.legalRepresentativeName) {
