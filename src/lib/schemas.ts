@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -151,7 +150,8 @@ export const providerFormSchema = z
     accountNumber: z.string().min(1, 'El número de cuenta es requerido.'),
     beneficiaryName: z
       .string()
-      .min(1, 'El nombre del titular es requerido.'),
+      .min(1, 'El nombre del titular es requerido.')
+      .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre del titular solo debe contener letras y espacios.'),
     // Section 6 - Documentos
     rutFile: fileSchemaOptional,
     camaraComercioFile: fileSchemaOptional,
@@ -368,5 +368,3 @@ export const criteriaWeightsSchema = z.object({
     message: 'La suma de los pesos debe ser exactamente 100%.',
     path: ['criteria'],
 });
-    
-
