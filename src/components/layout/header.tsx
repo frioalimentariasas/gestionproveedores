@@ -87,56 +87,62 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-24 items-center justify-between px-4">
-        <div className="flex items-center gap-12">
-          <Link href="/">
+      <div className="mx-auto flex max-w-7xl h-24 items-center justify-between px-6 lg:px-8">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex-shrink-0">
             <Image
               src="/logo.png"
               alt="Frio Alimentaria Logo"
               width={140}
               height={40}
+              priority
             />
           </Link>
-          {isAdmin && !loading && (
-             <h1 className="hidden lg:block text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Gestión de Proveedores
-            </h1>
-          )}
-          {user && !loading && (
-            <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'rounded-lg px-4 py-2 transition-all duration-300',
-                    pathname === link.href
-                      ? 'bg-primary text-primary-foreground shadow-lg'
-                      : 'text-foreground/80 hover:bg-primary/10'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          )}
+          
+          <div className="flex items-center gap-6">
+            {isAdmin && !loading && (
+              <h1 className="hidden xl:block text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase">
+                Gestión de Proveedores
+              </h1>
+            )}
+            
+            {user && !loading && (
+              <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'rounded-lg px-3 py-2 transition-all duration-300 whitespace-nowrap',
+                      pathname === link.href
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'text-foreground/80 hover:bg-primary/10'
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-4 ml-4">
           {loading ? (
             <Skeleton className="h-9 w-28" />
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  {displayName}
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                <Button variant="outline" className="max-w-[200px] truncate uppercase">
+                  <span className="truncate">{displayName}</span>
+                  <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 {isAdmin && (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/account">
+                      <Link href="/account" className="flex items-center">
                         <UserIcon className="mr-2 h-4 w-4" />
                         <span>Mi Cuenta</span>
                       </Link>
@@ -144,7 +150,7 @@ export default function Header() {
                     <DropdownMenuSeparator />
                   </>
                 )}
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
                 </DropdownMenuItem>
