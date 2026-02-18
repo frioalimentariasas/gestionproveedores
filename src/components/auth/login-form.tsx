@@ -186,11 +186,6 @@ export function LoginForm() {
               <Link href="/auth/register">Regístrate como proveedor</Link>
             </Button>
           </div>
-          <div className="mt-4 text-center text-sm">
-             <Button variant="link" asChild className="p-0 h-auto text-muted-foreground">
-              <Link href="/auth/migrate">¿Usuario antiguo? Actualiza tu cuenta aquí</Link>
-            </Button>
-          </div>
         </form>
       </Form>
       
