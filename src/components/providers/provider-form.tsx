@@ -1319,7 +1319,14 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                   <FormItem>
                     <FormLabel>Nombre del Representante Legal</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={isLocked} />
+                      <Input 
+                        {...field} 
+                        disabled={isLocked} 
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                          field.onChange(value);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1363,9 +1370,16 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                   name="legalRepresentativeDocumentNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número</FormLabel>
+                      <FormLabel>Número Documento Representante Legal</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLocked} />
+                        <Input 
+                          {...field} 
+                          disabled={isLocked} 
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            field.onChange(value);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1394,7 +1408,14 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                     de:
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isLocked} />
+                    <Input 
+                      {...field} 
+                      disabled={isLocked} 
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                        field.onChange(value);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

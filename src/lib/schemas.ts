@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const loginSchema = z.object({
   identifier: z.string().min(1, 'El NIT o Email es requerido.'),
-  password: z.string().min(1, 'La contraseña es requerida.'),
+  password: z.string().min(1, 'La contraseña es requerido.'),
 });
 
 export const registerSchema = z
@@ -116,8 +116,8 @@ export const providerFormSchema = z
     paymentContactTitle: z
       .string()
       .min(1, 'El cargo de la persona para notificar pago es requerido.'),
-    paymentContactEmail: z
-      .string()
+    paymentContactEmail:
+      z.string()
       .email('El email para notificación de pago no es válido.').min(1, 'El email para notificación de pago es requerido.'),
     email: z.string().email('Email no válido.'),
 
@@ -189,7 +189,14 @@ export const providerFormSchema = z
           message: 'El nombre del representante legal es requerido.',
           path: ['legalRepresentativeName'],
         });
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(data.legalRepresentativeName)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre del representante solo debe contener letras.',
+          path: ['legalRepresentativeName'],
+        });
       }
+
       if (!data.legalRepresentativeDocumentType) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -201,6 +208,12 @@ export const providerFormSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'El número de documento del representante es requerido.',
+          path: ['legalRepresentativeDocumentNumber'],
+        });
+      } else if (!/^[0-9]+$/.test(data.legalRepresentativeDocumentNumber)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El número de documento solo debe contener números.',
           path: ['legalRepresentativeDocumentNumber'],
         });
       }
