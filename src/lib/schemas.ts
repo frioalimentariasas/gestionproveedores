@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 const ADMIN_EMAILS = [
@@ -195,6 +196,7 @@ export const providerFormSchema = z
     // Status fields
     formLocked: z.boolean().optional(),
     disabled: z.boolean().optional(),
+    criticalityLevel: z.enum(['Crítico', 'Medio', 'Bajo']).optional(),
   })
   .superRefine((data, ctx) => {
     // Check if email is an admin email in the main form too
@@ -369,6 +371,9 @@ export const selectionEventSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   type: z.enum(['Productos', 'Servicios'], {
     required_error: 'Debes seleccionar un sector.',
+  }),
+  criticalityLevel: z.enum(['Crítico', 'Medio', 'Bajo'], {
+    required_error: 'Debes seleccionar el nivel de criticidad.',
   }),
 });
 

@@ -55,6 +55,15 @@
           "description": "The email address of the provider, used for login and communication.",
           "format": "email"
         },
+        "criticalityLevel": {
+          "type": "string",
+          "enum": [
+            "Crítico",
+            "Medio",
+            "Bajo"
+          ],
+          "description": "The criticality level assigned to the provider by an admin."
+        },
         "rutFileUrl": {
           "type": "string",
           "description": "URL of the RUT file stored in cloud storage.",
@@ -371,6 +380,14 @@
             "Servicios"
           ]
         },
+        "criticalityLevel": {
+          "type": "string",
+          "enum": [
+            "Crítico",
+            "Medio",
+            "Bajo"
+          ]
+        },
         "status": {
           "type": "string",
           "enum": [
@@ -451,7 +468,8 @@
         "name",
         "type",
         "status",
-        "createdAt"
+        "createdAt",
+        "criticalityLevel"
       ]
     }
   },

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -22,6 +23,8 @@ import {
   Tag,
   Trash2,
   FileClock,
+  ShieldAlert,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Table,
@@ -67,6 +70,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { EvaluationModal } from './evaluation-modal';
 import { cn } from '@/lib/utils';
 import { AssignCategoriesModal } from './assign-categories-modal';
+import { AssignCriticalityModal } from './assign-criticality-modal';
 
 interface Provider {
   id: string;
@@ -78,6 +82,7 @@ interface Provider {
   categoryIds?: string[];
   providerType?: string;
   originSelectionEventId?: string;
+  criticalityLevel?: 'Crítico' | 'Medio' | 'Bajo';
 }
 
 export default function ProvidersTable() {
@@ -96,6 +101,7 @@ export default function ProvidersTable() {
 
   const [evaluationTarget, setEvaluationTarget] = useState<Provider | null>(null);
   const [assignCategoriesTarget, setAssignCategoriesTarget] = useState<Provider | null>(null);
+  const [criticalityTarget, setCriticalityTarget] = useState<Provider | null>(null);
   const [deleteDialogState, setDeleteDialogState] = useState<{
     isOpen: boolean;
     provider: Provider | null;
@@ -239,6 +245,23 @@ export default function ProvidersTable() {
     }
   };
 
+  const getCriticalityBadge = (level?: string) => {
+    switch (level) {
+      case 'Crítico':
+        return <Badge variant="destructive">Crítico</Badge>;
+      case 'Medio':
+        return <Badge variant="secondary" className="bg-yellow-500 text-white hover:bg-yellow-600">Medio</Badge>;
+      case 'Bajo':
+        return <Badge variant="outline" className="text-green-600 border-green-600">Bajo</Badge>;
+      default:
+        return (
+          <Badge variant="outline" className="text-red-500 border-red-500 animate-pulse flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" /> Pendiente
+          </Badge>
+        );
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -277,6 +300,7 @@ export default function ProvidersTable() {
               <TableHead>Razón Social</TableHead>
               <TableHead>NIT / Documento</TableHead>
               <TableHead>Email de Contacto</TableHead>
+              <TableHead className="text-center">Criticidad</TableHead>
               <TableHead className="text-center">Formulario</TableHead>
               <TableHead className="text-center">Estado Cuenta</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -295,6 +319,9 @@ export default function ProvidersTable() {
                 </TableCell>
                 <TableCell>{provider.documentNumber}</TableCell>
                 <TableCell>{provider.email}</TableCell>
+                <TableCell className="text-center">
+                  {getCriticalityBadge(provider.criticalityLevel)}
+                </TableCell>
                 <TableCell className="text-center">
                   <Badge variant={provider.formLocked ? 'outline' : 'secondary'}>
                     {provider.formLocked ? 'Bloqueado' : 'Habilitado'}
@@ -363,6 +390,14 @@ export default function ProvidersTable() {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => setCriticalityTarget(provider)}>
+                            <ShieldAlert className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Asignar Criticidad</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <Button variant="ghost" size="icon" onClick={() => handleToggleLock(provider)}>
                             {provider.formLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                           </Button>
@@ -422,6 +457,12 @@ export default function ProvidersTable() {
         isOpen={!!assignCategoriesTarget}
         onClose={() => setAssignCategoriesTarget(null)}
         provider={assignCategoriesTarget}
+      />
+
+      <AssignCriticalityModal
+        isOpen={!!criticalityTarget}
+        onClose={() => setCriticalityTarget(null)}
+        provider={criticalityTarget}
       />
 
       <Dialog

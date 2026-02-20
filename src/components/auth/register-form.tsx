@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { registerSchema } from '@/lib/schemas';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -64,6 +65,15 @@ export function RegisterForm() {
     const eventId = searchParams.get('eventId');
 
     try {
+      // Fetch event criticality if coming from a selection process
+      let inheritedCriticality = null;
+      if (eventId) {
+        const eventDoc = await getDoc(doc(firestore, 'selection_events', eventId));
+        if (eventDoc.exists()) {
+          inheritedCriticality = eventDoc.data().criticalityLevel;
+        }
+      }
+
       // Use the NIT (documentNumber) to create a synthetic email for auth
       const syntheticEmail = `${values.documentNumber}@proveedores.frioalimentaria.com.co`;
       
@@ -85,6 +95,9 @@ export function RegisterForm() {
 
       if (eventId) {
         providerData.originSelectionEventId = eventId;
+        if (inheritedCriticality) {
+          providerData.criticalityLevel = inheritedCriticality;
+        }
       }
 
       // Create a partial provider profile in Firestore
@@ -240,5 +253,3 @@ export function RegisterForm() {
     </Form>
   );
 }
-
-    

@@ -29,6 +29,7 @@ import {
 } from '../ui/card';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export default function CreateSelectionForm() {
   const { toast } = useToast();
@@ -42,6 +43,7 @@ export default function CreateSelectionForm() {
     defaultValues: {
       name: '',
       type: 'Productos',
+      criticalityLevel: 'Bajo' as any,
     },
   });
 
@@ -95,7 +97,7 @@ export default function CreateSelectionForm() {
       <CardHeader>
         <CardTitle>1. Definir el Proceso</CardTitle>
         <CardDescription>
-          Dale un nombre a este proceso de selección y define el sector de adquisición.
+          Dale un nombre a este proceso de selección, define el sector y el nivel de criticidad.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -118,38 +120,63 @@ export default function CreateSelectionForm() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Sector</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <FormItem className="flex items-center space-x-3 space-y-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                    <FormItem className="space-y-3">
+                    <FormLabel>Sector</FormLabel>
+                    <FormControl>
+                        <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                        >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                            <RadioGroupItem value="Productos" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Productos</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                            <RadioGroupItem value="Servicios" />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                            Servicios
+                            </FormLabel>
+                        </FormItem>
+                        </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+
+                <FormField
+                control={form.control}
+                name="criticalityLevel"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Nivel de Criticidad</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <RadioGroupItem value="Productos" />
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el nivel..." />
+                        </SelectTrigger>
                         </FormControl>
-                        <FormLabel className="font-normal">Productos</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="Servicios" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Servicios
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                        <SelectContent>
+                        <SelectItem value="Crítico">Crítico</SelectItem>
+                        <SelectItem value="Medio">Medio</SelectItem>
+                        <SelectItem value="Bajo">Bajo</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
 
             <div className="flex justify-end">
               <Button type="submit" disabled={isSubmitting}>

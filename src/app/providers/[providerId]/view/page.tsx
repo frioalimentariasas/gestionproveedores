@@ -110,6 +110,7 @@ export default function ProviderViewPage() {
       { Section: '1. Información del Proveedor' },
       { Section: '', Field: 'Razón social o nombre', Value: providerData.businessName },
       { Section: '', Field: 'Tipo de Proveedor', Value: providerData.providerType?.join(', ') },
+      { Section: '', Field: 'Nivel de Criticidad', Value: providerData.criticalityLevel || 'Pendiente' },
       { Section: '', Field: 'Tipo de Documento', Value: providerData.documentType },
       { Section: '', Field: 'Número', Value: providerData.documentNumber },
       { Section: '', Field: 'Tipo de Persona', Value: providerData.personType },
@@ -307,6 +308,7 @@ export default function ProviderViewPage() {
             { title: "DESCRIPCIÓN DEL BIEN Y/O SERVICIO", fields: [{ label: '', value: providerData.serviceDescription }] },
             { title: "1. Información del Proveedor", fields: [
                 { label: "Razón Social o nombre", value: providerData.businessName },
+                { label: "Nivel de Criticidad", value: providerData.criticalityLevel || 'No Asignado' },
                 { label: "Tipo de Proveedor", value: providerData.providerType?.join(', ') },
                 { label: "Tipo de Documento", value: providerData.documentType },
                 { label: "Número", value: providerData.documentNumber },
@@ -510,9 +512,13 @@ export default function ProviderViewPage() {
                   label="Razón Social o nombre"
                   value={providerData.businessName}
                 />
+                <InfoField
+                  label="Nivel de Criticidad"
+                  value={providerData.criticalityLevel || 'No asignado'}
+                />
                  <InfoField
                   label="Tipo de Proveedor"
-                  value={providerData.providerType?.join(', ')}
+                  value={providerData.providerType?.join(', ') || ''}
                 />
                 <InfoField
                   label="Tipo de Documento"
