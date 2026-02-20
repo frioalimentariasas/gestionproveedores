@@ -5,7 +5,7 @@ import {
   useCollection,
   useMemoFirebase,
 } from '@/firebase';
-import { collection, query, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Loader2, PlusCircle, Trash2, Pencil, FileUp, FileDown, Printer, Search, Tag } from 'lucide-react';
 import {
   Table,
@@ -42,12 +42,13 @@ import jsPDF from 'jspdf';
 import { CategoryImportModal } from './category-import-modal';
 import { Input } from '../ui/input';
 import { assignCategorySequenceIds } from '@/actions/user-management';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Category {
   id: string;
   name: string;
   description?: string;
-  categoryType?: 'Bienes' | 'Servicios (Contratista)';
+  categoryType?: 'Productos' | 'Servicios';
   sequenceId?: string;
 }
 
@@ -62,6 +63,11 @@ export default function CategoriesTable() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
+  
+  // States for bulk actions
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteConfirmOpen] = useState(false);
 
 
   const categoriesQuery = useMemoFirebase(
@@ -84,7 +90,28 @@ export default function CategoriesTable() {
     );
     filtered.sort((a, b) => a.name.localeCompare(b.name));
     return { filteredCategories: filtered, hasMissingIds: hasMissing };
-}, [categories, searchTerm]);
+  }, [categories, searchTerm]);
+
+  // Bulk selection logic
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredCategories.map(cat => cat.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  };
 
   const handleDelete = async () => {
     if (!firestore || !deleteTarget) return;
@@ -97,6 +124,11 @@ export default function CategoriesTable() {
           title: 'Categoría Eliminada',
           description: `La categoría "${deleteTarget.name}" ha sido eliminada.`,
         });
+        setSelectedIds(prev => {
+          const next = new Set(prev);
+          next.delete(deleteTarget.id);
+          return next;
+        });
       })
       .catch(() => {
         toast({
@@ -106,6 +138,35 @@ export default function CategoriesTable() {
         });
       });
     setDeleteTarget(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.size === 0) return;
+
+    setIsBulkDeleting(true);
+    const batch = writeBatch(firestore);
+    
+    selectedIds.forEach(id => {
+      batch.delete(doc(firestore, 'categories', id));
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: 'Categorías Eliminadas',
+        description: `Se han eliminado ${selectedIds.size} categorías correctamente.`,
+      });
+      setSelectedIds(new Set());
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Error en eliminación masiva',
+        description: 'No se pudieron eliminar todas las categorías seleccionadas.',
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setIsBulkDeleteConfirmOpen(false);
+    }
   };
 
   const handleExportExcel = () => {
@@ -122,7 +183,7 @@ export default function CategoriesTable() {
       ID: sequenceId || '',
       Nombre: name,
       Descripción: description || '',
-      Tipo: categoryType || '',
+      Sector: categoryType || '',
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
@@ -166,7 +227,7 @@ export default function CategoriesTable() {
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(150);
-        doc.text(`Tipo: ${cat.categoryType || 'N/A'}`, margin, yPos + 5);
+        doc.text(`Sector: ${cat.categoryType || 'N/A'}`, margin, yPos + 5);
         
         doc.setTextColor(0);
         const descLines = doc.splitTextToSize(cat.description || 'Sin descripción.', pageWidth - (margin * 2));
@@ -219,6 +280,8 @@ export default function CategoriesTable() {
     );
   }
 
+  const isAllSelected = filteredCategories.length > 0 && selectedIds.size === filteredCategories.length;
+
   return (
     <>
       <div className="flex justify-between mb-4 gap-2 flex-wrap items-center">
@@ -232,6 +295,16 @@ export default function CategoriesTable() {
             />
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
+          {selectedIds.size > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={() => setIsBulkDeleteConfirmOpen(true)}
+              disabled={isBulkDeleting}
+            >
+              {isBulkDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Eliminar Seleccionados ({selectedIds.size})
+            </Button>
+          )}
           {hasMissingIds && (
             <Button variant="outline" onClick={handleAssignIds} disabled={isAssigning}>
                 {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Tag className="mr-2 h-4 w-4" />}
@@ -260,23 +333,37 @@ export default function CategoriesTable() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox 
+                  checked={isAllSelected}
+                  onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                  aria-label="Seleccionar todos"
+                />
+              </TableHead>
               <TableHead className="w-[80px]">ID</TableHead>
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Sector</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(!filteredCategories || filteredCategories.length === 0) ? (
                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                         {searchTerm ? 'No se encontraron categorías.' : 'No hay categorías registradas.'}
                     </TableCell>
                 </TableRow>
             ) : (
                 filteredCategories.map((category) => (
-                <TableRow key={category.id}>
+                <TableRow key={category.id} className={selectedIds.has(category.id) ? 'bg-muted/50' : ''}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedIds.has(category.id)}
+                        onCheckedChange={(checked) => handleSelectRow(category.id, !!checked)}
+                        aria-label={`Seleccionar ${category.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-mono text-muted-foreground">{category.sequenceId || 'S/ID'}</TableCell>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell>{category.description || 'N/A'}</TableCell>
@@ -339,6 +426,7 @@ export default function CategoriesTable() {
         onClose={() => setIsImportModalOpen(false)}
       />
 
+      {/* Single Delete Confirmation */}
       <AlertDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -358,6 +446,32 @@ export default function CategoriesTable() {
               className="bg-destructive hover:bg-destructive/90"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog
+        open={isBulkDeleteDialogOpen}
+        onOpenChange={setIsBulkDeleteConfirmOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {selectedIds.size} categorías?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible y eliminará permanentemente todas las categorías seleccionadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sí, eliminar todas
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
