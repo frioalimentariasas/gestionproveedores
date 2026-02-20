@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 const ADMIN_EMAILS = [
@@ -410,4 +409,9 @@ export const criteriaWeightsSchema = z.object({
 }, {
     message: 'La suma de los pesos debe ser exactamente 100%.',
     path: ['criteria'],
+});
+
+export const inviteProviderSchema = z.object({
+  name: z.string().min(1, 'El nombre del proveedor es requerido.'),
+  email: z.string().email('Por favor, ingresa un email válido.'),
 });

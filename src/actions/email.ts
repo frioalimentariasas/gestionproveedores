@@ -283,3 +283,42 @@ export async function notifyWinnerOfSelection({
     htmlContent,
   });
 }
+
+/**
+ * Sends a direct invitation to an active provider to register in the platform.
+ */
+export async function sendDirectInvitation({
+  providerName,
+  providerEmail,
+}: {
+  providerName: string;
+  providerEmail: string;
+}) {
+  const subject = 'REGISTRO DE PROVEEDOR FRIOALIMENTARIA SAS';
+  const registrationUrl = 'https://app.gestionproveedores.frioalimentaria.com.co/auth/register';
+  
+  const htmlContent = `
+    <p>Buen día Estimado Proveedor <strong>${providerName}</strong>,</p>
+    <br>
+    <p>Nos permitimos informarle que será vinculado como proveedor autorizado de nuestra compañía. Le damos una cordial bienvenida. Confiamos en que esta relación será productiva y que juntos alcanzaremos importantes logros. Le invitamos a registrarse y actualizar la informacion en el siguiente link: <a href="${registrationUrl}">${registrationUrl}</a></p>
+    <br>
+    <h3>Documentación y Facturación:</h3>
+    <ol>
+      <li><strong>Revisión de facturas y pagos:</strong> Para cualquier consulta relacionada con la revisión de facturas y pagos, por favor contacte a <a href="mailto:administracion@frioalimentaria.com.co">administracion@frioalimentaria.com.co</a>. Asegúrese de que las facturas se presenten correctamente y a tiempo para evitar retrasos en los pagos.</li>
+      <li><strong>Orden de Compra (OC):</strong> Es indispensable contar con una Orden de Compra (OC) antes de proceder con la facturación. Esta debe ser solicitada al funcionario que requirió el servicio. Por favor, tenga en cuenta que sin este documento no es posible realizar la radicación de la factura.</li>
+      <li><strong>Radicación de facturas electrónicas:</strong> Las facturas electrónicas deben ser enviadas al correo: <a href="mailto:asistente@frioalimentaria.com.co">asistente@frioalimentaria.com.co</a>.</li>
+      <li><strong>Actualización documental y solicitudes adicionales:</strong> Para actualizaciones documentales o solicitudes adicionales, puede comunicarse al correo: <a href="mailto:asistente@frioalimentaria.com.co">asistente@frioalimentaria.com.co</a>.</li>
+    </ol>
+    <br>
+    <p>Estamos a su disposición para resolver cualquier inquietud que pueda tener. Nuevamente, le damos la bienvenida y esperamos construir una relación comercial sólida y beneficiosa.</p>
+    <br>
+    <p>Cordialmente,</p>
+    <p><strong>El equipo de Frioalimentaria SAS</strong></p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
