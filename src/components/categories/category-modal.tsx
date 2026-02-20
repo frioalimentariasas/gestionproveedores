@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +35,7 @@ interface Category {
   id: string;
   name: string;
   description?: string;
-  categoryType?: 'Bienes' | 'Servicios (Contratista)';
+  categoryType?: 'Productos' | 'Servicios';
   sequenceId?: string;
 }
 
@@ -63,7 +64,7 @@ export function CategoryModal({
     defaultValues: {
       name: '',
       description: '',
-      categoryType: 'Bienes',
+      categoryType: 'Productos',
     },
   });
 
@@ -73,13 +74,13 @@ export function CategoryModal({
         form.reset({
           name: category.name,
           description: category.description || '',
-          categoryType: category.categoryType || 'Bienes',
+          categoryType: category.categoryType || 'Productos',
         });
       } else {
         form.reset({
           name: '',
           description: '',
-          categoryType: 'Bienes',
+          categoryType: 'Productos',
         });
       }
     }
@@ -184,7 +185,7 @@ export function CategoryModal({
               name="categoryType"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Tipo de Categoría</FormLabel>
+                  <FormLabel>Sector</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -193,16 +194,16 @@ export function CategoryModal({
                     >
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value="Bienes" />
+                          <RadioGroupItem value="Productos" />
                         </FormControl>
-                        <FormLabel className="font-normal">Bienes</FormLabel>
+                        <FormLabel className="font-normal">Productos</FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value="Servicios (Contratista)" />
+                          <RadioGroupItem value="Servicios" />
                         </FormControl>
                         <FormLabel className="font-normal">
-                          Servicios (Contratista)
+                          Servicios
                         </FormLabel>
                       </FormItem>
                     </RadioGroup>

@@ -225,7 +225,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
 
   const isFormSubmitting = isSubmitting || isUploading;
   const evaluationTitle = selectedCategoryData ? EVALUATION_TYPES[selectedCategoryData.categoryType] : "Evaluación";
-  const showFracttalField = selectedCategoryData?.categoryType === 'Bienes';
+  const showFracttalField = selectedCategoryData?.categoryType === 'Productos';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>

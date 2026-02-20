@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 const ADMIN_EMAILS = [
@@ -93,7 +94,7 @@ export const providerFormSchema = z
   .object({
     // Section 1
     providerType: z.array(z.string()).refine((value) => value.length > 0, {
-      message: 'Debes seleccionar al menos un tipo de proveedor.',
+      message: 'Debes seleccionar al menos un sector.',
     }),
     categoryIds: z
       .array(z.string())
@@ -362,13 +363,13 @@ export const providerFormSchema = z
 export const categorySchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().optional(),
-  categoryType: z.string().min(1, 'El tipo de categoría es requerido.'),
+  categoryType: z.string().min(1, 'El sector es requerido.'),
 });
 
 export const selectionEventSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  type: z.enum(['Bienes', 'Servicios (Contratista)'], {
-    required_error: 'Debes seleccionar un tipo.',
+  type: z.enum(['Productos', 'Servicios'], {
+    required_error: 'Debes seleccionar un sector.',
   }),
 });
 

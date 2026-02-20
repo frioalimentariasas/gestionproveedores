@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Provider": {
@@ -12,12 +13,12 @@
         },
         "providerType": {
           "type": "array",
-          "description": "Define si el proveedor es de Bienes, Servicios (Contratista), o ambos.",
+          "description": "Define si el proveedor es de Productos, Servicios, o ambos.",
           "items": {
             "type": "string",
             "enum": [
-              "Bienes",
-              "Servicios (Contratista)"
+              "Productos",
+              "Servicios"
             ]
           }
         },
@@ -263,8 +264,8 @@
         "evaluationType": {
           "type": "string",
           "enum": [
-            "Bienes",
-            "Servicios (Contratista)"
+            "Productos",
+            "Servicios"
           ]
         },
         "categoryId": {
@@ -331,10 +332,10 @@
         },
         "categoryType": {
           "type": "string",
-          "description": "The type of provider this category applies to.",
+          "description": "The sector this category applies to.",
           "enum": [
-            "Bienes",
-            "Servicios (Contratista)"
+            "Productos",
+            "Servicios"
           ]
         },
         "evaluationCriteriaWeights": {
@@ -366,8 +367,8 @@
         "type": {
           "type": "string",
           "enum": [
-            "Bienes",
-            "Servicios (Contratista)"
+            "Productos",
+            "Servicios"
           ]
         },
         "status": {

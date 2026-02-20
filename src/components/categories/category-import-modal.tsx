@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -32,8 +33,8 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 const categoryImportSchema = z.object({
   Nombre: z.string().min(1, 'El nombre es requerido.'),
   Descripción: z.string().optional(),
-  Tipo: z.enum(['Bienes', 'Servicios (Contratista)'], {
-    errorMap: () => ({ message: 'El tipo debe ser "Bienes" o "Servicios (Contratista)".' }),
+  Sector: z.enum(['Productos', 'Servicios'], {
+    errorMap: () => ({ message: 'El sector debe ser "Productos" o "Servicios".' }),
   }),
 });
 
@@ -100,7 +101,7 @@ export function CategoryImportModal({ isOpen, onClose }: CategoryImportModalProp
       batch.set(newDocRef, {
         name: categoryData.Nombre,
         description: categoryData.Descripción || '',
-        categoryType: categoryData.Tipo,
+        categoryType: categoryData.Sector,
       });
     });
 
@@ -134,7 +135,7 @@ export function CategoryImportModal({ isOpen, onClose }: CategoryImportModalProp
         <DialogHeader>
           <DialogTitle>Importar Categorías desde Excel</DialogTitle>
           <DialogDescription>
-            Sube un archivo .xlsx con las columnas: "Nombre", "Descripción" (opcional), y "Tipo" ("Bienes" o "Servicios (Contratista)").
+            Sube un archivo .xlsx con las columnas: "Nombre", "Descripción" (opcional), y "Sector" ("Productos" o "Servicios").
           </DialogDescription>
         </DialogHeader>
 
@@ -157,7 +158,7 @@ export function CategoryImportModal({ isOpen, onClose }: CategoryImportModalProp
                             <TableRow>
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Descripción</TableHead>
-                                <TableHead>Tipo</TableHead>
+                                <TableHead>Sector</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -165,7 +166,7 @@ export function CategoryImportModal({ isOpen, onClose }: CategoryImportModalProp
                                 <TableRow key={index}>
                                     <TableCell>{row.Nombre}</TableCell>
                                     <TableCell>{row.Descripción || 'N/A'}</TableCell>
-                                    <TableCell>{row.Tipo}</TableCell>
+                                    <TableCell>{row.Sector}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

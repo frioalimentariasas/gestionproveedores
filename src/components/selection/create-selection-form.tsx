@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,7 +41,7 @@ export default function CreateSelectionForm() {
     resolver: zodResolver(selectionEventSchema),
     defaultValues: {
       name: '',
-      type: 'Bienes',
+      type: 'Productos',
     },
   });
 
@@ -94,8 +95,7 @@ export default function CreateSelectionForm() {
       <CardHeader>
         <CardTitle>1. Definir el Proceso</CardTitle>
         <CardDescription>
-          Dale un nombre a este proceso de selección y define qué tipo de
-          adquisición es.
+          Dale un nombre a este proceso de selección y define el sector de adquisición.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -123,7 +123,7 @@ export default function CreateSelectionForm() {
               name="type"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Tipo de Adquisición</FormLabel>
+                  <FormLabel>Sector</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -132,16 +132,16 @@ export default function CreateSelectionForm() {
                     >
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value="Bienes" />
+                          <RadioGroupItem value="Productos" />
                         </FormControl>
-                        <FormLabel className="font-normal">Bienes</FormLabel>
+                        <FormLabel className="font-normal">Productos</FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value="Servicios (Contratista)" />
+                          <RadioGroupItem value="Servicios" />
                         </FormControl>
                         <FormLabel className="font-normal">
-                          Servicios (Contratista)
+                          Servicios
                         </FormLabel>
                       </FormItem>
                     </RadioGroup>

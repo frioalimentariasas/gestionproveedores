@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,7 +66,7 @@ type ProviderFormValues = z.infer<typeof providerFormSchema>;
 interface Category {
   id: string;
   name: string;
-  categoryType: 'Bienes' | 'Servicios (Contratista)';
+  categoryType: 'Productos' | 'Servicios';
 }
 
 const initialFormValues: ProviderFormValues = {
@@ -129,8 +130,8 @@ const yesNoOptions = ['Sí', 'No'];
 const legalRepDocTypes = ['CC', 'CE', 'Pasaporte'];
 
 const providerTypeOptions = [
-  { id: 'Bienes', label: 'Bienes' },
-  { id: 'Servicios (Contratista)', label: 'Servicios (Contratista)' },
+  { id: 'Productos', label: 'Productos' },
+  { id: 'Servicios', label: 'Servicios' },
 ] as const;
 
 
@@ -589,7 +590,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
               name="providerType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Proveedor</FormLabel>
+                  <FormLabel>Sector</FormLabel>
                   <div className="flex flex-col space-y-2 pt-2 sm:flex-row sm:space-y-0 sm:space-x-4">
                     {providerTypeOptions.map((item) => (
                       <FormItem
@@ -669,7 +670,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                                     <p className="text-sm text-muted-foreground text-center">
                                     {isCategoriesLoading
                                         ? 'Cargando categorías...'
-                                        : 'No se encontraron categorías. Selecciona un "Tipo de Proveedor" o ajusta tu búsqueda.'}
+                                        : 'No se encontraron categorías. Selecciona un "Sector" o ajusta tu búsqueda.'}
                                     </p>
                                 )}
                             </div>

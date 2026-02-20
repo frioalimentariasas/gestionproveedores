@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -51,7 +52,7 @@ export interface Criterion {
 export interface SelectionEvent {
   id: string;
   name: string;
-  type: 'Bienes' | 'Servicios (Contratista)';
+  type: 'Productos' | 'Servicios';
   status: 'Abierto' | 'Cerrado';
   createdAt: Timestamp;
   selectedCompetitorId?: string;
@@ -244,7 +245,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/selection">
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
             </Link>
           </Button>
           <div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -39,7 +40,7 @@ import { deleteSelectionEvent } from '@/actions/user-management';
 
 interface SelectionEvent {
   name: string;
-  type: 'Bienes' | 'Servicios (Contratista)';
+  type: 'Productos' | 'Servicios';
   status: 'Abierto' | 'Cerrado';
   createdAt: Timestamp;
 }
@@ -116,7 +117,7 @@ export default function SelectionEventsList() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre del Proceso</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Sector</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Fecha de Creación</TableHead>
               <TableHead className="text-right">Acciones</TableHead>

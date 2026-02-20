@@ -1,7 +1,6 @@
 
-
-// Define all possible criteria with their default weights for Bienes
-export const BIENES_CRITERIA_DEFINITIONS = {
+// Define all possible criteria with their default weights for Productos
+export const PRODUCTOS_CRITERIA_DEFINITIONS = {
   price: { id: 'price', label: 'Precio', defaultWeight: 0.10 },
   creditPolicies: { id: 'creditPolicies', label: 'Políticas de crédito y descuento', defaultWeight: 0.10 },
   deliveryTime: { id: 'deliveryTime', label: 'Tiempo de entrega del producto', defaultWeight: 0.20 },
@@ -21,21 +20,21 @@ export const SERVICIOS_CRITERIA_DEFINITIONS = {
   customerService: { id: 'customerService', label: 'Atención al cliente', defaultWeight: 0.10 },
 };
 
-// Define which criteria apply to which type
+// Define which criteria apply to which sector
 export const CRITERIA_BY_TYPE = {
-  'Bienes': Object.values(BIENES_CRITERIA_DEFINITIONS),
-  'Servicios (Contratista)': Object.values(SERVICIOS_CRITERIA_DEFINITIONS),
+  'Productos': Object.values(PRODUCTOS_CRITERIA_DEFINITIONS),
+  'Servicios': Object.values(SERVICIOS_CRITERIA_DEFINITIONS),
 };
 
 export const EVALUATION_TYPES = {
-  'Bienes': 'Evaluación de Desempeño de Proveedor de Bienes',
-  'Servicios (Contratista)': 'Evaluación de Desempeño de Contratista',
+  'Productos': 'Evaluación de Desempeño de Proveedor de Productos',
+  'Servicios': 'Evaluación de Desempeño de Contratista de Servicios',
 };
 
 export type CategoryType = keyof typeof CRITERIA_BY_TYPE;
 export type Criterion = { id: string; label: string; defaultWeight: number };
 
-// Helper function to get the criteria definitions for a given category type
+// Helper function to get the criteria definitions for a given sector
 export function getCriteriaForType(type: CategoryType): Criterion[] {
   return CRITERIA_BY_TYPE[type] || [];
 }
