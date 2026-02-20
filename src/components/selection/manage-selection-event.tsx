@@ -53,6 +53,7 @@ export interface SelectionEvent {
   id: string;
   name: string;
   type: 'Productos' | 'Servicios';
+  criticalityLevel?: 'Crítico' | 'Medio' | 'Bajo';
   status: 'Abierto' | 'Cerrado';
   createdAt: Timestamp;
   selectedCompetitorId?: string;

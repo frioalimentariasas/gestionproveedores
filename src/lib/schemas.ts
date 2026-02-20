@@ -370,10 +370,10 @@ export const categorySchema = z.object({
 export const selectionEventSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   type: z.enum(['Productos', 'Servicios'], {
-    required_error: 'Debes seleccionar un sector.',
+    errorMap: () => ({ message: 'Debes seleccionar un sector.' }),
   }),
   criticalityLevel: z.enum(['Crítico', 'Medio', 'Bajo'], {
-    required_error: 'Debes seleccionar el nivel de criticidad.',
+    errorMap: () => ({ message: 'Debes seleccionar el nivel de criticidad.' }),
   }),
 });
 

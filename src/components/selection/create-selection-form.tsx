@@ -42,8 +42,8 @@ export default function CreateSelectionForm() {
     resolver: zodResolver(selectionEventSchema),
     defaultValues: {
       name: '',
-      type: 'Productos',
-      criticalityLevel: 'Bajo' as any,
+      type: undefined,
+      criticalityLevel: undefined,
     },
   });
 
@@ -130,7 +130,7 @@ export default function CreateSelectionForm() {
                     <FormControl>
                         <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-col space-y-1"
                         >
                         <FormItem className="flex items-center space-x-3 space-y-0">
@@ -160,7 +160,7 @@ export default function CreateSelectionForm() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Nivel de Criticidad</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Selecciona el nivel..." />
