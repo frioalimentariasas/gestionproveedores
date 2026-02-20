@@ -275,7 +275,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             className="text-xl font-semibold p-4 bg-muted/50 rounded-md hover:no-underline"
             disabled={isSaving}
           >
-            Paso 1: Definir Criterios de Evaluación
+            Paso 1: Definir Criterios de Selección
           </AccordionTrigger>
           <AccordionContent className="p-4 pt-0">
             <div className="p-6 border rounded-b-md">
