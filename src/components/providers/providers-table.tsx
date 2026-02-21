@@ -25,6 +25,9 @@ import {
   ShieldAlert,
   AlertTriangle,
   BellRing,
+  Settings2,
+  ChevronRight,
+  Info,
 } from 'lucide-react';
 import {
   Table,
@@ -39,12 +42,6 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +69,15 @@ import { EvaluationModal } from './evaluation-modal';
 import { cn } from '@/lib/utils';
 import { AssignCategoriesModal } from './assign-categories-modal';
 import { AssignCriticalityModal } from './assign-criticality-modal';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
 
 interface Provider {
   id: string;
@@ -94,6 +100,11 @@ export default function ProvidersTable() {
   const [actionState, setActionState] = useState<{
     [key: string]: boolean;
   }>({});
+  
+  // States for sub-modals
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  
   const [dialogState, setDialogState] = useState<{
     type: 'password' | 'status' | null;
     provider: Provider | null;
@@ -137,9 +148,7 @@ export default function ProvidersTable() {
         }
         toast({
           title: 'Estado de Formulario Actualizado',
-          description: `El formulario del proveedor ha sido ${
-            !isCurrentlyLocked ? 'bloqueado' : 'habilitado para edición'
-          }.`,
+          description: `El formulario ha sido ${!isCurrentlyLocked ? 'bloqueado' : 'habilitado'}.`,
         });
       })
       .catch(async (serverError) => {
@@ -166,7 +175,7 @@ export default function ProvidersTable() {
       if (result.success) {
         toast({
           title: 'Recordatorio Enviado',
-          description: `Se ha notificado a ${provider.businessName} que finalice su registro.`,
+          description: `Se ha notificado a ${provider.businessName}.`,
         });
       } else {
         throw new Error(result.error || 'Error al enviar recordatorio.');
@@ -175,7 +184,7 @@ export default function ProvidersTable() {
       toast({
         variant: 'destructive',
         title: 'Error de Envío',
-        description: err.message || 'No se pudo enviar el correo en este momento.',
+        description: err.message || 'No se pudo enviar el correo.',
       });
     } finally {
       setActionLoading(provider.id, false);
@@ -229,14 +238,10 @@ export default function ProvidersTable() {
         });
         toast({
           title: 'Estado del Proveedor Actualizado',
-          description: `La cuenta de ${
-            provider.businessName
-          } ha sido ${newDisabledStatus ? 'desactivada' : 'activada'}.`,
+          description: `La cuenta ha sido ${newDisabledStatus ? 'desactivada' : 'activada'}.`,
         });
       } else {
-        throw new Error(
-          result.error || 'Error al actualizar el estado del usuario.'
-        );
+        throw new Error(result.error || 'Error al actualizar el estado.');
       }
     } catch (error: any) {
       toast({
@@ -262,13 +267,13 @@ export default function ProvidersTable() {
     if (result.success) {
       toast({
         title: 'Proveedor Eliminado',
-        description: `El proveedor ${provider.businessName} y todos sus datos han sido eliminados.`,
+        description: `El proveedor ${provider.businessName} ha sido eliminado.`,
       });
     } else {
       toast({
         variant: 'destructive',
         title: 'Error al eliminar',
-        description: result.error || 'Ocurrió un error inesperado al eliminar el proveedor.',
+        description: result.error || 'Error al eliminar el proveedor.',
       });
     }
   };
@@ -288,6 +293,11 @@ export default function ProvidersTable() {
     }
   };
 
+  const openManagementSheet = (provider: Provider) => {
+    setSelectedProvider(provider);
+    setIsSheetOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -301,31 +311,19 @@ export default function ProvidersTable() {
     return (
       <Alert variant="destructive">
         <AlertTitle>Error de Permiso</AlertTitle>
-        <AlertDescription>
-          No tienes permiso para ver la lista de proveedores. Contacta a un
-          administrador para que te asigne el rol.
-        </AlertDescription>
+        <AlertDescription>No tienes permiso para ver la lista de proveedores.</AlertDescription>
       </Alert>
-    );
-  }
-
-  if (!providers || providers.length === 0) {
-    return (
-      <p className="text-center text-muted-foreground">
-        No hay proveedores registrados todavía.
-      </p>
     );
   }
 
   return (
     <>
-      <div className="rounded-lg border">
+      <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Razón Social</TableHead>
               <TableHead>NIT / Documento</TableHead>
-              <TableHead>Email de Contacto</TableHead>
               <TableHead className="text-center">Criticidad</TableHead>
               <TableHead className="text-center">Formulario</TableHead>
               <TableHead className="text-center">Estado Cuenta</TableHead>
@@ -333,18 +331,15 @@ export default function ProvidersTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {providers.map((provider) => (
+            {providers?.map((provider) => (
               <TableRow
                 key={provider.id}
-                className={cn(
-                  provider.disabled ? 'bg-muted/50 text-muted-foreground' : ''
-                )}
+                className={cn(provider.disabled ? 'bg-muted/50 text-muted-foreground' : '')}
               >
-                <TableCell className="font-medium">
+                <TableCell className="font-medium max-w-[250px] truncate">
                   {provider.businessName}
                 </TableCell>
                 <TableCell>{provider.documentNumber}</TableCell>
-                <TableCell>{provider.email}</TableCell>
                 <TableCell className="text-center">
                   {getCriticalityBadge(provider.criticalityLevel)}
                 </TableCell>
@@ -363,120 +358,19 @@ export default function ProvidersTable() {
                 </TableCell>
                 <TableCell className="text-right">
                   {actionState[provider.id] ? (
-                    <div className="flex items-center justify-end pr-4">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
+                    <Loader2 className="h-5 w-5 animate-spin ml-auto" />
                   ) : (
-                    <div className="flex items-center justify-end gap-1">
-                    <TooltipProvider>
-                      {!provider.formLocked && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleSendReminder(provider)}>
-                              <BellRing className="h-4 w-4 text-orange-500" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Enviar Recordatorio de Registro</p></TooltipContent>
-                        </Tooltip>
-                      )}
-                      {provider.originSelectionEventId && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/selection/${provider.originSelectionEventId}`}>
-                                <FileClock className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Ver Proceso de Selección Origen</p></TooltipContent>
-                        </Tooltip>
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/providers/${provider.id}/view`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Ver Formulario</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/providers/${provider.id}/evaluations`}>
-                              <ClipboardList className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Historial de Evaluaciones</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setEvaluationTarget(provider)}>
-                            <PlusCircle className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Nueva Evaluación</p></TooltipContent>
-                      </Tooltip>
-                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setAssignCategoriesTarget(provider)}>
-                            <Tag className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Asignar Categorías</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setCriticalityTarget(provider)}>
-                            <ShieldAlert className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Asignar Criticidad</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => handleToggleLock(provider)}>
-                            {provider.formLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>{provider.formLocked ? 'Habilitar Edición' : 'Bloquear Formulario'}</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'password', provider: provider })}>
-                            <KeyRound className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Restablecer Contraseña</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Button variant="ghost" size="icon" className={cn(provider.disabled ? 'text-green-600 focus:text-green-700' : 'text-destructive focus:text-destructive')} onClick={() => setDialogState({ type: 'status', provider: provider })}>
-                            {provider.disabled ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>{provider.disabled ? 'Activar Proveedor' : 'Desactivar Proveedor'}</p></TooltipContent>
-                      </Tooltip>
-                      {user?.email === 'sistemas@frioalimentaria.com.co' && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleteDialogState({ isOpen: true, provider: provider })}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Eliminar Proveedor (Permanente)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TooltipProvider>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/providers/${provider.id}/view`}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver
+                        </Link>
+                      </Button>
+                      <Button variant="default" size="sm" onClick={() => openManagementSheet(provider)}>
+                        <Settings2 className="h-4 w-4 mr-2" />
+                        Gestionar
+                      </Button>
                     </div>
                   )}
                 </TableCell>
@@ -485,7 +379,101 @@ export default function ProvidersTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* --- Management Sheet (Panel Lateral) --- */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="sm:max-w-md p-0">
+          <SheetHeader className="p-6 bg-primary text-primary-foreground">
+            <SheetTitle className="text-primary-foreground flex items-center gap-2">
+              <Settings2 className="h-5 w-5" />
+              Gestión de Proveedor
+            </SheetTitle>
+            <SheetDescription className="text-primary-foreground/80 font-bold uppercase">
+              {selectedProvider?.businessName}
+            </SheetDescription>
+          </SheetHeader>
+          
+          <ScrollArea className="h-[calc(100vh-120px)] p-6">
+            <div className="space-y-8">
+              {/* Seccion 1: Trazabilidad y Consulta */}
+              <section className="space-y-3">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Info className="h-3 w-3" /> Trazabilidad y Consulta
+                </h4>
+                <div className="grid gap-2">
+                  <Button variant="outline" className="justify-start" asChild onClick={() => setIsSheetOpen(false)}>
+                    <Link href={`/providers/${selectedProvider?.id}/view`}>
+                      <Eye className="mr-2 h-4 w-4" /> Ver Formulario de Registro
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="justify-start" asChild onClick={() => setIsSheetOpen(false)}>
+                    <Link href={`/providers/${selectedProvider?.id}/evaluations`}>
+                      <ClipboardList className="mr-2 h-4 w-4" /> Historial de Evaluaciones
+                    </Link>
+                  </Button>
+                  {selectedProvider?.originSelectionEventId && (
+                    <Button variant="outline" className="justify-start" asChild onClick={() => setIsSheetOpen(false)}>
+                      <Link href={`/selection/${selectedProvider?.originSelectionEventId}`}>
+                        <FileClock className="mr-2 h-4 w-4" /> Ver Selección de Origen
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </section>
+
+              <Separator />
+
+              {/* Seccion 2: Gestión Técnica */}
+              <section className="space-y-3">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Gestión Técnica</h4>
+                <div className="grid gap-2">
+                  <Button variant="secondary" className="justify-start" onClick={() => { setEvaluationTarget(selectedProvider); setIsSheetOpen(false); }}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Realizar Nueva Evaluación
+                  </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => { setAssignCategoriesTarget(selectedProvider); setIsSheetOpen(false); }}>
+                    <Tag className="mr-2 h-4 w-4" /> Asignar Categorías
+                  </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => { setCriticalityTarget(selectedProvider); setIsSheetOpen(false); }}>
+                    <ShieldAlert className="mr-2 h-4 w-4" /> Asignar Nivel de Criticidad
+                  </Button>
+                  {!selectedProvider?.formLocked && (
+                    <Button variant="outline" className="justify-start text-orange-600 hover:text-orange-700" onClick={() => handleSendReminder(selectedProvider!)}>
+                      <BellRing className="mr-2 h-4 w-4" /> Enviar Recordatorio de Registro
+                    </Button>
+                  )}
+                </div>
+              </section>
+
+              <Separator />
+
+              {/* Seccion 3: Administración de Cuenta */}
+              <section className="space-y-3">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Control de Acceso</h4>
+                <div className="grid gap-2">
+                  <Button variant="outline" className="justify-start" onClick={() => handleToggleLock(selectedProvider!)}>
+                    {selectedProvider?.formLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+                    {selectedProvider?.formLocked ? 'Habilitar Edición de Formulario' : 'Bloquear Formulario'}
+                  </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => setDialogState({ type: 'password', provider: selectedProvider })}>
+                    <KeyRound className="mr-2 h-4 w-4" /> Restablecer Contraseña
+                  </Button>
+                  <Button variant="outline" className={cn("justify-start", selectedProvider?.disabled ? "text-green-600" : "text-destructive")} onClick={() => setDialogState({ type: 'status', provider: selectedProvider })}>
+                    {selectedProvider?.disabled ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
+                    {selectedProvider?.disabled ? 'Activar Cuenta' : 'Desactivar Cuenta'}
+                  </Button>
+                  {user?.email === 'sistemas@frioalimentaria.com.co' && (
+                    <Button variant="ghost" className="justify-start text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialogState({ isOpen: true, provider: selectedProvider })}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar Permanentemente
+                    </Button>
+                  )}
+                </div>
+              </section>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
       
+      {/* --- Resto de Modales (Sin Cambios en lógica, solo disparadores) --- */}
       <EvaluationModal
         isOpen={!!evaluationTarget}
         onClose={() => setEvaluationTarget(null)}
@@ -506,55 +494,25 @@ export default function ProvidersTable() {
 
       <Dialog
         open={dialogState.type === 'password'}
-        onOpenChange={(open) =>
-          !open && setDialogState({ type: null, provider: null })
-        }
+        onOpenChange={(open) => !open && setDialogState({ type: null, provider: null })}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {dialogState.newPassword
-                ? 'Contraseña Restablecida'
-                : `¿Restablecer contraseña para ${dialogState.provider?.businessName}?`}
+              {dialogState.newPassword ? 'Contraseña Restablecida' : `¿Restablecer contraseña?`}
             </DialogTitle>
             <DialogDescription>
               {dialogState.newPassword ? (
-                <>
-                  La nueva contraseña es:{' '}
-                  <strong className="text-lg">{dialogState.newPassword}</strong>
-                  <br />
-                  Se ha enviado un correo al proveedor con esta información.
-                  Puede cerrar esta ventana.
-                </>
-              ) : (
-                'Se generará una nueva contraseña y se enviará al correo del proveedor. Esta acción no se puede deshacer.'
-              )}
+                <>La nueva contraseña es: <strong className="text-lg">{dialogState.newPassword}</strong><br />Se envió un correo al proveedor.</>
+              ) : 'Se generará una nueva contraseña y se enviará al proveedor.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            {dialogState.newPassword ? (
-              <Button onClick={() => setDialogState({ type: null, provider: null })}>
-                Cerrar
-              </Button>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setDialogState({ type: null, provider: null })}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleResetPassword}
-                  disabled={actionState[dialogState.provider?.id || '']}
-                >
-                  {actionState[dialogState.provider?.id || ''] ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    'Sí, restablecer'
-                  )}
-                </Button>
-              </>
+            {dialogState.newPassword ? <Button onClick={() => setDialogState({ type: null, provider: null })}>Cerrar</Button> : (
+              <><Button variant="outline" onClick={() => setDialogState({ type: null, provider: null })}>Cancelar</Button>
+                <Button onClick={handleResetPassword} disabled={actionState[dialogState.provider?.id || '']}>
+                  {actionState[dialogState.provider?.id || ''] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sí, restablecer'}
+                </Button></>
             )}
           </DialogFooter>
         </DialogContent>
@@ -562,30 +520,18 @@ export default function ProvidersTable() {
       
       <AlertDialog
         open={dialogState.type === 'status'}
-        onOpenChange={(open) =>
-          !open && setDialogState({ type: null, provider: null })
-        }
+        onOpenChange={(open) => !open && setDialogState({ type: null, provider: null })}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Confirmar cambio de estado?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vas a{' '}
-              <strong>
-                {dialogState.provider?.disabled ? 'activar' : 'desactivar'}
-              </strong>{' '}
-              la cuenta del proveedor{' '}
-              <strong>{dialogState.provider?.businessName}</strong>.
-              {dialogState.provider?.disabled
-                ? ' Podrá volver a iniciar sesión.'
-                : ' No podrá iniciar sesión hasta que se reactive.'}
+              Vas a <strong>{dialogState.provider?.disabled ? 'activar' : 'desactivar'}</strong> la cuenta de <strong>{dialogState.provider?.businessName}</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleToggleStatus}>
-              {dialogState.provider?.disabled ? 'Activar' : 'Desactivar'}
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleToggleStatus}>Confirmar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -596,20 +542,15 @@ export default function ProvidersTable() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar permanentemente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente al proveedor{' '}
-              <strong>{deleteDialogState.provider?.businessName}</strong>, su cuenta, sus
-              evaluaciones y todos los documentos asociados.
+              Esta acción es irreversible. Se eliminará a <strong>{deleteDialogState.provider?.businessName}</strong>, su cuenta y todos sus datos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleDeleteProvider}
-            >
-              Sí, eliminar permanentemente
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteProvider}>
+              Eliminar para siempre
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
