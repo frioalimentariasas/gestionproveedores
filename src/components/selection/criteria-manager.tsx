@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -14,7 +13,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Save, Scale, Gavel, Clock, AlertCircle } from 'lucide-react';
+import { Save, Scale, Gavel, Clock, AlertCircle, Wrench } from 'lucide-react';
 import { useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
@@ -37,7 +36,13 @@ const PREDEFINED_CRITERIA: Omit<Criterion, 'weight'>[] = [
     { id: 'legal_rut', label: 'RUT actualizado (Verificación: Documento)' },
     { id: 'legal_seguridad_social', label: 'Pago seguridad social (si aplica) (Verificación: Planilla PILA)' },
     { id: 'legal_sgsst', label: 'Certificación SG-SST (Verificación: Soporte vigente)' },
-    // Resto pendiente
+    
+    // 2. CAPACIDAD TÉCNICA (35%)
+    { id: 'tech_exp', label: 'Experiencia mínima comprobada (2-5 años) (Aplica a: Todos)' },
+    { id: 'tech_staff', label: 'Personal calificado / certificado (Aplica a: Servicios técnicos)' },
+    { id: 'tech_specs', label: 'Fichas técnicas / especificaciones (Aplica a: Productos)' },
+    { id: 'tech_certs', label: 'Certificaciones técnicas (RETIE, ONAC, INVIMA, etc.) (Aplica a: Según aplique)' },
+
     { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)' },
 ];
 
@@ -82,13 +87,22 @@ export function CriteriaManager({
             }
         });
     } else {
-        // Initial setup based on request
+        // Initial setup based on requested categories
         formData = [
+            // Section 1: CAPACIDAD LEGAL (20%)
             { id: 'legal_camara', label: 'Cámara de Comercio vigente (Verificación: Documento actualizado)', weight: 5 },
             { id: 'legal_rut', label: 'RUT actualizado (Verificación: Documento)', weight: 3 },
             { id: 'legal_seguridad_social', label: 'Pago seguridad social (si aplica) (Verificación: Planilla PILA)', weight: 5 },
             { id: 'legal_sgsst', label: 'Certificación SG-SST (Verificación: Soporte vigente)', weight: 7 },
-            { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)', weight: 80 },
+            
+            // Section 2: CAPACIDAD TÉCNICA (35%)
+            { id: 'tech_exp', label: 'Experiencia mínima comprobada (2-5 años) (Aplica a: Todos)', weight: 10 },
+            { id: 'tech_staff', label: 'Personal calificado / certificado (Aplica a: Servicios técnicos)', weight: 10 },
+            { id: 'tech_specs', label: 'Fichas técnicas / especificaciones (Aplica a: Productos)', weight: 5 },
+            { id: 'tech_certs', label: 'Certificaciones técnicas (RETIE, ONAC, INVIMA, etc.) (Aplica a: Según aplique)', weight: 10 },
+
+            // Remaining pending criteria (45%)
+            { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)', weight: 45 },
         ];
     }
     
@@ -164,17 +178,53 @@ export function CriteriaManager({
         )}
 
         <div className="space-y-8">
-            {/* CATEGORY 1 */}
+            {/* CATEGORY 1: LEGAL */}
             <section className="space-y-4">
                 <div className="bg-primary/5 p-3 rounded-t-lg border-b-2 border-primary">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                        <Gavel className="h-5 w-5 text-primary" /> 1. CAPACIDAD LEGAL (Obligatorio para todos)
+                        <Gavel className="h-5 w-5 text-primary" /> 1. CAPACIDAD LEGAL (20%)
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-primary/20">
                     {fields.map((field, index) => {
                         const critId = watchedCriteria[index]?.id;
                         if (!critId?.startsWith('legal_')) return null;
+                        
+                        return (
+                            <div key={field.id} className="flex items-center gap-4">
+                                <FormLabel className="flex-1 pt-2 text-sm md:text-base">{watchedCriteria[index]?.label}</FormLabel>
+                                <FormField
+                                    control={form.control}
+                                    name={`criteria.${index}.weight`}
+                                    render={({ field }) => (
+                                        <FormItem className="w-28 shrink-0">
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Input type="number" placeholder="Peso" {...field} className="pr-8 text-center font-bold" />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* CATEGORY 2: TECHNICAL */}
+            <section className="space-y-4">
+                <div className="bg-blue-500/5 p-3 rounded-t-lg border-b-2 border-blue-500">
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-blue-700">
+                        <Wrench className="h-5 w-5 text-blue-600" /> 2. CAPACIDAD TÉCNICA (35%)
+                    </h3>
+                </div>
+                <div className="space-y-4 pl-4 border-l-2 border-blue-200">
+                    {fields.map((field, index) => {
+                        const critId = watchedCriteria[index]?.id;
+                        if (!critId?.startsWith('tech_')) return null;
                         
                         return (
                             <div key={field.id} className="flex items-center gap-4">
@@ -210,7 +260,7 @@ export function CriteriaManager({
                 <div className="space-y-4 pl-4 border-l-2 border-dashed border-muted-foreground/20">
                     {fields.map((field, index) => {
                         const critId = watchedCriteria[index]?.id;
-                        if (critId?.startsWith('legal_')) return null;
+                        if (critId?.startsWith('legal_') || critId?.startsWith('tech_')) return null;
                         
                         return (
                             <div key={field.id} className="flex items-center gap-4">
