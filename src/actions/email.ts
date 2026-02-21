@@ -1,8 +1,10 @@
-'use server';
+
+'use client';
+
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
 // The Brevo API key is sensitive and should be stored in an environment variable.
-// Ensure you have a .env.local file with:
-// BREVO_API_KEY=your_brevo_api_key
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 // The admin email to which notifications are sent.
@@ -15,6 +17,42 @@ interface SendEmailParams {
   htmlContent: string;
   sender?: { email: string; name?: string };
   replyTo?: { email: string; name?: string };
+}
+
+/**
+ * Replaces placeholders like {{variableName}} with values from a data object.
+ */
+function replacePlaceholders(content: string, data: Record<string, string>) {
+  let result = content;
+  for (const [key, value] of Object.entries(data)) {
+    const placeholder = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(placeholder, value || '');
+  }
+  return result;
+}
+
+/**
+ * Attempts to load a dynamic template from Firestore.
+ */
+async function getDynamicTemplate(templateId: string, variables: Record<string, string>) {
+  try {
+    const { firestore } = initializeFirebase();
+    if (!firestore) return null;
+
+    const templateRef = doc(firestore, 'notification_templates', templateId);
+    const templateSnap = await getDoc(templateRef);
+
+    if (templateSnap.exists()) {
+      const templateData = templateSnap.data();
+      return {
+        subject: replacePlaceholders(templateData.subject, variables),
+        htmlContent: replacePlaceholders(templateData.htmlContent, variables),
+      };
+    }
+  } catch (e) {
+    console.error(`Error loading dynamic template ${templateId}:`, e);
+  }
+  return null;
 }
 
 /**
@@ -77,9 +115,6 @@ async function sendTransactionalEmail({
 
 // --- Email Notification Actions ---
 
-/**
- * Notifies the admin when a new provider has completed the registration form.
- */
 export async function notifyAdminOfNewProvider({
   businessName,
   documentNumber,
@@ -89,8 +124,11 @@ export async function notifyAdminOfNewProvider({
   documentNumber: string;
   email: string;
 }) {
-  const subject = `Nuevo Proveedor Registrado: ${businessName}`;
-  const htmlContent = `
+  const variables = { businessName, documentNumber, email };
+  const dynamic = await getDynamicTemplate('new_provider_admin', variables);
+
+  const subject = dynamic?.subject || `Nuevo Proveedor Registrado: ${businessName}`;
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Nuevo Proveedor en la Plataforma</h1>
     <p>Se ha registrado un nuevo proveedor en el portal.</p>
     <ul>
@@ -109,9 +147,6 @@ export async function notifyAdminOfNewProvider({
   });
 }
 
-/**
- * Notifies the admin when a provider has submitted updates to their form.
- */
 export async function notifyAdminOfFormUpdate({
   businessName,
   email,
@@ -119,8 +154,11 @@ export async function notifyAdminOfFormUpdate({
   businessName: string;
   email: string;
 }) {
-  const subject = `Proveedor Actualizó su Información: ${businessName}`;
-  const htmlContent = `
+  const variables = { businessName, email };
+  const dynamic = await getDynamicTemplate('form_update_admin', variables);
+
+  const subject = dynamic?.subject || `Proveedor Actualizó su Información: ${businessName}`;
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Actualización de Formulario</h1>
     <p>El proveedor <strong>${businessName}</strong> (${email}) ha actualizado y guardado su formulario en la plataforma.</p>
     <p>Los datos han sido bloqueados y están listos para tu revisión en el panel de administración.</p>
@@ -134,9 +172,6 @@ export async function notifyAdminOfFormUpdate({
   });
 }
 
-/**
- * Notifies a provider when an admin has unlocked their form for editing.
- */
 export async function notifyProviderFormUnlocked({
   providerEmail,
   providerName,
@@ -144,8 +179,11 @@ export async function notifyProviderFormUnlocked({
   providerEmail: string;
   providerName: string;
 }) {
-  const subject = 'Tu formulario de proveedor ha sido habilitado para edición';
-  const htmlContent = `
+  const variables = { providerName };
+  const dynamic = await getDynamicTemplate('form_unlocked_provider', variables);
+
+  const subject = dynamic?.subject || 'Tu formulario de proveedor ha sido habilitado para edición';
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
     <p>Te informamos que tu formulario de proveedor en la plataforma de Frioalimentaria ha sido <strong>habilitado para edición</strong>.</p>
     <p>Ahora puedes iniciar sesión y realizar los cambios necesarios en tu información.</p>
@@ -162,9 +200,6 @@ export async function notifyProviderFormUnlocked({
   });
 }
 
-/**
- * Notifies a provider that their password has been reset by an administrator.
- */
 export async function notifyProviderPasswordReset({
   providerEmail,
   providerName,
@@ -174,8 +209,11 @@ export async function notifyProviderPasswordReset({
   providerName: string;
   newPassword: string;
 }) {
-  const subject = 'Restablecimiento de Contraseña de su Cuenta de Proveedor';
-  const htmlContent = `
+  const variables = { providerName, newPassword };
+  const dynamic = await getDynamicTemplate('password_reset_provider', variables);
+
+  const subject = dynamic?.subject || 'Restablecimiento de Contraseña de su Cuenta de Proveedor';
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
     <p>Un administrador ha restablecido la contraseña de su cuenta en el portal de proveedores de Frioalimentaria.</p>
     <p>Su nueva contraseña temporal es: <strong>${newPassword}</strong></p>
@@ -192,9 +230,6 @@ export async function notifyProviderPasswordReset({
   });
 }
 
-/**
- * Notifies a provider about a change in their account status (activated/deactivated).
- */
 export async function notifyProviderAccountStatus({
   providerEmail,
   providerName,
@@ -204,8 +239,11 @@ export async function notifyProviderAccountStatus({
   providerName: string;
   status: 'activada' | 'desactivada';
 }) {
-  const subject = `Su cuenta de proveedor ha sido ${status}`;
-  const htmlContent = `
+  const variables = { providerName, status };
+  const dynamic = await getDynamicTemplate('account_status_provider', variables);
+
+  const subject = dynamic?.subject || `Su cuenta de proveedor ha sido ${status}`;
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
     <p>Le informamos que su cuenta en el portal de proveedores de Frioalimentaria ha sido <strong>${status}</strong> por un administrador.</p>
     ${status === 'desactivada' ? '<p>No podrá acceder a la plataforma hasta que su cuenta sea reactivada. Si cree que esto es un error, por favor póngase en contacto con nosotros.</p>' : '<p>Ya puede acceder a la plataforma con sus credenciales.</p>'}
@@ -221,35 +259,6 @@ export async function notifyProviderAccountStatus({
   });
 }
 
-/**
- * Notifies the admin that a disabled user has requested to have their account reactivated.
- */
-export async function notifyAdminOfReactivationRequest({
-  providerEmail,
-  businessName,
-}: {
-  providerEmail: string;
-  businessName: string;
-}) {
-  const subject = `Solicitud de Reactivación de Cuenta: "${businessName}"`;
-  const htmlContent = `
-    <h1>Solicitud de Reactivación de Cuenta</h1>
-    <p>El proveedor <strong>${businessName}</strong> (email: ${providerEmail}) ha solicitado que su cuenta sea reactivada.</p>
-    <p>Por favor, inicie sesión en el panel de administración para revisar y habilitar la cuenta si lo considera apropiado.</p>
-  `;
-
-  return await sendTransactionalEmail({
-    to: [{ email: ADMIN_EMAIL }],
-    subject,
-    htmlContent,
-    replyTo: { email: providerEmail, name: businessName },
-  });
-}
-
-
-/**
- * Notifies a competitor that they have been selected in a selection process and invites them to register.
- */
 export async function notifyWinnerOfSelection({
   competitorEmail,
   competitorName,
@@ -261,11 +270,14 @@ export async function notifyWinnerOfSelection({
   selectionProcessName: string;
   eventId: string;
 }) {
-  const subject = `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
   const registrationUrl = `${baseUrl}/auth/register?eventId=${eventId}`;
   
-  const htmlContent = `
+  const variables = { competitorName, selectionProcessName, registrationUrl };
+  const dynamic = await getDynamicTemplate('winner_selection_provider', variables);
+
+  const subject = dynamic?.subject || `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${competitorName}</h1>
     <p>Nos complace informarte que has sido seleccionado para el proceso de selección: <strong>${selectionProcessName}</strong>.</p>
     <p>El siguiente paso es completar tu registro en nuestro portal de proveedores. Por favor, haz clic en el siguiente enlace para comenzar:</p>
@@ -284,9 +296,6 @@ export async function notifyWinnerOfSelection({
   });
 }
 
-/**
- * Sends a direct invitation to an active provider to register in the platform.
- */
 export async function sendDirectInvitation({
   providerName,
   providerEmail,
@@ -294,10 +303,13 @@ export async function sendDirectInvitation({
   providerName: string;
   providerEmail: string;
 }) {
-  const subject = 'REGISTRO DE PROVEEDOR FRIOALIMENTARIA SAS';
   const registrationUrl = 'https://app.gestionproveedores.frioalimentaria.com.co/auth/register';
   
-  const htmlContent = `
+  const variables = { providerName, registrationUrl };
+  const dynamic = await getDynamicTemplate('direct_invitation_provider', variables);
+
+  const subject = dynamic?.subject || 'REGISTRO DE PROVEEDOR FRIOALIMENTARIA SAS';
+  const htmlContent = dynamic?.htmlContent || `
     <p>Buen día Estimado Proveedor <strong>${providerName}</strong>,</p>
     <br>
     <p>Nos permitimos informarle que será vinculado como proveedor autorizado de nuestra compañía. Le damos una cordial bienvenida. Confiamos en que esta relación será productiva y que juntos alcanzaremos importantes logros. Le invitamos a registrarse y actualizar la informacion en el siguiente link: <a href="${registrationUrl}">${registrationUrl}</a></p>
@@ -323,9 +335,6 @@ export async function sendDirectInvitation({
   });
 }
 
-/**
- * Notifies a provider that their form registration is still pending.
- */
 export async function notifyProviderPendingForm({
   providerEmail,
   providerName,
@@ -333,13 +342,17 @@ export async function notifyProviderPendingForm({
   providerEmail: string;
   providerName: string;
 }) {
-  const subject = 'Recordatorio: Diligenciamiento de Formulario de Proveedor Pendiente';
-  const htmlContent = `
+  const loginUrl = 'https://app.gestionproveedores.frioalimentaria.com.co/auth/login';
+  const variables = { providerName, loginUrl };
+  const dynamic = await getDynamicTemplate('pending_form_reminder_provider', variables);
+
+  const subject = dynamic?.subject || 'Recordatorio: Diligenciamiento de Formulario de Proveedor Pendiente';
+  const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
     <p>Hemos notado que aún no has finalizado el diligenciamiento de tu formulario de registro en nuestra plataforma de proveedores de Frioalimentaria.</p>
     <p>Es indispensable completar toda la información y adjuntar los documentos obligatorios para que nuestro equipo pueda validar tu perfil y proceder con la vinculación formal.</p>
     <p>Por favor, ingresa con tus credenciales (NIT) en el siguiente enlace y completa los campos pendientes:</p>
-    <p><a href="https://app.gestionproveedores.frioalimentaria.com.co/auth/login" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Ir al Formulario</a></p>
+    <p><a href="${loginUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Ir al Formulario</a></p>
     <p>Una vez guardes y bloquees el formulario, recibiremos una notificación automática para su revisión.</p>
     <br>
     <p>Gracias,</p>

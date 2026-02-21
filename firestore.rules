@@ -1,38 +1,4 @@
-/**
- * Core Philosophy: This ruleset enforces a hybrid security model. It combines a strict
- * user-ownership pattern for provider data with a role-based access control system
- * for administrators. Providers are completely isolated and can only manage their own
- * information, ensuring data privacy. Administrators are granted read and update
- * access to all provider data for oversight and management purposes.
- *
- * Data Structure: The data is organized into two distinct, top-level collections:
- * 1. /providers/{providerId}: Contains individual documents for each provider, where the
- *    document ID `{providerId}` directly corresponds to the provider's authentication UID.
- * 2. /roles_admin/{adminId}: A collection that defines who is an administrator. The mere
- *    existence of a document with a user's UID grants them admin privileges.
- *
- * Key Security Decisions:
- * - Provider Isolation: A provider can only create, read, update, or delete their own
- *   document. They cannot list or access any other provider's data.
- * - Admin Write Access: Administrators can read and list all provider documents. They also
- *   have update access to perform management tasks (e.g., locking/unlocking forms),
- *   but are forbidden from creating or deleting provider data.
- * - Locked-Down Roles: The /roles_admin collection is not writable by any client. This is a
- *   critical security measure, as role assignments must only be handled through a trusted
- *   backend process or the Firebase Console.
- * - Denylisting List Operations: By default, users cannot list documents in the /providers
- *   collection. This permission is explicitly granted only to administrators, preventing
- *   unauthorized enumeration of all registered providers.
- *
- * Denormalization for Authorization: This structure is already highly optimized for security
- * rules. The document ID in `/providers/{providerId}` serves as the denormalized `ownerId`,
- * allowing for fast, simple ownership checks without needing to read the document's content.
- * The `/roles_admin` collection is a standard, performant pattern for managing roles that
- * avoids slow queries or lookups.
- *
- * Structural Segregation: The system uses separate top-level collections to segregate
- * provider data from administrative role data, which is a clean and secure pattern.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -41,58 +7,32 @@ service cloud.firestore {
     // Helper Functions
     // ------------------------------------------------------------------------
 
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the foundation of the user-ownership model.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks if the user has an admin role by verifying their email is in the hardcoded list
-     * or if they have a corresponding document in the `roles_admin` collection.
-     */
     function isAdmin() {
       return isSignedIn() &&
         (request.auth.token.email in ['sistemas@frioalimentaria.com.co', 'asistente@frioalimentaria.com.co', 'logistica@frioalimentaria.com.co']
         || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)));
     }
 
-    /**
-     * Ensures an operation is for an existing document and is performed by the owner.
-     * Crucial for preventing writes to non-existent paths.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * Ensures an operation is for an existing document and is performed by an admin.
-     */
     function isExistingAdmin() {
       return isAdmin() && resource != null;
     }
 
-    /**
-     * Validates that a user is creating their own provider document and that the
-     * internal `id` field matches the document's path ID for relational integrity.
-     */
     function isCreatingOwnProviderProfile(providerId) {
       return isOwner(providerId) && request.resource.data.id == providerId;
     }
 
-    /**
-     * Validates that the provider's unique ID field remains unchanged during an update.
-     * This prevents re-assigning a provider profile to a different user.
-     */
     function hasImmutableProviderId() {
       return request.resource.data.id == resource.data.id;
     }
@@ -101,18 +41,7 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
-    /**
-     * @description Rules for the `providers` collection. A provider can manage their own
-     *              document, and administrators have read and update access to all documents.
-     * @path /providers/{providerId}
-     * @allow (get) A provider (uid: 'provider123') reading their own document at `/providers/provider123`.
-     * @allow (create) A new provider (uid: 'provider456') creating their document at `/providers/provider456`.
-     * @allow (list) An admin listing all documents in the `/providers` collection.
-     * @allow (update) An admin updating a document at `/providers/provider123` (e.g. to lock/unlock the form).
-     * @deny (list) A provider attempting to list the `/providers` collection.
-     * @deny (create) A provider (uid: 'provider123') trying to create a document for another user at `/providers/other456`.
-     * @principle Enforces a strict ownership model for creates/deletes and provides role-based read/update access for admins.
-     */
+    
     match /providers/{providerId} {
       allow get: if isOwner(providerId) || isAdmin();
       allow list: if isAdmin();
@@ -120,39 +49,15 @@ service cloud.firestore {
       allow update: if (isExistingOwner(providerId) || isExistingAdmin()) && hasImmutableProviderId();
       allow delete: if isExistingOwner(providerId);
       
-      /**
-       * @description Rules for the `evaluations` subcollection. Admins have full access.
-       * @path /providers/{providerId}/evaluations/{evaluationId}
-       * @allow (read, write) An admin user.
-       * @deny (write) Any non-admin user (in production).
-       * @principle Protects sensitive evaluation data, restricting write access to authorized personnel.
-       */
       match /evaluations/{evaluationId} {
         allow read, write: if isAdmin();
       }
     }
 
-    /**
-     * @description Allows admins to query across all `evaluations` subcollections for dashboard purposes.
-     * @path /{path=**}/evaluations/{evaluationId}
-     * @allow (read) An admin performing a `list` (collectionGroup) query.
-     * @principle Enables admin-only dashboard features like "Recent Evaluations" without compromising security.
-     */
     match /{path=**}/evaluations/{evaluationId} {
       allow read: if isAdmin();
     }
 
-    /**
-     * @description Defines admin user roles. The existence of a document grants admin privileges.
-     *              This collection is read-only from the client to prevent privilege escalation.
-     * @path /roles_admin/{adminId}
-     * @allow (get) An admin (uid: 'admin123') checking for their own document at `/roles_admin/admin123`.
-     * @allow (internal exists()) An internal rule like `isAdmin()` checking for a document's existence.
-     * @deny (get) A non-admin trying to directly read a document from `/roles_admin`.
-     * @deny (create) Any user attempting to create a document to grant themselves admin rights.
-     * @deny (delete) Any user attempting to delete a document to revoke admin rights.
-     * @principle Secures role management by making the collection read-only for assignment from client applications. Role assignments must be managed by a trusted backend or through the console.
-     */
     match /roles_admin/{adminId} {
       allow get: if isOwner(adminId) || isAdmin();
       allow list: if false;
@@ -161,24 +66,16 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    /**
-     * @description Rules for the `categories` collection. Any authenticated user can read categories,
-     *              but only admins can create, update, or delete them.
-     * @path /categories/{categoryId}
-     * @allow (read) Any signed-in user.
-     * @allow (write) An admin user.
-     * @deny (write) Any non-admin user.
-     */
     match /categories/{categoryId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
     
-    /**
-     * @description Rules for the `selection_events` collection. Only admins can manage these.
-     * @path /selection_events/{eventId}
-     */
     match /selection_events/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notification_templates/{templateId} {
       allow read, write: if isAdmin();
     }
   }

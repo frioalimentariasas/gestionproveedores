@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import { doc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, BellRing } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,10 +31,11 @@ const adminNavLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/selection', label: 'Selección' },
   { href: '/providers', label: 'Gestión' },
-  { href: '/categories', label: 'Gestión Categorias' },
+  { href: '/categories', label: 'Categorías' },
   { href: '/comparison', label: 'Comparador' },
   { href: '/parametrizacion', label: 'Parametrización' },
-  { href: '/admin/form-preview', label: 'Modelo Formulario' },
+  { href: '/admin/notifications', label: 'Emails' },
+  { href: '/admin/form-preview', label: 'Formato' },
 ];
 
 const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];
@@ -89,7 +91,6 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl h-24 items-center justify-between px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          {/* Logo and Title Stack */}
           <div className="flex flex-col items-center shrink-0">
             <Link href="/" className="flex-shrink-0">
               <Image
@@ -147,6 +148,12 @@ export default function Header() {
                       <Link href="/account" className="flex items-center">
                         <UserIcon className="mr-2 h-4 w-4" />
                         <span>Mi Cuenta</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/notifications" className="flex items-center">
+                        <BellRing className="mr-2 h-4 w-4" />
+                        <span>Plantillas de Email</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

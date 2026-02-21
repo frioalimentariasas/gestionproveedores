@@ -473,6 +473,42 @@
         "createdAt",
         "criticalityLevel"
       ]
+    },
+    "NotificationTemplate": {
+      "title": "Notification Template",
+      "type": "object",
+      "description": "Stores customizable email templates for the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The internal ID of the notification type (e.g., 'pending_form')."
+        },
+        "name": {
+          "type": "string",
+          "description": "Friendly name of the notification."
+        },
+        "subject": {
+          "type": "string",
+          "description": "Default subject line for the email."
+        },
+        "htmlContent": {
+          "type": "string",
+          "description": "HTML body of the email with placeholders."
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of supported variable placeholders for this template."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "subject",
+        "htmlContent"
+      ]
     }
   },
   "auth": {
@@ -563,6 +599,22 @@
             {
               "name": "eventId",
               "description": "The unique ID for the selection event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "notification_templates/{templateId}",
+        "definition": {
+          "entityName": "NotificationTemplate",
+          "schema": {
+            "$ref": "#/backend/entities/NotificationTemplate"
+          },
+          "description": "Stores customizable email templates. Only admins can access.",
+          "params": [
+            {
+              "name": "templateId",
+              "description": "The unique ID for the template."
             }
           ]
         }
