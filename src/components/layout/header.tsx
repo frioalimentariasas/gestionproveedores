@@ -15,7 +15,7 @@ import { doc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, ChevronDown, User as UserIcon, BellRing, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, BellRing, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch, Home } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,89 +122,99 @@ export default function Header() {
             )}
           </div>
 
-          {/* Menu Drawer Trigger - Now placed after logo */}
+          {/* Menu Drawer Trigger */}
           {user && !loading && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-3 hover:bg-primary/5 transition-colors border-l pl-6 ml-2 rounded-none h-12">
-                  <Menu className="h-6 w-6 text-primary" />
-                  <span className="font-bold text-xs uppercase tracking-tight hidden md:inline-block">Menú Principal</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 sm:max-w-xs">
-                <SheetHeader className="p-6 bg-primary text-primary-foreground text-left">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white p-1 rounded-sm">
-                      <Image
-                        src="/logo.png"
-                        alt="Logo"
-                        width={80}
-                        height={22}
-                      />
+            <div className="flex items-center gap-2 border-l pl-6 ml-2 h-12">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-3 hover:bg-primary/5 transition-colors rounded-none h-12">
+                    <Menu className="h-6 w-6 text-primary" />
+                    <span className="font-bold text-xs uppercase tracking-tight hidden md:inline-block">Menú Principal</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 sm:max-w-xs">
+                  <SheetHeader className="p-6 bg-primary text-primary-foreground text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white p-1 rounded-sm">
+                        <Image
+                          src="/logo.png"
+                          alt="Logo"
+                          width={80}
+                          height={22}
+                        />
+                      </div>
+                      <SheetTitle className="text-primary-foreground text-lg">Menú Principal</SheetTitle>
                     </div>
-                    <SheetTitle className="text-primary-foreground text-lg">Menú Principal</SheetTitle>
-                  </div>
-                  <SheetDescription className="text-primary-foreground/70 text-xs">
-                    Plataforma de Gestión de Proveedores FAL
-                  </SheetDescription>
-                </SheetHeader>
-                
-                <ScrollArea className="h-[calc(100vh-140px)]">
-                  <nav className="flex flex-col gap-1 p-4">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
-                      Navegación
-                    </p>
-                    {navLinks.map((link) => {
-                      const Icon = link.icon;
-                      const isActive = pathname === link.href;
-                      return (
-                        <SheetClose asChild key={link.href}>
-                          <Link
-                            href={link.href}
-                            className={cn(
-                              "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-sm font-medium",
-                              isActive 
-                                ? "bg-primary text-primary-foreground shadow-sm" 
-                                : "text-foreground/70 hover:bg-muted hover:text-foreground"
-                            )}
-                          >
-                            <Icon className={cn("h-5 w-5", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
-                            {link.label}
-                          </Link>
-                        </SheetClose>
-                      );
-                    })}
-                    
-                    <Separator className="my-4" />
-                    
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
-                      Cuenta
-                    </p>
-                    <SheetClose asChild>
-                      <Link
-                        href="/account"
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-sm font-medium text-foreground/70 hover:bg-muted hover:text-foreground",
-                          pathname === '/account' && "bg-muted text-foreground"
-                        )}
+                    <SheetDescription className="text-primary-foreground/70 text-xs">
+                      Plataforma de Gestión de Proveedores FAL
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <ScrollArea className="h-[calc(100vh-140px)]">
+                    <nav className="flex flex-col gap-1 p-4">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                        Navegación
+                      </p>
+                      {navLinks.map((link) => {
+                        const Icon = link.icon;
+                        const isActive = pathname === link.href;
+                        return (
+                          <SheetClose asChild key={link.href}>
+                            <Link
+                              href={link.href}
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-sm font-medium",
+                                isActive 
+                                  ? "bg-primary text-primary-foreground shadow-sm" 
+                                  : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              <Icon className={cn("h-5 w-5", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                              {link.label}
+                            </Link>
+                          </SheetClose>
+                        );
+                      })}
+                      
+                      <Separator className="my-4" />
+                      
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                        Cuenta
+                      </p>
+                      <SheetClose asChild>
+                        <Link
+                          href="/account"
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-sm font-medium text-foreground/70 hover:bg-muted hover:text-foreground",
+                            pathname === '/account' && "bg-muted text-foreground"
+                          )}
+                        >
+                          <UserIcon className="h-5 w-5 text-muted-foreground" />
+                          Mi Perfil / Configuración
+                        </Link>
+                      </SheetClose>
+                      
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 px-3 py-6 mt-4 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={handleLogout}
                       >
-                        <UserIcon className="h-5 w-5 text-muted-foreground" />
-                        Mi Perfil / Configuración
-                      </Link>
-                    </SheetClose>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="justify-start gap-3 px-3 py-6 mt-4 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="h-5 w-5" />
-                      Cerrar Sesión
-                    </Button>
-                  </nav>
-                </ScrollArea>
-              </SheetContent>
-            </Sheet>
+                        <LogOut className="h-5 w-5" />
+                        Cerrar Sesión
+                      </Button>
+                    </nav>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+
+              {/* Home Icon Button */}
+              <Button variant="ghost" size="icon" asChild className="hover:bg-primary/5 text-primary h-12 w-12 shrink-0">
+                <Link href="/">
+                  <Home className="h-6 w-6" />
+                  <span className="sr-only">Inicio</span>
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
 
