@@ -41,6 +41,7 @@ export interface Competitor {
   scores?: Record<string, number>;
   totalScore?: number;
   isSelected?: boolean;
+  auditNotes?: string;
 }
 
 export interface Criterion {
@@ -133,6 +134,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
             email: competitorEmail,
             scores: {},
             totalScore: 0,
+            auditNotes: '',
           };
           // Call update and specify the next step explicitly
           handleUpdateEvent({ competitors: [newCompetitor] }, 'step-2');

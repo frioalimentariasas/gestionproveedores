@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -13,7 +14,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { Crown, Trophy, Mail, Copy, Loader2, Info } from 'lucide-react';
+import { Crown, Trophy, Mail, Copy, Loader2, Info, NotebookPen, MessageSquareQuote } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { Textarea } from '../ui/textarea';
@@ -197,7 +198,7 @@ export function ResultsManager({
               <span className="font-bold">Decisión</span>
             </div>
             <div className="flex justify-between items-center text-green-700 font-medium">
-              <span>≥ 85% (4.25)</span>
+              <span>&ge; 85% (4.25)</span>
               <span>Aprobado</span>
             </div>
             <div className="flex justify-between items-center text-blue-700 font-medium">
@@ -221,8 +222,8 @@ export function ResultsManager({
       
       <Card>
         <CardHeader>
-            <CardTitle>Resultados Finales</CardTitle>
-            <CardDescription>Lista de competidores con recomendación de aprobación. Selecciona un proveedor para cerrar el proceso.</CardDescription>
+            <CardTitle>Resumen de Competidores para Auditoría</CardTitle>
+            <CardDescription>Lista de competidores con sus bases de verificación. Selecciona un proveedor para cerrar el proceso.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             {selectedCompetitor && (
@@ -233,7 +234,7 @@ export function ResultsManager({
                        <p>El proveedor seleccionado de este proceso es <strong>{selectedCompetitor.name}</strong>. El proceso está cerrado y se ha enviado una invitación por correo para que complete su registro.</p>
                        {justification && (
                           <div className="mt-2 pt-2 border-t border-yellow-400/50">
-                            <p className="font-semibold text-xs text-yellow-800">Justificación:</p>
+                            <p className="font-semibold text-xs text-yellow-800">Justificación de Selección:</p>
                             <p className="text-xs italic">"{justification}"</p>
                           </div>
                        )}
@@ -250,36 +251,48 @@ export function ResultsManager({
                     </AlertDescription>
                 </Alert>
             )}
-            <div className="space-y-2">
+            <div className="space-y-4">
               {sortedCompetitors.map((c, index) => {
                   const decision = getDecisionStatus(c.totalScore);
                   return (
-                    <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors gap-4">
-                        <div className="flex items-center gap-4">
-                            <span className={cn(
-                              "text-xl font-bold w-8 text-center",
-                              index === 0 ? 'text-primary' : 'text-muted-foreground'
-                            )}>{index + 1}.</span>
-                            <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-bold text-lg">{c.name}</p>
-                                  <Badge variant="outline" className={cn("text-[10px] py-0 h-5 border shadow-none", decision.color)}>
-                                    {decision.label}
-                                  </Badge>
+                    <div key={c.id} className="flex flex-col p-4 rounded-lg border bg-card hover:bg-muted/10 transition-colors gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <span className={cn(
+                                  "text-xl font-bold w-8 text-center",
+                                  index === 0 ? 'text-primary' : 'text-muted-foreground'
+                                )}>{index + 1}.</span>
+                                <div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="font-bold text-lg">{c.name}</p>
+                                      <Badge variant="outline" className={cn("text-[10px] py-0 h-5 border shadow-none", decision.color)}>
+                                        {decision.label}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      Puntaje: <span className="font-bold text-foreground">{c.totalScore?.toFixed(2) || 'N/A'}</span> ({( (c.totalScore || 0) * 20 ).toFixed(0)}%)
+                                    </p>
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                  Puntaje: <span className="font-bold text-foreground">{c.totalScore?.toFixed(2) || 'N/A'}</span> ({( (c.totalScore || 0) * 20 ).toFixed(0)}%)
-                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 self-end sm:self-center">
+                              {!isLocked && (
+                                  <Button size="sm" onClick={() => setDialogState({ isOpen: true, competitor: c, justification: '' })}>
+                                      <Crown className="mr-2 h-4 w-4"/>
+                                      Seleccionar Ganador
+                                  </Button>
+                              )}
+                              {c.id === selectedCompetitorId && <Trophy className="h-6 w-6 text-yellow-500" />}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 self-end sm:self-center">
-                          {!isLocked && (
-                              <Button size="sm" onClick={() => setDialogState({ isOpen: true, competitor: c, justification: '' })}>
-                                  <Crown className="mr-2 h-4 w-4"/>
-                                  Seleccionar
-                              </Button>
-                          )}
-                          {c.id === selectedCompetitorId && !selectedCompetitor && <Trophy className="h-6 w-6 text-yellow-500" />}
+                        
+                        {/* Audit trail display */}
+                        <div className="bg-muted/30 p-3 rounded-md border-l-4 border-muted">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wider">
+                                <NotebookPen className="h-3 w-3" /> Base de Verificación (Audit Log)
+                            </div>
+                            <p className="text-xs italic text-muted-foreground whitespace-pre-wrap">
+                                {c.auditNotes || "Sin notas de auditoría registradas."}
+                            </p>
                         </div>
                     </div>
                   );
@@ -289,34 +302,50 @@ export function ResultsManager({
       </Card>
       
       <AlertDialog open={dialogState.isOpen} onOpenChange={(isOpen) => setDialogState(prev => ({...prev, isOpen}))}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-[500px]">
             <AlertDialogHeader>
-                <AlertDialogTitle>¿Confirmar Selección?</AlertDialogTitle>
+                <AlertDialogTitle>Confirmar Selección de Proveedor</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Estás a punto de seleccionar a <strong>{dialogState.competitor?.name}</strong>. Esta acción cerrará el proceso y notificará al proveedor.
+                    Estás a punto de cerrar el proceso y declarar a <strong>{dialogState.competitor?.name}</strong> como ganador.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="grid gap-2 py-2 text-sm">
-                <div className="p-3 rounded-md bg-muted/50 border mb-2">
-                  <p><strong>Resultado Informativo:</strong> {getDecisionStatus(dialogState.competitor?.totalScore).label}</p>
-                  <p><strong>Puntaje:</strong> {dialogState.competitor?.totalScore?.toFixed(2)} ({( (dialogState.competitor?.totalScore || 0) * 20 ).toFixed(0)}%)</p>
+            <div className="grid gap-4 py-4 text-sm">
+                <div className="p-4 rounded-md bg-muted/50 border space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">Recomendación:</span>
+                    <Badge variant="outline" className={cn("text-[10px]", getDecisionStatus(dialogState.competitor?.totalScore).color)}>
+                        {getDecisionStatus(dialogState.competitor?.totalScore).label}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">Puntaje Final:</span>
+                    <span className="font-bold text-primary text-lg">{dialogState.competitor?.totalScore?.toFixed(2)} ({( (dialogState.competitor?.totalScore || 0) * 20 ).toFixed(0)}%)</span>
+                  </div>
                 </div>
-                <Label htmlFor="justification">Justificación de la Selección (Obligatorio)</Label>
-                <Textarea
-                  id="justification"
-                  placeholder="Argumenta por qué este proveedor fue seleccionado, especialmente si tiene una recomendación condicionada..."
-                  value={dialogState.justification}
-                  onChange={(e) => setDialogState(prev => ({ ...prev, justification: e.target.value }))}
-                  className="min-h-[100px]"
-                />
+
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <MessageSquareQuote className="h-4 w-4 text-primary" />
+                        <Label htmlFor="justification" className="font-bold">Justificación de la Selección</Label>
+                    </div>
+                    <Textarea
+                      id="justification"
+                      placeholder="Escriba los motivos por los cuales este proveedor fue elegido (Ej: Mejor relación costo-beneficio, solidez técnica comprobada)..."
+                      value={dialogState.justification}
+                      onChange={(e) => setDialogState(prev => ({ ...prev, justification: e.target.value }))}
+                      className="min-h-[120px]"
+                    />
+                    <p className="text-[10px] text-muted-foreground italic">Esta justificación es obligatoria para cumplir con los estándares de auditoría interna.</p>
+                </div>
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setDialogState({ isOpen: false, competitor: null, justification: '' })}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                     onClick={handleSelectClick}
                     disabled={!dialogState.justification.trim()}
+                    className="bg-primary text-primary-foreground"
                 >
-                    Sí, seleccionar y cerrar
+                    Confirmar y Cerrar Proceso
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

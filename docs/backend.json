@@ -456,6 +456,10 @@
               "isSelected": {
                 "type": "boolean",
                 "description": "Indicates if this competitor was selected."
+              },
+              "auditNotes": {
+                "type": "string",
+                "description": "Internal notes for audit purposes explaining the basis for the assigned scores."
               }
             }
           }
