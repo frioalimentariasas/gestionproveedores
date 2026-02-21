@@ -224,7 +224,7 @@ export default function Header() {
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="max-w-[200px] truncate uppercase border-primary/20 hover:bg-primary/5">
+                <Button variant="outline" className="max-w-[400px] truncate uppercase border-primary/20 hover:bg-primary/5">
                   <span className="truncate">{displayName}</span>
                   <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0" />
                 </Button>
