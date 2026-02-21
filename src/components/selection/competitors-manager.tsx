@@ -21,6 +21,7 @@ import {
   Trash2,
   Save,
   AlertCircle,
+  Info,
 } from 'lucide-react';
 import type { Competitor, Criterion } from './manage-selection-event';
 import { competitorSchema } from '@/lib/schemas';
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/table';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
 import { cn } from '@/lib/utils';
+import { Badge } from '../ui/badge';
 
 interface CompetitorsManagerProps {
   eventId: string;
@@ -119,7 +121,6 @@ export function CompetitorsManager({
   };
 
   const handleScoreChange = (competitorId: string, criterionId: string, value: string) => {
-    // Allow empty string for clearing or numbers
     if (value !== '' && !/^\d+$/.test(value)) return;
 
     const score = value === '' ? undefined : parseInt(value, 10);
@@ -150,7 +151,6 @@ export function CompetitorsManager({
   const isSaveDisabled = useMemo(() => {
     if (localCompetitors.length === 0) return true;
     
-    // Check if every competitor has valid scores (1-5) for all criteria with weight > 0
     return localCompetitors.some(comp => 
       criteria.some(crit => {
         if (crit.weight > 0) {
@@ -253,71 +253,102 @@ export function CompetitorsManager({
       )}
 
       {localCompetitors.length > 0 && (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[250px]">Competidor</TableHead>
-                {criteria.map((c) => (
-                  <TableHead key={c.id} className="text-center min-w-[150px]">{c.label} ({c.weight}%)</TableHead>
-                ))}
-                <TableHead className="text-right min-w-[120px]">Puntaje Total</TableHead>
-                {!isLocked && <TableHead className="text-right"></TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {localCompetitors.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <div className="font-bold">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.nit}</div>
-                    <div className="text-xs text-muted-foreground">{c.email}</div>
-                    {c.quoteUrl && (
-                      <Button variant="link" asChild className="p-0 h-auto text-xs -translate-x-1">
-                        <a href={c.quoteUrl} target="_blank" rel="noopener noreferrer">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Ver Cotización
-                        </a>
-                      </Button>
-                    )}
-                  </TableCell>
-                  {criteria.map(crit => {
-                    const score = c.scores?.[crit.id];
-                    const isRequired = crit.weight > 0;
-                    const isInvalid = isRequired && (score === undefined || score < 1 || score > 5);
-                    
-                    return (
-                      <TableCell key={crit.id} className="text-center">
-                          <Input
-                              type="number"
-                              min="1"
-                              max="5"
-                              placeholder={isRequired ? "1-5" : "N/A"}
-                              className={cn(
-                                "w-20 mx-auto text-center",
-                                isInvalid && !isLocked && "border-destructive focus-visible:ring-destructive"
-                              )}
-                              value={score ?? ''}
-                              onChange={(e) => handleScoreChange(c.id, crit.id, e.target.value)}
-                              disabled={isLocked}
-                          />
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell className="text-right font-bold text-lg">
-                    {c.totalScore?.toFixed(2) || '0.00'}
-                  </TableCell>
-                  {!isLocked && (
-                    <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveCompetitor(c.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive"/>
-                        </Button>
-                    </TableCell>
-                  )}
+        <div className="space-y-4">
+          <div className="bg-muted/50 p-4 rounded-lg border text-sm">
+            <h4 className="font-bold flex items-center gap-2 mb-3">
+              <Info className="h-4 w-4 text-primary" />
+              Escala de Calificación:
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-background font-bold px-2">5</Badge>
+                <span className="text-muted-foreground">Cumple totalmente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-background font-bold px-2">4</Badge>
+                <span className="text-muted-foreground">Cumple con pequeñas observaciones</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-background font-bold px-2">3</Badge>
+                <span className="text-muted-foreground">Cumple parcialmente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-background font-bold px-2">2</Badge>
+                <span className="text-muted-foreground">Deficiente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-background font-bold px-2">1</Badge>
+                <span className="text-muted-foreground">No cumple</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[250px]">Competidor</TableHead>
+                  {criteria.map((c) => (
+                    <TableHead key={c.id} className="text-center min-w-[150px]">{c.label} ({c.weight}%)</TableHead>
+                  ))}
+                  <TableHead className="text-right min-w-[120px]">Puntaje Total</TableHead>
+                  {!isLocked && <TableHead className="text-right"></TableHead>}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {localCompetitors.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      <div className="font-bold">{c.name}</div>
+                      <div className="text-xs text-muted-foreground">{c.nit}</div>
+                      <div className="text-xs text-muted-foreground">{c.email}</div>
+                      {c.quoteUrl && (
+                        <Button variant="link" asChild className="p-0 h-auto text-xs -translate-x-1">
+                          <a href={c.quoteUrl} target="_blank" rel="noopener noreferrer">
+                            <FileText className="h-3 w-3 mr-1" />
+                            Ver Cotización
+                          </a>
+                        </Button>
+                      )}
+                    </TableCell>
+                    {criteria.map(crit => {
+                      const score = c.scores?.[crit.id];
+                      const isRequired = crit.weight > 0;
+                      const isInvalid = isRequired && (score === undefined || score < 1 || score > 5);
+                      
+                      return (
+                        <TableCell key={crit.id} className="text-center">
+                            <Input
+                                type="number"
+                                min="1"
+                                max="5"
+                                placeholder={isRequired ? "1-5" : "N/A"}
+                                className={cn(
+                                  "w-20 mx-auto text-center",
+                                  isInvalid && !isLocked && "border-destructive focus-visible:ring-destructive"
+                                )}
+                                value={score ?? ''}
+                                onChange={(e) => handleScoreChange(c.id, crit.id, e.target.value)}
+                                disabled={isLocked}
+                            />
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right font-bold text-lg">
+                      {c.totalScore?.toFixed(2) || '0.00'}
+                    </TableCell>
+                    {!isLocked && (
+                      <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveCompetitor(c.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive"/>
+                          </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,8 +29,9 @@ import { useFirestore, useUser, errorEmitter, useCollection, useMemoFirebase, us
 import { FirestorePermissionError } from '@/firebase/errors';
 import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 import { getCriteriaForType, CategoryType, EVALUATION_TYPES } from '@/lib/evaluations';
+import { Badge } from '../ui/badge';
 
 interface Provider {
   id: string;
@@ -74,12 +74,10 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
-  // State for multi-step process
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [criteriaForForm, setCriteriaForForm] = useState<any[]>([]);
   const [totalScore, setTotalScore] = useState(0);
 
-  // Fetch all categories to get names
   const categoriesCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'categories') : null),
     [firestore]
@@ -91,14 +89,12 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     return allCategories.filter(cat => provider.categoryIds!.includes(cat.id));
   }, [provider, allCategories]);
 
-  // Fetch the selected category to get its custom weights
   const selectedCategoryDocRef = useMemoFirebase(
     () => (firestore && selectedCategoryId ? doc(firestore, 'categories', selectedCategoryId) : null),
     [firestore, selectedCategoryId]
   );
   const { data: selectedCategoryData, isLoading: isLoadingCategory } = useDoc<Category>(selectedCategoryDocRef);
 
-  // Dynamic schema and form setup
   const evaluationSchema = useMemo(() => {
     const scoreFields = criteriaForForm.reduce((acc, crit) => {
       acc[crit.id] = z.number().min(1).max(5);
@@ -119,7 +115,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     resolver: zodResolver(evaluationSchema),
   });
 
-  // Effect to build the form when a category is selected and its data loads
   useEffect(() => {
     if (selectedCategoryData) {
       const criteria = getCriteriaForType(selectedCategoryData.categoryType);
@@ -138,7 +133,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     }
   }, [selectedCategoryData, form]);
 
-  // Effect to calculate total score
   useEffect(() => {
     const subscription = form.watch((value) => {
       const currentScores = value.scores as Record<string, number> | undefined;
@@ -158,12 +152,11 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   }, [form, criteriaForForm]);
 
   const handleClose = () => {
-    // Reset internal state on close
     setTimeout(() => {
       setSelectedCategoryId(null);
       setCriteriaForForm([]);
       form.reset();
-    }, 300); // Delay for animation
+    }, 300);
     onClose();
   };
 
@@ -229,7 +222,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-[650px]" onCloseAutoFocus={(e) => e.preventDefault()}>
         {!provider ? (
           <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : !selectedCategoryId ? (
@@ -258,12 +251,36 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
             <DialogHeader>
               <DialogTitle>{evaluationTitle}</DialogTitle>
               <DialogDescription>
-                Evalúa a <strong>{provider.businessName}</strong> para la categoría <strong>{selectedCategoryData?.name}</strong> en una escala de 1 a 5.
+                Evalúa a <strong>{provider.businessName}</strong> para la categoría <strong>{selectedCategoryData?.name}</strong>.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-4">
+                <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-4">
+                  <div className="bg-muted/50 p-3 rounded-md border text-[10px] sm:text-xs">
+                    <h4 className="font-bold flex items-center gap-1 mb-2">
+                      <Info className="h-3 w-3 text-primary" />
+                      Escala:
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">5</Badge> <span className="truncate">Cumple totalmente</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">4</Badge> <span className="truncate">Con observaciones</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">3</Badge> <span className="truncate">Parcialmente</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">2</Badge> <span className="truncate">Deficiente</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">1</Badge> <span className="truncate">No cumple</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-4 rounded-md border bg-muted/50 p-4">
                     <h4 className="font-semibold text-sm mb-2">Soportes de la Evaluación</h4>
                     {showFracttalField ? (
