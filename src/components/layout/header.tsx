@@ -16,7 +16,7 @@ import { doc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, ChevronDown, User as UserIcon, BellRing } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, BellRing, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,19 +26,32 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
 import { useRole } from '@/hooks/use-role';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
 
 const adminNavLinks = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/selection', label: 'Selección' },
-  { href: '/providers', label: 'Gestión' },
-  { href: '/categories', label: 'Categorías' },
-  { href: '/comparison', label: 'Comparador' },
-  { href: '/parametrizacion', label: 'Parametrización' },
-  { href: '/admin/notifications', label: 'Emails' },
-  { href: '/admin/form-preview', label: 'Formato' },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/selection', label: 'Procesos de Selección', icon: ClipboardCheck },
+  { href: '/providers', label: 'Gestión de Proveedores', icon: Users },
+  { href: '/categories', label: 'Categorías', icon: Tags },
+  { href: '/comparison', label: 'Comparador de Desempeño', icon: BarChart3 },
+  { href: '/parametrizacion', label: 'Configuración de Pesos', icon: Settings },
+  { href: '/admin/notifications', label: 'Plantillas de Email', icon: Mail },
+  { href: '/admin/form-preview', label: 'Vista Previa Formulario', icon: FileSearch },
 ];
 
-const providerNavLinks = [{ href: '/providers/form', label: 'Mi Perfil' }];
+const providerNavLinks = [
+  { href: '/providers/form', label: 'Mi Perfil de Proveedor', icon: UserIcon }
+];
 
 interface ProviderData {
   businessName?: string;
@@ -63,6 +76,7 @@ export default function Header() {
 
   const loading =
     userLoading || roleLoading || (!isAdmin && providerDataLoading);
+  
   const navLinks = isAdmin ? adminNavLinks : providerNavLinks;
 
   const handleLogout = async () => {
@@ -90,7 +104,93 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl h-24 items-center justify-between px-6 lg:px-8">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
+          {/* Menu Drawer Trigger */}
+          {user && !loading && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:h-12 md:w-12">
+                  <Menu className="h-6 w-6 md:h-8 md:w-8" />
+                  <span className="sr-only">Abrir menú</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 sm:max-w-xs">
+                <SheetHeader className="p-6 bg-primary text-primary-foreground text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white p-1 rounded-sm">
+                      <Image
+                        src="/logo.png"
+                        alt="Logo"
+                        width={80}
+                        height={22}
+                      />
+                    </div>
+                    <SheetTitle className="text-primary-foreground text-lg">Menú Principal</SheetTitle>
+                  </div>
+                  <SheetDescription className="text-primary-foreground/70 text-xs">
+                    Plataforma de Gestión de Proveedores FAL
+                  </SheetDescription>
+                </SheetHeader>
+                
+                <ScrollArea className="h-[calc(100vh-140px)]">
+                  <nav className="flex flex-col gap-1 p-4">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                      Navegación
+                    </p>
+                    {navLinks.map((link) => {
+                      const Icon = link.icon;
+                      const isActive = pathname === link.href;
+                      return (
+                        <SheetClose asChild key={link.href}>
+                          <Link
+                            href={link.href}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-sm font-medium",
+                              isActive 
+                                ? "bg-primary text-primary-foreground shadow-sm" 
+                                : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            <Icon className={cn("h-5 w-5", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                            {link.label}
+                          </Link>
+                        </SheetClose>
+                      );
+                    })}
+                    
+                    <Separator className="my-4" />
+                    
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                      Cuenta
+                    </p>
+                    <SheetClose asChild>
+                      <Link
+                        href="/account"
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-sm font-medium text-foreground/70 hover:bg-muted hover:text-foreground",
+                          pathname === '/account' && "bg-muted text-foreground"
+                        )}
+                      >
+                        <UserIcon className="h-5 w-5 text-muted-foreground" />
+                        Mi Perfil / Configuración
+                      </Link>
+                    </SheetClose>
+                    
+                    <Button 
+                      variant="ghost" 
+                      className="justify-start gap-3 px-3 py-6 mt-4 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Cerrar Sesión
+                    </Button>
+                  </nav>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          )}
+
+          {/* Logo Branding */}
           <div className="flex flex-col items-center shrink-0">
             <Link href="/" className="flex-shrink-0">
               <Image
@@ -107,27 +207,6 @@ export default function Header() {
               </h1>
             )}
           </div>
-          
-          <div className="flex items-center gap-6">
-            {user && !loading && (
-              <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      'rounded-lg px-3 py-2 transition-all duration-300 whitespace-nowrap',
-                      pathname === link.href
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'text-foreground/80 hover:bg-primary/10'
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            )}
-          </div>
         </div>
 
         <div className="flex items-center gap-4 ml-4 shrink-0">
@@ -136,29 +215,27 @@ export default function Header() {
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="max-w-[200px] truncate uppercase">
+                <Button variant="outline" className="max-w-[200px] truncate uppercase border-primary/20 hover:bg-primary/5">
                   <span className="truncate">{displayName}</span>
                   <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/account" className="flex items-center">
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Mi Cuenta</span>
+                  </Link>
+                </DropdownMenuItem>
                 {isAdmin && (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link href="/account" className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        <span>Mi Cuenta</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin/notifications" className="flex items-center">
-                        <BellRing className="mr-2 h-4 w-4" />
-                        <span>Plantillas de Email</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/notifications" className="flex items-center">
+                      <BellRing className="mr-2 h-4 w-4" />
+                      <span>Plantillas de Email</span>
+                    </Link>
+                  </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
