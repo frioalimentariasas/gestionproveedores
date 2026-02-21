@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -13,7 +14,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Save, Scale, Gavel, AlertCircle, Wrench, Truck, CircleDollarSign, ShieldCheck } from 'lucide-react';
+import { Save, Scale, Gavel, AlertCircle, Wrench, Truck, CircleDollarSign, ShieldCheck, Info } from 'lucide-react';
 import { useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
@@ -26,6 +27,7 @@ interface CriteriaManagerProps {
   criteria: Criterion[];
   onSave: (criteria: Criterion[]) => void;
   isLocked: boolean;
+  criticalityLevel?: string;
 }
 
 type CriteriaFormValues = z.infer<typeof criteriaListSchema>;
@@ -37,25 +39,26 @@ const PREDEFINED_CRITERIA: Omit<Criterion, 'weight'>[] = [
     { id: 'legal_seguridad_social', label: 'Pago seguridad social (si aplica) (Verificación: Planilla PILA)' },
     { id: 'legal_sgsst', label: 'Certificación SG-SST (Verificación: Soporte vigente)' },
     
-    // 2. CAPACIDAD TÉCNICA (35%)
-    { id: 'tech_exp', label: 'Experiencia mínima comprobada (2-5 años) (Aplica a: Todos)' },
-    { id: 'tech_staff', label: 'Personal calificado / certificado (Aplica a: Servicios técnicos)' },
-    { id: 'tech_specs', label: 'Fichas técnicas / especificaciones (Aplica a: Productos)' },
-    { id: 'tech_certs', label: 'Certificaciones técnicas (RETIE, ONAC, INVIMA, etc.) (Aplica a: Según aplique)' },
+    // 2. CAPACIDAD TÉCNICA (Variable: 35% o 40%)
+    { id: 'tech_exp', label: 'Experiencia mínima comprobada (2-5 años)' },
+    { id: 'tech_staff', label: 'Personal calificado / certificado' },
+    { id: 'tech_specs', label: 'Fichas técnicas / especificaciones' },
+    { id: 'tech_certs', label: 'Certificaciones técnicas (RETIE, ONAC, INVIMA, etc.)' },
+    { id: 'tech_visit', label: 'Visita técnica previa (Solo Críticos)' },
 
-    // 3. CAPACIDAD OPERATIVA (20%)
-    { id: 'operative_infra', label: 'Infraestructura y recursos disponibles (Verificación: Evidencia documental)' },
-    { id: 'operative_resp', label: 'Capacidad de respuesta (Verificación: Tiempo estimado)' },
-    { id: 'operative_delivery', label: 'Disponibilidad para entregas (Verificación: Declaración formal)' },
+    // 3. CAPACIDAD OPERATIVA (Variable: 20% o 15%)
+    { id: 'operative_infra', label: 'Infraestructura y recursos disponibles' },
+    { id: 'operative_resp', label: 'Capacidad de respuesta' },
+    { id: 'operative_delivery', label: 'Disponibilidad para entregas' },
 
-    // 4. CAPACIDAD FINANCIERA Y COMERCIAL (15%)
-    { id: 'financial_stability', label: 'Estabilidad financiera (Verificación: Estados financieros / referencias)' },
-    { id: 'financial_conditions', label: 'Condiciones comerciales (Verificación: Crédito, plazos)' },
-    { id: 'financial_price', label: 'Competitividad del precio (Verificación: Comparativo de cotizaciones)' },
+    // 4. CAPACIDAD FINANCIERA Y COMERCIAL (Variable: 15% o 10%)
+    { id: 'financial_stability', label: 'Estabilidad financiera' },
+    { id: 'financial_conditions', label: 'Condiciones comerciales' },
+    { id: 'financial_price', label: 'Competitividad del precio' },
 
-    // 5. GESTIÓN DEL RIESGO Y CONTINUIDAD (10%)
-    { id: 'risk_plan', label: 'Plan de contingencia (Aplica a: Servicios críticos)' },
-    { id: 'risk_policy', label: 'Póliza de responsabilidad civil (Aplica a: Servicios técnicos)' },
+    // 5. GESTIÓN DEL RIESGO Y CONTINUIDAD (Variable: 10% o 15%)
+    { id: 'risk_plan', label: 'Plan de contingencia' },
+    { id: 'risk_policy', label: 'Póliza de responsabilidad civil' },
 ];
 
 
@@ -63,6 +66,7 @@ export function CriteriaManager({
   criteria,
   onSave,
   isLocked,
+  criticalityLevel,
 }: CriteriaManagerProps) {
   const form = useForm<CriteriaFormValues>({
     resolver: zodResolver(criteriaListSchema),
@@ -80,11 +84,9 @@ export function CriteriaManager({
   useEffect(() => {
     const hasSavedCriteria = criteria && criteria.length > 0;
     
-    let formData;
-
     if (hasSavedCriteria) {
         // Map saved criteria but ensure predefined ones are there if they don't exist yet
-        formData = PREDEFINED_CRITERIA.map(predef => {
+        const formData = PREDEFINED_CRITERIA.map(predef => {
             const saved = criteria.find(c => c.id === predef.id);
             return {
                 ...predef,
@@ -98,50 +100,51 @@ export function CriteriaManager({
                 formData.push(c);
             }
         });
+        form.reset({ criteria: formData });
     } else {
-        // Initial setup based on requested categories reaching 100%
-        formData = [
-            // Section 1: CAPACIDAD LEGAL (20%)
+        // Initialization based on CRITICALITY logic
+        const isCritical = criticalityLevel === 'Crítico';
+        
+        const formData = [
+            // Section 1: CAPACIDAD LEGAL (20%) - Stable
             { id: 'legal_camara', label: 'Cámara de Comercio vigente (Verificación: Documento actualizado)', weight: 5 },
             { id: 'legal_rut', label: 'RUT actualizado (Verificación: Documento)', weight: 3 },
             { id: 'legal_seguridad_social', label: 'Pago seguridad social (si aplica) (Verificación: Planilla PILA)', weight: 5 },
             { id: 'legal_sgsst', label: 'Certificación SG-SST (Verificación: Soporte vigente)', weight: 7 },
             
-            // Section 2: CAPACIDAD TÉCNICA (35%)
-            { id: 'tech_exp', label: 'Experiencia mínima comprobada (2-5 años) (Aplica a: Todos)', weight: 10 },
-            { id: 'tech_staff', label: 'Personal calificado / certificado (Aplica a: Servicios técnicos)', weight: 10 },
-            { id: 'tech_specs', label: 'Fichas técnicas / especificaciones (Aplica a: Productos)', weight: 5 },
-            { id: 'tech_certs', label: 'Certificaciones técnicas (RETIE, ONAC, INVIMA, etc.) (Aplica a: Según aplique)', weight: 10 },
+            // Section 2: CAPACIDAD TÉCNICA (35% standard -> 40% critical)
+            { id: 'tech_exp', label: 'Experiencia mínima comprobada (2-5 años)', weight: 10 },
+            { id: 'tech_staff', label: 'Personal calificado / certificado', weight: 10 },
+            { id: 'tech_specs', label: 'Fichas técnicas / especificaciones', weight: 5 },
+            { id: 'tech_certs', label: 'Certificaciones técnicas (RETIE, ONAC, INVIMA, etc.)', weight: isCritical ? 10 : 10 },
+            { id: 'tech_visit', label: 'Visita técnica previa (Solo Críticos)', weight: isCritical ? 5 : 0 },
 
-            // Section 3: CAPACIDAD OPERATIVA (20%)
-            { id: 'operative_infra', label: 'Infraestructura y recursos disponibles (Verificación: Evidencia documental)', weight: 10 },
-            { id: 'operative_resp', label: 'Capacidad de respuesta (Verificación: Tiempo estimado)', weight: 5 },
-            { id: 'operative_delivery', label: 'Disponibilidad para entregas (Verificación: Declaración formal)', weight: 5 },
+            // Section 3: CAPACIDAD OPERATIVA (20% standard -> 15% critical)
+            { id: 'operative_infra', label: 'Infraestructura y recursos disponibles', weight: isCritical ? 5 : 10 },
+            { id: 'operative_resp', label: 'Capacidad de respuesta', weight: 5 },
+            { id: 'operative_delivery', label: 'Disponibilidad para entregas', weight: 5 },
 
-            // Section 4: CAPACIDAD FINANCIERA Y COMERCIAL (15%)
-            { id: 'financial_stability', label: 'Estabilidad financiera (Verificación: Estados financieros / referencias)', weight: 5 },
-            { id: 'financial_conditions', label: 'Condiciones comerciales (Verificación: Crédito, plazos)', weight: 5 },
-            { id: 'financial_price', label: 'Competitividad del precio (Verificación: Comparativo de cotizaciones)', weight: 5 },
+            // Section 4: CAPACIDAD FINANCIERA Y COMERCIAL (15% standard -> 10% critical)
+            { id: 'financial_stability', label: 'Estabilidad financiera', weight: isCritical ? 4 : 5 },
+            { id: 'financial_conditions', label: 'Condiciones comerciales', weight: isCritical ? 3 : 5 },
+            { id: 'financial_price', label: 'Competitividad del precio', weight: isCritical ? 3 : 5 },
 
-            // Section 5: GESTIÓN DEL RIESGO Y CONTINUIDAD (10%)
-            { id: 'risk_plan', label: 'Plan de contingencia (Aplica a: Servicios críticos)', weight: 5 },
-            { id: 'risk_policy', label: 'Póliza de responsabilidad civil (Aplica a: Servicios técnicos)', weight: 5 },
+            // Section 5: GESTIÓN DEL RIESGO Y CONTINUIDAD (10% standard -> 15% critical)
+            { id: 'risk_plan', label: 'Plan de contingencia', weight: isCritical ? 10 : 5 },
+            { id: 'risk_policy', label: 'Póliza de responsabilidad civil', weight: 5 },
         ];
-    }
-    
-    // Ensure total is 100 for default state
-    const total = formData.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
-    if (total !== 100 && !hasSavedCriteria) {
-        const diff = 100 - total;
-        const lastItem = formData[formData.length - 1];
-        if (lastItem) {
-          lastItem.weight = (lastItem.weight || 0) + diff;
+
+        // Ensure total is 100
+        const total = formData.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+        if (total !== 100) {
+            const diff = 100 - total;
+            const lastItem = formData[formData.length - 1];
+            if (lastItem) { lastItem.weight = (lastItem.weight || 0) + diff; }
         }
+
+        form.reset({ criteria: formData });
     }
-
-    form.reset({ criteria: formData });
-
-  }, [criteria, form]);
+  }, [criteria, form, criticalityLevel]);
 
 
   const watchedCriteria = useWatch({
@@ -170,7 +173,7 @@ export function CriteriaManager({
             ) : (
                 <>
                 <div className="grid gap-2">
-                    {criteria.map(c => (
+                    {criteria.filter(c => c.weight > 0).map(c => (
                         <div key={c.id} className="flex justify-between items-center text-sm p-3 rounded-md bg-muted/50 border">
                             <span className="font-medium">{c.label}</span>
                             <Badge variant="secondary" className="font-bold text-sm">{c.weight}%</Badge>
@@ -192,6 +195,19 @@ export function CriteriaManager({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="bg-primary/5 p-4 rounded-lg border flex items-start gap-3">
+            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-sm">
+                <p className="font-bold">Ajuste por Criticidad: {criticalityLevel}</p>
+                <p className="text-muted-foreground">
+                    Los pesos se han inicializado según el nivel de criticidad seleccionado. 
+                    {criticalityLevel === 'Crítico' ? 
+                        ' Se ha incrementado la Capacidad Técnica (40%) y Gestión de Riesgo (15%).' : 
+                        ' Se mantiene la ponderación estándar.'}
+                </p>
+            </div>
+        </div>
+
         {form.formState.errors.criteria?.root && (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4"/>
@@ -241,7 +257,7 @@ export function CriteriaManager({
             <section className="space-y-4">
                 <div className="bg-blue-500/5 p-3 rounded-t-lg border-b-2 border-blue-500">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-blue-700">
-                        <Wrench className="h-5 w-5 text-blue-600" /> 2. CAPACIDAD TÉCNICA (35%)
+                        <Wrench className="h-5 w-5 text-blue-600" /> 2. CAPACIDAD TÉCNICA ({criticalityLevel === 'Crítico' ? '40%' : '35%'})
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-blue-200">
@@ -277,7 +293,7 @@ export function CriteriaManager({
             <section className="space-y-4">
                 <div className="bg-orange-500/5 p-3 rounded-t-lg border-b-2 border-orange-500">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-orange-700">
-                        <Truck className="h-5 w-5 text-orange-600" /> 3. CAPACIDAD OPERATIVA (20%)
+                        <Truck className="h-5 w-5 text-orange-600" /> 3. CAPACIDAD OPERATIVA ({criticalityLevel === 'Crítico' ? '15%' : '20%'})
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-orange-200">
@@ -313,7 +329,7 @@ export function CriteriaManager({
             <section className="space-y-4">
                 <div className="bg-green-500/5 p-3 rounded-t-lg border-b-2 border-green-500">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-green-700">
-                        <CircleDollarSign className="h-5 w-5 text-green-600" /> 4. CAPACIDAD FINANCIERA Y COMERCIAL (15%)
+                        <CircleDollarSign className="h-5 w-5 text-green-600" /> 4. CAPACIDAD FINANCIERA Y COMERCIAL ({criticalityLevel === 'Crítico' ? '10%' : '15%'})
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-green-200">
@@ -349,7 +365,7 @@ export function CriteriaManager({
             <section className="space-y-4">
                 <div className="bg-emerald-500/5 p-3 rounded-t-lg border-b-2 border-emerald-500">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-700">
-                        <ShieldCheck className="h-5 w-5 text-emerald-600" /> 5. GESTIÓN DEL RIESGO Y CONTINUIDAD (10%)
+                        <ShieldCheck className="h-5 w-5 text-emerald-600" /> 5. GESTIÓN DEL RIESGO Y CONTINUIDAD ({criticalityLevel === 'Crítico' ? '15%' : '10%'})
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-emerald-200">

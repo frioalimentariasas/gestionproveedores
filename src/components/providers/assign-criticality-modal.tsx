@@ -85,7 +85,7 @@ export function AssignCriticalityModal({
           <DialogDescription>
             Define el nivel de criticidad para{' '}
             <span className="font-bold">{provider?.businessName}</span>. 
-            Este valor es fundamental para los procesos de selección y evaluaciones de desempeño.
+            Este valor ajustará automáticamente los pesos en futuras evaluaciones.
           </DialogDescription>
         </DialogHeader>
         
@@ -98,8 +98,7 @@ export function AssignCriticalityModal({
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="Crítico">Crítico</SelectItem>
-                        <SelectItem value="Medio">Medio</SelectItem>
-                        <SelectItem value="Bajo">Bajo</SelectItem>
+                        <SelectItem value="No Crítico">No Crítico</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

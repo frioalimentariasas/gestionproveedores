@@ -82,7 +82,7 @@ interface Provider {
   categoryIds?: string[];
   providerType?: string;
   originSelectionEventId?: string;
-  criticalityLevel?: 'Crítico' | 'Medio' | 'Bajo';
+  criticalityLevel?: 'Crítico' | 'No Crítico';
 }
 
 export default function ProvidersTable() {
@@ -249,10 +249,8 @@ export default function ProvidersTable() {
     switch (level) {
       case 'Crítico':
         return <Badge variant="destructive">Crítico</Badge>;
-      case 'Medio':
-        return <Badge variant="secondary" className="bg-yellow-500 text-white hover:bg-yellow-600">Medio</Badge>;
-      case 'Bajo':
-        return <Badge variant="outline" className="text-green-600 border-green-600">Bajo</Badge>;
+      case 'No Crítico':
+        return <Badge variant="outline" className="text-green-600 border-green-600">No Crítico</Badge>;
       default:
         return (
           <Badge variant="outline" className="text-red-500 border-red-500 animate-pulse flex items-center gap-1">

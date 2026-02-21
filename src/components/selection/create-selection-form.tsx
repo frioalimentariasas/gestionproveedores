@@ -77,7 +77,7 @@ export default function CreateSelectionForm() {
 
       toast({
         title: 'Proceso Creado',
-        description: 'Ahora puedes añadir criterios y competidores.',
+        description: 'Ahora puedes definir los criterios ajustados a la criticidad seleccionada.',
       });
 
       router.push(redirectUrl);
@@ -168,8 +168,7 @@ export default function CreateSelectionForm() {
                         </FormControl>
                         <SelectContent>
                         <SelectItem value="Crítico">Crítico</SelectItem>
-                        <SelectItem value="Medio">Medio</SelectItem>
-                        <SelectItem value="Bajo">Bajo</SelectItem>
+                        <SelectItem value="No Crítico">No Crítico</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />

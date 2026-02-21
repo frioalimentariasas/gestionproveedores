@@ -196,7 +196,7 @@ export const providerFormSchema = z
     // Status fields
     formLocked: z.boolean().optional(),
     disabled: z.boolean().optional(),
-    criticalityLevel: z.enum(['Crítico', 'Medio', 'Bajo']).optional(),
+    criticalityLevel: z.enum(['Crítico', 'No Crítico']).optional(),
   })
   .superRefine((data, ctx) => {
     // Check if email is an admin email in the main form too
@@ -372,7 +372,7 @@ export const selectionEventSchema = z.object({
   type: z.enum(['Productos', 'Servicios'], {
     errorMap: () => ({ message: 'Debes seleccionar un sector.' }),
   }),
-  criticalityLevel: z.enum(['Crítico', 'Medio', 'Bajo'], {
+  criticalityLevel: z.enum(['Crítico', 'No Crítico'], {
     errorMap: () => ({ message: 'Debes seleccionar el nivel de criticidad.' }),
   }),
 });

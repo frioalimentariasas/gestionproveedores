@@ -59,8 +59,7 @@
           "type": "string",
           "enum": [
             "Crítico",
-            "Medio",
-            "Bajo"
+            "No Crítico"
           ],
           "description": "The criticality level assigned to the provider by an admin."
         },
@@ -99,7 +98,7 @@
           "description": "Indicates whether the provider has accepted the SARLAFT terms and conditions."
         },
         "formLocked": {
-          "type": "boolean",
+          "boolean": "boolean",
           "description": "If true, the provider's form is locked and cannot be edited."
         },
         "disabled": {
@@ -384,8 +383,7 @@
           "type": "string",
           "enum": [
             "Crítico",
-            "Medio",
-            "Bajo"
+            "No Crítico"
           ]
         },
         "status": {

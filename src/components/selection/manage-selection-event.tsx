@@ -53,7 +53,7 @@ export interface SelectionEvent {
   id: string;
   name: string;
   type: 'Productos' | 'Servicios';
-  criticalityLevel?: 'Crítico' | 'Medio' | 'Bajo';
+  criticalityLevel?: 'Crítico' | 'No Crítico';
   status: 'Abierto' | 'Cerrado';
   createdAt: Timestamp;
   selectedCompetitorId?: string;
@@ -258,6 +258,9 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
               >
                 {event.status}
               </Badge>
+              <Badge variant="outline" className={event.criticalityLevel === 'Crítico' ? 'border-destructive text-destructive' : ''}>
+                Criticidad: {event.criticalityLevel}
+              </Badge>
               {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             </div>
           </div>
@@ -284,6 +287,7 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
                 criteria={event.criteria || []}
                 onSave={(newCriteria) => handleUpdateEvent({ criteria: newCriteria })}
                 isLocked={isLocked}
+                criticalityLevel={event.criticalityLevel}
               />
             </div>
           </AccordionContent>
