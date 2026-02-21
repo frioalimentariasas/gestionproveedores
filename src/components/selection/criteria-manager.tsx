@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Save, Scale, Gavel, Clock, AlertCircle, Wrench, Truck, CircleDollarSign } from 'lucide-react';
+import { Save, Scale, Gavel, AlertCircle, Wrench, Truck, CircleDollarSign, ShieldCheck } from 'lucide-react';
 import { useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
@@ -53,7 +53,9 @@ const PREDEFINED_CRITERIA: Omit<Criterion, 'weight'>[] = [
     { id: 'financial_conditions', label: 'Condiciones comerciales (Verificación: Crédito, plazos)' },
     { id: 'financial_price', label: 'Competitividad del precio (Verificación: Comparativo de cotizaciones)' },
 
-    { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)' },
+    // 5. GESTIÓN DEL RIESGO Y CONTINUIDAD (10%)
+    { id: 'risk_plan', label: 'Plan de contingencia (Aplica a: Servicios críticos)' },
+    { id: 'risk_policy', label: 'Póliza de responsabilidad civil (Aplica a: Servicios técnicos)' },
 ];
 
 
@@ -97,7 +99,7 @@ export function CriteriaManager({
             }
         });
     } else {
-        // Initial setup based on requested categories
+        // Initial setup based on requested categories reaching 100%
         formData = [
             // Section 1: CAPACIDAD LEGAL (20%)
             { id: 'legal_camara', label: 'Cámara de Comercio vigente (Verificación: Documento actualizado)', weight: 5 },
@@ -121,8 +123,9 @@ export function CriteriaManager({
             { id: 'financial_conditions', label: 'Condiciones comerciales (Verificación: Crédito, plazos)', weight: 5 },
             { id: 'financial_price', label: 'Competitividad del precio (Verificación: Comparativo de cotizaciones)', weight: 5 },
 
-            // Remaining pending criteria (10%)
-            { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)', weight: 10 },
+            // Section 5: GESTIÓN DEL RIESGO Y CONTINUIDAD (10%)
+            { id: 'risk_plan', label: 'Plan de contingencia (Aplica a: Servicios críticos)', weight: 5 },
+            { id: 'risk_policy', label: 'Póliza de responsabilidad civil (Aplica a: Servicios técnicos)', weight: 5 },
         ];
     }
     
@@ -342,26 +345,21 @@ export function CriteriaManager({
                 </div>
             </section>
 
-            {/* OTHER CRITERIA SECTION */}
-            <section className="space-y-4 opacity-60">
-                <div className="bg-muted p-3 rounded-t-lg border-b-2 border-muted-foreground/30">
-                    <h3 className="font-bold text-lg flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-muted-foreground" /> CRITERIOS PENDIENTES POR DEFINIR
+            {/* CATEGORY 5: RISK MANAGEMENT */}
+            <section className="space-y-4">
+                <div className="bg-emerald-500/5 p-3 rounded-t-lg border-b-2 border-emerald-500">
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-700">
+                        <ShieldCheck className="h-5 w-5 text-emerald-600" /> 5. GESTIÓN DEL RIESGO Y CONTINUIDAD (10%)
                     </h3>
                 </div>
-                <div className="space-y-4 pl-4 border-l-2 border-dashed border-muted-foreground/20">
+                <div className="space-y-4 pl-4 border-l-2 border-emerald-200">
                     {fields.map((field, index) => {
                         const critId = watchedCriteria[index]?.id;
-                        if (
-                          critId?.startsWith('legal_') || 
-                          critId?.startsWith('tech_') || 
-                          critId?.startsWith('operative_') ||
-                          critId?.startsWith('financial_')
-                        ) return null;
+                        if (!critId?.startsWith('risk_')) return null;
                         
                         return (
                             <div key={field.id} className="flex items-center gap-4">
-                                <FormLabel className="flex-1 pt-2 text-sm italic">{watchedCriteria[index]?.label}</FormLabel>
+                                <FormLabel className="flex-1 pt-2 text-sm md:text-base">{watchedCriteria[index]?.label}</FormLabel>
                                 <FormField
                                     control={form.control}
                                     name={`criteria.${index}.weight`}
@@ -369,7 +367,7 @@ export function CriteriaManager({
                                         <FormItem className="w-28 shrink-0">
                                             <FormControl>
                                                 <div className="relative">
-                                                    <Input type="number" placeholder="Peso" {...field} className="pr-8 text-center" />
+                                                    <Input type="number" placeholder="Peso" {...field} className="pr-8 text-center font-bold" />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
                                                 </div>
                                             </FormControl>
