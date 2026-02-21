@@ -209,7 +209,7 @@ export function ResultsManager({
               <span>Req. Análisis</span>
             </div>
             <div className="flex justify-between items-center text-red-700 font-medium">
-              <span>< 60% (3.0)</span>
+              <span>&lt; 60% (3.0)</span>
               <span>No Aprobado</span>
             </div>
             <p className="text-[10px] text-muted-foreground mt-4 italic">
