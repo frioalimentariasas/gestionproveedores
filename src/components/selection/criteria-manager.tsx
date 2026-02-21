@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -13,14 +14,14 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Save, Scale } from 'lucide-react';
+import { Save, Scale, Gavel, Clock, AlertCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { Progress } from '../ui/progress';
-import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
 import type { Criterion } from './manage-selection-event';
 import { criteriaListSchema } from '@/lib/schemas';
 import type { z } from 'zod';
+import { Badge } from '../ui/badge';
 
 interface CriteriaManagerProps {
   criteria: Criterion[];
@@ -167,7 +168,7 @@ export function CriteriaManager({
             <section className="space-y-4">
                 <div className="bg-primary/5 p-3 rounded-t-lg border-b-2 border-primary">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                        🧩 1. CAPACIDAD LEGAL (Obligatorio para todos)
+                        <Gavel className="h-5 w-5 text-primary" /> 1. CAPACIDAD LEGAL (Obligatorio para todos)
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-primary/20">
@@ -203,7 +204,7 @@ export function CriteriaManager({
             <section className="space-y-4 opacity-60">
                 <div className="bg-muted p-3 rounded-t-lg border-b-2 border-muted-foreground/30">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                        ⏳ CRITERIOS PENDIENTES POR DEFINIR
+                        <Clock className="h-5 w-5 text-muted-foreground" /> CRITERIOS PENDIENTES POR DEFINIR
                     </h3>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-dashed border-muted-foreground/20">
