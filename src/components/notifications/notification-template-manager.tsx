@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,10 +8,9 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
-import { Loader2, Save, Info, AlertCircle } from 'lucide-react';
+import { Loader2, Save, Info, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface Template {
   id: string;
@@ -50,6 +48,13 @@ const DEFAULT_TEMPLATES: Template[] = [
     subject: 'Restablecimiento de Contraseña de su Cuenta',
     htmlContent: '<h1>Hola, {{providerName}}</h1><p>Tu nueva contraseña es: {{newPassword}}</p>',
     variables: ['providerName', 'newPassword'],
+  },
+  {
+    id: 'reactivation_request_admin',
+    name: 'Solicitud de Reactivación (Para Administrador)',
+    subject: 'Solicitud de Reactivación de Cuenta: {{businessName}}',
+    htmlContent: '<h1>Solicitud de Reactivación</h1><p>El proveedor <strong>{{businessName}}</strong> ({{providerEmail}}) solicita reactivar su cuenta.</p>',
+    variables: ['businessName', 'providerEmail'],
   }
 ];
 

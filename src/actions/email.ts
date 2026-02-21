@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
@@ -169,6 +168,31 @@ export async function notifyAdminOfFormUpdate({
     subject,
     htmlContent,
     replyTo: { email: email, name: businessName },
+  });
+}
+
+export async function notifyAdminOfReactivationRequest({
+  providerEmail,
+  businessName,
+}: {
+  providerEmail: string;
+  businessName: string;
+}) {
+  const variables = { providerEmail, businessName };
+  const dynamic = await getDynamicTemplate('reactivation_request_admin', variables);
+
+  const subject = dynamic?.subject || `Solicitud de Reactivación de Cuenta: ${businessName}`;
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Solicitud de Reactivación de Cuenta</h1>
+    <p>El proveedor <strong>${businessName}</strong> (${providerEmail}) ha solicitado la reactivación de su cuenta de acceso.</p>
+    <p>Por favor, revisa el estado del proveedor en el panel de administración y toma las medidas correspondientes.</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: ADMIN_EMAIL }],
+    subject,
+    htmlContent,
+    replyTo: { email: providerEmail, name: businessName },
   });
 }
 
