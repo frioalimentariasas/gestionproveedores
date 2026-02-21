@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -104,14 +103,32 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl h-24 items-center justify-between px-6 lg:px-8">
-        <div className="flex items-center gap-4">
-          {/* Menu Drawer Trigger */}
+        <div className="flex items-center gap-6">
+          {/* Logo Branding */}
+          <div className="flex flex-col items-center shrink-0">
+            <Link href="/" className="flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Frio Alimentaria Logo"
+                width={130}
+                height={36}
+                priority
+              />
+            </Link>
+            {isAdmin && !loading && (
+              <h1 className="text-[10px] font-bold tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase mt-1 leading-none text-center w-full">
+                Gestión de Proveedores
+              </h1>
+            )}
+          </div>
+
+          {/* Menu Drawer Trigger - Now placed after logo */}
           {user && !loading && (
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:h-12 md:w-12">
-                  <Menu className="h-6 w-6 md:h-8 md:w-8" />
-                  <span className="sr-only">Abrir menú</span>
+                <Button variant="ghost" className="flex items-center gap-2 px-3 hover:bg-primary/5 transition-colors border-l pl-6 ml-2 rounded-none h-12">
+                  <Menu className="h-6 w-6 text-primary" />
+                  <span className="font-bold text-xs uppercase tracking-tight hidden md:inline-block">Menú Principal</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 sm:max-w-xs">
@@ -189,24 +206,6 @@ export default function Header() {
               </SheetContent>
             </Sheet>
           )}
-
-          {/* Logo Branding */}
-          <div className="flex flex-col items-center shrink-0">
-            <Link href="/" className="flex-shrink-0">
-              <Image
-                src="/logo.png"
-                alt="Frio Alimentaria Logo"
-                width={130}
-                height={36}
-                priority
-              />
-            </Link>
-            {isAdmin && !loading && (
-              <h1 className="text-[10px] font-bold tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase mt-1 leading-none text-center w-full">
-                Gestión de Proveedores
-              </h1>
-            )}
-          </div>
         </div>
 
         <div className="flex items-center gap-4 ml-4 shrink-0">
@@ -230,7 +229,7 @@ export default function Header() {
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/notifications" className="flex items-center">
-                      <BellRing className="mr-2 h-4 w-4" />
+                      <Mail className="mr-2 h-4 w-4" />
                       <span>Plantillas de Email</span>
                     </Link>
                   </DropdownMenuItem>
