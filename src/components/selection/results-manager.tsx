@@ -13,13 +13,15 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { Crown, Trophy, Mail, Copy, Loader2 } from 'lucide-react';
+import { Crown, Trophy, Mail, Copy, Loader2, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { notifyWinnerOfSelection } from '@/actions/email';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ResultsManagerProps {
   eventId: string;
@@ -29,6 +31,22 @@ interface ResultsManagerProps {
   selectedCompetitorId?: string;
   justification?: string;
   isLocked: boolean;
+}
+
+/**
+ * Maps the 1-5 scale to the 0-100 decision scale provided by the user.
+ */
+function getDecisionStatus(score: number = 0) {
+  const percentage = score * 20; // 5.00 * 20 = 100
+  if (percentage >= 85) {
+    return { label: 'Aprobado', color: 'bg-green-100 text-green-800 border-green-200' };
+  } else if (percentage >= 70) {
+    return { label: 'Aprobado Condicionado', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+  } else if (percentage >= 60) {
+    return { label: 'Requiere análisis gerencial', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+  } else {
+    return { label: 'No Aprobado', color: 'bg-red-100 text-red-800 border-red-200' };
+  }
 }
 
 export function ResultsManager({
@@ -71,14 +89,17 @@ export function ResultsManager({
     name: c.name,
     Puntaje: c.totalScore?.toFixed(2) || 0,
     isSelected: c.id === selectedCompetitorId,
+    decision: getDecisionStatus(c.totalScore).label,
   }));
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
-        <div className="bg-background border p-2 rounded-md shadow-md">
-          <p className="font-bold">{label}</p>
-          <p className="text-primary">{`Puntaje: ${payload[0].value}`}</p>
+        <div className="bg-background border p-2 rounded-md shadow-md text-xs">
+          <p className="font-bold border-b mb-1 pb-1">{label}</p>
+          <p className="text-primary">{`Puntaje: ${data.Puntaje} / 5.00`}</p>
+          <p className="font-semibold text-muted-foreground mt-1">{`Decisión: ${data.decision}`}</p>
         </div>
       );
     }
@@ -141,35 +162,71 @@ export function ResultsManager({
 
   return (
     <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gráfico de Resultados</CardTitle>
-          <CardDescription>Comparación visual de los puntajes totales de los competidores.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData} layout="vertical" margin={{ left: 100 }}>
-              <XAxis type="number" domain={[0, 5]} hide/>
-              <YAxis type="category" dataKey="name" width={100} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
-              <Bar dataKey="Puntaje" radius={[0, 4, 4, 0]}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.isSelected ? 'hsl(var(--accent))' : 'hsl(var(--primary))'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Gráfico de Resultados</CardTitle>
+            <CardDescription>Comparación visual de los puntajes totales de los competidores.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData} layout="vertical" margin={{ left: 40, right: 40 }}>
+                <XAxis type="number" domain={[0, 5]} hide/>
+                <YAxis type="category" dataKey="name" width={100} axisLine={false} tickLine={false} fontSize={10} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
+                <Bar dataKey="Puntaje" radius={[0, 4, 4, 0]} barSize={20}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.isSelected ? 'hsl(var(--accent))' : 'hsl(var(--primary))'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Info className="h-4 w-4 text-primary" />
+              Guía de Decisión
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs space-y-3">
+            <div className="flex justify-between items-center border-b pb-1">
+              <span className="font-bold">Puntaje (%)</span>
+              <span className="font-bold">Decisión</span>
+            </div>
+            <div className="flex justify-between items-center text-green-700 font-medium">
+              <span>≥ 85% (4.25)</span>
+              <span>Aprobado</span>
+            </div>
+            <div className="flex justify-between items-center text-blue-700 font-medium">
+              <span>70 - 84% (3.5)</span>
+              <span>Aprobado Cond.</span>
+            </div>
+            <div className="flex justify-between items-center text-yellow-700 font-medium">
+              <span>60 - 69% (3.0)</span>
+              <span>Req. Análisis</span>
+            </div>
+            <div className="flex justify-between items-center text-red-700 font-medium">
+              <span>< 60% (3.0)</span>
+              <span>No Aprobado</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-4 italic">
+              * El sistema multiplica el puntaje (1-5) por 20 para obtener el equivalente porcentual.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
       
       <Card>
         <CardHeader>
             <CardTitle>Resultados Finales</CardTitle>
-            <CardDescription>Lista de competidores ordenados por puntaje. Selecciona un proveedor para cerrar el proceso.</CardDescription>
+            <CardDescription>Lista de competidores con recomendación de aprobación. Selecciona un proveedor para cerrar el proceso.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-4">
             {selectedCompetitor && (
-                 <Alert className="border-yellow-500 text-yellow-700">
+                 <Alert className="border-yellow-500 text-yellow-700 bg-yellow-50/30 mb-6">
                     <Trophy className="h-4 w-4 !text-yellow-600" />
                     <AlertTitle className="text-yellow-800 font-bold">Proveedor Seleccionado</AlertTitle>
                     <AlertDescription className="text-yellow-700 space-y-2">
@@ -193,24 +250,41 @@ export function ResultsManager({
                     </AlertDescription>
                 </Alert>
             )}
-            {sortedCompetitors.map((c, index) => (
-                <div key={c.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
-                    <div className="flex items-center gap-4">
-                        <span className={`text-lg font-bold w-8 text-center ${index === 0 ? 'text-primary' : 'text-muted-foreground'}`}>{index + 1}.</span>
-                        <div>
-                            <p className="font-semibold">{c.name}</p>
-                            <p className="text-sm text-muted-foreground">Puntaje: {c.totalScore?.toFixed(2) || 'N/A'}</p>
+            <div className="space-y-2">
+              {sortedCompetitors.map((c, index) => {
+                  const decision = getDecisionStatus(c.totalScore);
+                  return (
+                    <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors gap-4">
+                        <div className="flex items-center gap-4">
+                            <span className={cn(
+                              "text-xl font-bold w-8 text-center",
+                              index === 0 ? 'text-primary' : 'text-muted-foreground'
+                            )}>{index + 1}.</span>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-bold text-lg">{c.name}</p>
+                                  <Badge variant="outline" className={cn("text-[10px] py-0 h-5 border shadow-none", decision.color)}>
+                                    {decision.label}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  Puntaje: <span className="font-bold text-foreground">{c.totalScore?.toFixed(2) || 'N/A'}</span> ({( (c.totalScore || 0) * 20 ).toFixed(0)}%)
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          {!isLocked && (
+                              <Button size="sm" onClick={() => setDialogState({ isOpen: true, competitor: c, justification: '' })}>
+                                  <Crown className="mr-2 h-4 w-4"/>
+                                  Seleccionar
+                              </Button>
+                          )}
+                          {c.id === selectedCompetitorId && !selectedCompetitor && <Trophy className="h-6 w-6 text-yellow-500" />}
                         </div>
                     </div>
-                     {!isLocked && (
-                        <Button size="sm" onClick={() => setDialogState({ isOpen: true, competitor: c, justification: '' })}>
-                            <Crown className="mr-2 h-4 w-4"/>
-                            Seleccionar
-                        </Button>
-                     )}
-                     {c.id === selectedCompetitorId && !selectedCompetitor && <Trophy className="h-6 w-6 text-yellow-500" />}
-                </div>
-            ))}
+                  );
+              })}
+            </div>
         </CardContent>
       </Card>
       
@@ -219,14 +293,18 @@ export function ResultsManager({
             <AlertDialogHeader>
                 <AlertDialogTitle>¿Confirmar Selección?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Estás a punto de seleccionar a <strong>{dialogState.competitor?.name}</strong>. Por favor, argumenta tu decisión. Esta acción cerrará el proceso.
+                    Estás a punto de seleccionar a <strong>{dialogState.competitor?.name}</strong>. Esta acción cerrará el proceso y notificará al proveedor.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="grid gap-2 py-2">
-                <Label htmlFor="justification">Justificación de la Selección</Label>
+            <div className="grid gap-2 py-2 text-sm">
+                <div className="p-3 rounded-md bg-muted/50 border mb-2">
+                  <p><strong>Resultado Informativo:</strong> {getDecisionStatus(dialogState.competitor?.totalScore).label}</p>
+                  <p><strong>Puntaje:</strong> {dialogState.competitor?.totalScore?.toFixed(2)} ({( (dialogState.competitor?.totalScore || 0) * 20 ).toFixed(0)}%)</p>
+                </div>
+                <Label htmlFor="justification">Justificación de la Selección (Obligatorio)</Label>
                 <Textarea
                   id="justification"
-                  placeholder="Escribe la justificación de por qué este proveedor fue seleccionado..."
+                  placeholder="Argumenta por qué este proveedor fue seleccionado, especialmente si tiene una recomendación condicionada..."
                   value={dialogState.justification}
                   onChange={(e) => setDialogState(prev => ({ ...prev, justification: e.target.value }))}
                   className="min-h-[100px]"
@@ -238,7 +316,7 @@ export function ResultsManager({
                     onClick={handleSelectClick}
                     disabled={!dialogState.justification.trim()}
                 >
-                    Sí, seleccionar
+                    Sí, seleccionar y cerrar
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
