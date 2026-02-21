@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Save, Scale, Gavel, Clock, AlertCircle, Wrench, Truck } from 'lucide-react';
+import { Save, Scale, Gavel, Clock, AlertCircle, Wrench, Truck, CircleDollarSign } from 'lucide-react';
 import { useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
@@ -47,6 +47,11 @@ const PREDEFINED_CRITERIA: Omit<Criterion, 'weight'>[] = [
     { id: 'operative_infra', label: 'Infraestructura y recursos disponibles (Verificación: Evidencia documental)' },
     { id: 'operative_resp', label: 'Capacidad de respuesta (Verificación: Tiempo estimado)' },
     { id: 'operative_delivery', label: 'Disponibilidad para entregas (Verificación: Declaración formal)' },
+
+    // 4. CAPACIDAD FINANCIERA Y COMERCIAL (15%)
+    { id: 'financial_stability', label: 'Estabilidad financiera (Verificación: Estados financieros / referencias)' },
+    { id: 'financial_conditions', label: 'Condiciones comerciales (Verificación: Crédito, plazos)' },
+    { id: 'financial_price', label: 'Competitividad del precio (Verificación: Comparativo de cotizaciones)' },
 
     { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)' },
 ];
@@ -111,8 +116,13 @@ export function CriteriaManager({
             { id: 'operative_resp', label: 'Capacidad de respuesta (Verificación: Tiempo estimado)', weight: 5 },
             { id: 'operative_delivery', label: 'Disponibilidad para entregas (Verificación: Declaración formal)', weight: 5 },
 
-            // Remaining pending criteria (25%)
-            { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)', weight: 25 },
+            // Section 4: CAPACIDAD FINANCIERA Y COMERCIAL (15%)
+            { id: 'financial_stability', label: 'Estabilidad financiera (Verificación: Estados financieros / referencias)', weight: 5 },
+            { id: 'financial_conditions', label: 'Condiciones comerciales (Verificación: Crédito, plazos)', weight: 5 },
+            { id: 'financial_price', label: 'Competitividad del precio (Verificación: Comparativo de cotizaciones)', weight: 5 },
+
+            // Remaining pending criteria (10%)
+            { id: 'otros_pendientes', label: 'Otros Criterios (Pendientes por definir)', weight: 10 },
         ];
     }
     
@@ -296,6 +306,42 @@ export function CriteriaManager({
                 </div>
             </section>
 
+            {/* CATEGORY 4: FINANCIAL */}
+            <section className="space-y-4">
+                <div className="bg-green-500/5 p-3 rounded-t-lg border-b-2 border-green-500">
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-green-700">
+                        <CircleDollarSign className="h-5 w-5 text-green-600" /> 4. CAPACIDAD FINANCIERA Y COMERCIAL (15%)
+                    </h3>
+                </div>
+                <div className="space-y-4 pl-4 border-l-2 border-green-200">
+                    {fields.map((field, index) => {
+                        const critId = watchedCriteria[index]?.id;
+                        if (!critId?.startsWith('financial_')) return null;
+                        
+                        return (
+                            <div key={field.id} className="flex items-center gap-4">
+                                <FormLabel className="flex-1 pt-2 text-sm md:text-base">{watchedCriteria[index]?.label}</FormLabel>
+                                <FormField
+                                    control={form.control}
+                                    name={`criteria.${index}.weight`}
+                                    render={({ field }) => (
+                                        <FormItem className="w-28 shrink-0">
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Input type="number" placeholder="Peso" {...field} className="pr-8 text-center font-bold" />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
             {/* OTHER CRITERIA SECTION */}
             <section className="space-y-4 opacity-60">
                 <div className="bg-muted p-3 rounded-t-lg border-b-2 border-muted-foreground/30">
@@ -306,7 +352,12 @@ export function CriteriaManager({
                 <div className="space-y-4 pl-4 border-l-2 border-dashed border-muted-foreground/20">
                     {fields.map((field, index) => {
                         const critId = watchedCriteria[index]?.id;
-                        if (critId?.startsWith('legal_') || critId?.startsWith('tech_') || critId?.startsWith('operative_')) return null;
+                        if (
+                          critId?.startsWith('legal_') || 
+                          critId?.startsWith('tech_') || 
+                          critId?.startsWith('operative_') ||
+                          critId?.startsWith('financial_')
+                        ) return null;
                         
                         return (
                             <div key={field.id} className="flex items-center gap-4">
