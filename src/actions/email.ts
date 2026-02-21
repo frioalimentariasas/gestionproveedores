@@ -322,3 +322,33 @@ export async function sendDirectInvitation({
     htmlContent,
   });
 }
+
+/**
+ * Notifies a provider that their form registration is still pending.
+ */
+export async function notifyProviderPendingForm({
+  providerEmail,
+  providerName,
+}: {
+  providerEmail: string;
+  providerName: string;
+}) {
+  const subject = 'Recordatorio: Diligenciamiento de Formulario de Proveedor Pendiente';
+  const htmlContent = `
+    <h1>Hola, ${providerName}</h1>
+    <p>Hemos notado que aún no has finalizado el diligenciamiento de tu formulario de registro en nuestra plataforma de proveedores de Frioalimentaria.</p>
+    <p>Es indispensable completar toda la información y adjuntar los documentos obligatorios para que nuestro equipo pueda validar tu perfil y proceder con la vinculación formal.</p>
+    <p>Por favor, ingresa con tus credenciales (NIT) en el siguiente enlace y completa los campos pendientes:</p>
+    <p><a href="https://app.gestionproveedores.frioalimentaria.com.co/auth/login" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Ir al Formulario</a></p>
+    <p>Una vez guardes y bloquees el formulario, recibiremos una notificación automática para su revisión.</p>
+    <br>
+    <p>Gracias,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}

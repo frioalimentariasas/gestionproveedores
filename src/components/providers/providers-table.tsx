@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -25,6 +24,7 @@ import {
   FileClock,
   ShieldAlert,
   AlertTriangle,
+  BellRing,
 } from 'lucide-react';
 import {
   Table,
@@ -65,6 +65,7 @@ import {
   notifyProviderFormUnlocked,
   notifyProviderPasswordReset,
   notifyProviderAccountStatus,
+  notifyProviderPendingForm,
 } from '@/actions/email';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { EvaluationModal } from './evaluation-modal';
@@ -152,6 +153,33 @@ export default function ProvidersTable() {
       .finally(() => {
         setActionLoading(provider.id, false);
       });
+  };
+
+  const handleSendReminder = async (provider: Provider) => {
+    setActionLoading(provider.id, true);
+    try {
+      const result = await notifyProviderPendingForm({
+        providerEmail: provider.email,
+        providerName: provider.businessName,
+      });
+
+      if (result.success) {
+        toast({
+          title: 'Recordatorio Enviado',
+          description: `Se ha notificado a ${provider.businessName} que finalice su registro.`,
+        });
+      } else {
+        throw new Error(result.error || 'Error al enviar recordatorio.');
+      }
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error de Envío',
+        description: err.message || 'No se pudo enviar el correo en este momento.',
+      });
+    } finally {
+      setActionLoading(provider.id, false);
+    }
   };
 
   const handleResetPassword = async () => {
@@ -321,8 +349,11 @@ export default function ProvidersTable() {
                   {getCriticalityBadge(provider.criticalityLevel)}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge variant={provider.formLocked ? 'outline' : 'secondary'}>
-                    {provider.formLocked ? 'Bloqueado' : 'Habilitado'}
+                  <Badge 
+                    variant={provider.formLocked ? 'outline' : 'destructive'}
+                    className={cn(!provider.formLocked && "animate-pulse")}
+                  >
+                    {provider.formLocked ? 'Completado' : 'Pendiente'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-center">
@@ -338,6 +369,16 @@ export default function ProvidersTable() {
                   ) : (
                     <div className="flex items-center justify-end gap-1">
                     <TooltipProvider>
+                      {!provider.formLocked && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => handleSendReminder(provider)}>
+                              <BellRing className="h-4 w-4 text-orange-500" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Enviar Recordatorio de Registro</p></TooltipContent>
+                        </Tooltip>
+                      )}
                       {provider.originSelectionEventId && (
                         <Tooltip>
                           <TooltipTrigger asChild>
