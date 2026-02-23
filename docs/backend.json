@@ -98,7 +98,7 @@
           "description": "Indicates whether the provider has accepted the SARLAFT terms and conditions."
         },
         "formLocked": {
-          "boolean": "boolean",
+          "type": "boolean",
           "description": "If true, the provider's form is locked and cannot be edited."
         },
         "disabled": {
@@ -207,6 +207,11 @@
         "originSelectionEventId": {
           "type": "string",
           "description": "The ID of the selection event from which this provider was registered."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time when the provider registered in the platform."
         }
       },
       "required": [

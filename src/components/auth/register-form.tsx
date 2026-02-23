@@ -25,12 +25,12 @@ import { useToast } from '@/hooks/use-toast';
 import { registerSchema } from '@/lib/schemas';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { notifyAdminOfNewProvider } from '@/actions/email';
+import { notifyAdminOfNewProvider, notifyProviderWelcomePlazo } from '@/actions/email';
 
 const documentTypes = [
   'NIT',
@@ -91,6 +91,7 @@ export function RegisterForm() {
         documentType: values.documentType,
         documentNumber: values.documentNumber, // This is the NIT, used as username
         formLocked: false,
+        createdAt: serverTimestamp(),
       };
 
       if (eventId) {
@@ -114,10 +115,16 @@ export function RegisterForm() {
         email: values.email,
       }).catch(console.error);
 
+      // Notify provider of the 8-day deadline
+      notifyProviderWelcomePlazo({
+        providerEmail: values.email,
+        providerName: values.businessName,
+      }).catch(console.error);
+
 
       toast({
         title: '¡Registro exitoso!',
-        description: 'Ahora puedes completar tu perfil de proveedor.',
+        description: 'Ahora puedes completar tu perfil de proveedor. Tienes 8 días de plazo.',
       });
       router.push('/providers/form');
     } catch (error: any) {

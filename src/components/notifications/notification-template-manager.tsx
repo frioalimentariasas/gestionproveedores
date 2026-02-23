@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -25,8 +26,15 @@ const DEFAULT_TEMPLATES: Template[] = [
     id: 'pending_form_reminder_provider',
     name: 'Recordatorio de Formulario Pendiente',
     subject: 'Recordatorio: Diligenciamiento de Formulario de Proveedor Pendiente',
-    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Hemos notado que aún no has finalizado el diligenciamiento de tu formulario...</p><p><a href="{{loginUrl}}">Ir al Formulario</a></p>',
-    variables: ['providerName', 'loginUrl'],
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Hemos notado que aún no has finalizado el diligenciamiento de tu formulario...</p><p>Te quedan {{daysLeft}} días para evitar el bloqueo.</p><p><a href="{{loginUrl}}">Ir al Formulario</a></p>',
+    variables: ['providerName', 'loginUrl', 'daysLeft'],
+  },
+  {
+    id: 'welcome_plazo_provider',
+    name: 'Bienvenida (Aviso 8 Días Plazo)',
+    subject: 'Bienvenido a Frioalimentaria - Inicio de Registro de Proveedor',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Tu cuenta ha sido creada. Cuentas con un plazo máximo de <strong>8 días calendario</strong> para completar tu registro.</p>',
+    variables: ['providerName'],
   },
   {
     id: 'winner_selection_provider',
@@ -51,10 +59,10 @@ const DEFAULT_TEMPLATES: Template[] = [
   },
   {
     id: 'reactivation_request_admin',
-    name: 'Solicitud de Reactivación (Para Administrador)',
+    name: 'Solicitud de Reactivación / Justificación (Para Administrador)',
     subject: 'Solicitud de Reactivación de Cuenta: {{businessName}}',
-    htmlContent: '<h1>Solicitud de Reactivación</h1><p>El proveedor <strong>{{businessName}}</strong> ({{providerEmail}}) solicita reactivar su cuenta.</p>',
-    variables: ['businessName', 'providerEmail'],
+    htmlContent: '<h1>Solicitud de Reactivación</h1><p>El proveedor <strong>{{businessName}}</strong> ({{providerEmail}}) solicita reactivar su cuenta.</p><p><strong>Justificación:</strong> {{justification}}</p>',
+    variables: ['businessName', 'providerEmail', 'justification'],
   }
 ];
 

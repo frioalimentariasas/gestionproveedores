@@ -1,3 +1,4 @@
+
 'use server';
 
 import admin from '@/lib/firebase-admin';
@@ -171,17 +172,23 @@ export async function notifyAdminOfFormUpdate({
 export async function notifyAdminOfReactivationRequest({
   providerEmail,
   businessName,
+  justification,
 }: {
   providerEmail: string;
   businessName: string;
+  justification?: string;
 }) {
-  const variables = { providerEmail, businessName };
+  const variables = { providerEmail, businessName, justification: justification || 'No proporcionada' };
   const dynamic = await getDynamicTemplate('reactivation_request_admin', variables);
 
   const subject = dynamic?.subject || `Solicitud de Reactivación de Cuenta: ${businessName}`;
   const htmlContent = dynamic?.htmlContent || `
     <h1>Solicitud de Reactivación de Cuenta</h1>
-    <p>El proveedor <strong>${businessName}</strong> (${providerEmail}) ha solicitado la reactivación de su cuenta de acceso.</p>
+    <p>El proveedor <strong>${businessName}</strong> (${providerEmail}) ha solicitado la reactivación de su cuenta de acceso o formulario.</p>
+    <p><strong>Justificación del proveedor:</strong></p>
+    <div style="padding: 10px; border: 1px solid #ccc; background: #f9f9f9; font-style: italic;">
+      ${justification || 'No proporcionada'}
+    </div>
     <p>Por favor, revisa el estado del proveedor en el panel de administración y toma las medidas correspondientes.</p>
   `;
 
@@ -359,22 +366,54 @@ export async function sendDirectInvitation({
 export async function notifyProviderPendingForm({
   providerEmail,
   providerName,
+  daysLeft,
 }: {
   providerEmail: string;
   providerName: string;
+  daysLeft?: number;
 }) {
   const loginUrl = 'https://app.gestionproveedores.frioalimentaria.com.co/auth/login';
-  const variables = { providerName, loginUrl };
+  const variables = { providerName, loginUrl, daysLeft: daysLeft?.toString() || 'pocos' };
   const dynamic = await getDynamicTemplate('pending_form_reminder_provider', variables);
 
   const subject = dynamic?.subject || 'Recordatorio: Diligenciamiento de Formulario de Proveedor Pendiente';
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
     <p>Hemos notado que aún no has finalizado el diligenciamiento de tu formulario de registro en nuestra plataforma de proveedores de Frioalimentaria.</p>
+    ${daysLeft ? `<p style="color: #e11d48; font-weight: bold;">Atención: Solo cuentas con ${daysLeft} días restantes antes de que tu acceso sea bloqueado automáticamente.</p>` : ''}
     <p>Es indispensable completar toda la información y adjuntar los documentos obligatorios para que nuestro equipo pueda validar tu perfil y proceder con la vinculación formal.</p>
     <p>Por favor, ingresa con tus credenciales (NIT) en el siguiente enlace y completa los campos pendientes:</p>
     <p><a href="${loginUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Ir al Formulario</a></p>
     <p>Una vez guardes y bloquees el formulario, recibiremos una notificación automática para su revisión.</p>
+    <br>
+    <p>Gracias,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
+export async function notifyProviderWelcomePlazo({
+  providerEmail,
+  providerName,
+}: {
+  providerEmail: string;
+  providerName: string;
+}) {
+  const variables = { providerName };
+  const dynamic = await getDynamicTemplate('welcome_plazo_provider', variables);
+
+  const subject = dynamic?.subject || 'Bienvenido a Frioalimentaria - Inicio de Registro de Proveedor';
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Hola, ${providerName}</h1>
+    <p>Tu cuenta ha sido creada exitosamente en nuestro portal de proveedores.</p>
+    <p>Te recordamos que, de acuerdo con nuestras políticas de vinculación, cuentas con un plazo máximo de <strong>8 días calendario</strong> para completar y enviar tu formulario de registro con todos los soportes legales requeridos.</p>
+    <p>Pasado este tiempo, el sistema bloqueará automáticamente el acceso a tu formulario y deberás solicitar una extensión justificada al administrador.</p>
+    <p>¡Esperamos tu pronta respuesta!</p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
