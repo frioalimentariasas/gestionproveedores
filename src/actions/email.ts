@@ -6,8 +6,11 @@ import admin from '@/lib/firebase-admin';
 // The Brevo API key is sensitive and must be accessed only on the server.
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
-// The admin email to which notifications are sent.
-const ADMIN_EMAIL = 'asistente@frioalimentaria.com.co';
+// The admin emails to which notifications are sent.
+const ADMIN_RECIPIENTS = [
+  { email: 'asistente@frioalimentaria.com.co' },
+  { email: 'sistemas@frioalimentaria.com.co' }
+];
 const SENDER_EMAIL = 'asistente@frioalimentaria.com.co';
 
 interface SendEmailParams {
@@ -137,7 +140,7 @@ export async function notifyAdminOfNewProvider({
   `;
 
   return await sendTransactionalEmail({
-    to: [{ email: ADMIN_EMAIL }],
+    to: ADMIN_RECIPIENTS,
     subject,
     htmlContent,
     replyTo: { email: email, name: businessName },
@@ -162,7 +165,7 @@ export async function notifyAdminOfFormUpdate({
   `;
 
   return await sendTransactionalEmail({
-    to: [{ email: ADMIN_EMAIL }],
+    to: ADMIN_RECIPIENTS,
     subject,
     htmlContent,
     replyTo: { email: email, name: businessName },
@@ -193,7 +196,7 @@ export async function notifyAdminOfReactivationRequest({
   `;
 
   return await sendTransactionalEmail({
-    to: [{ email: ADMIN_EMAIL }],
+    to: ADMIN_RECIPIENTS,
     subject,
     htmlContent,
     replyTo: { email: providerEmail, name: businessName },
@@ -331,7 +334,8 @@ export async function sendDirectInvitation({
   providerName: string;
   providerEmail: string;
 }) {
-  const registrationUrl = 'https://app.gestionproveedores.frioalimentaria.com.co/auth/register';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
+  const registrationUrl = `${baseUrl}/auth/register`;
   
   const variables = { providerName, registrationUrl };
   const dynamic = await getDynamicTemplate('direct_invitation_provider', variables);
@@ -372,7 +376,9 @@ export async function notifyProviderPendingForm({
   providerName: string;
   daysLeft?: number;
 }) {
-  const loginUrl = 'https://app.gestionproveedores.frioalimentaria.com.co/auth/login';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
+  const loginUrl = `${baseUrl}/auth/login`;
+  
   const variables = { providerName, loginUrl, daysLeft: daysLeft?.toString() || 'pocos' };
   const dynamic = await getDynamicTemplate('pending_form_reminder_provider', variables);
 

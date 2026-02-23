@@ -59,10 +59,31 @@ const DEFAULT_TEMPLATES: Template[] = [
   },
   {
     id: 'reactivation_request_admin',
-    name: 'Solicitud de Reactivación / Justificación (Para Administrador)',
+    name: 'Solicitud de Reactivación (Para Administrador)',
     subject: 'Solicitud de Reactivación de Cuenta: {{businessName}}',
     htmlContent: '<h1>Solicitud de Reactivación</h1><p>El proveedor <strong>{{businessName}}</strong> ({{providerEmail}}) solicita reactivar su cuenta.</p><p><strong>Justificación:</strong> {{justification}}</p>',
     variables: ['businessName', 'providerEmail', 'justification'],
+  },
+  {
+    id: 'new_provider_admin',
+    name: 'Aviso de Nuevo Proveedor Registrado (Para Administrador)',
+    subject: 'Nuevo Proveedor Registrado: {{businessName}}',
+    htmlContent: '<h1>Nuevo Proveedor en la Plataforma</h1><p>Se ha registrado un nuevo proveedor: <strong>{{businessName}}</strong> ({{documentNumber}}).</p><p>Email: {{email}}</p>',
+    variables: ['businessName', 'documentNumber', 'email'],
+  },
+  {
+    id: 'form_update_admin',
+    name: 'Aviso de Actualización de Formulario (Para Administrador)',
+    subject: 'Proveedor Actualizó su Información: {{businessName}}',
+    htmlContent: '<h1>Actualización de Formulario</h1><p>El proveedor <strong>{{businessName}}</strong> ({{email}}) ha completado y bloqueado su formulario.</p>',
+    variables: ['businessName', 'email'],
+  },
+  {
+    id: 'direct_invitation_provider',
+    name: 'Invitación Directa a Registro',
+    subject: 'REGISTRO DE PROVEEDOR FRIOALIMENTARIA SAS',
+    htmlContent: '<p>Estimado Proveedor <strong>{{providerName}}</strong>,</p><p>Le invitamos a registrarse en nuestro portal: <a href="{{registrationUrl}}">Ir al Portal</a></p>',
+    variables: ['providerName', 'registrationUrl'],
   }
 ];
 
@@ -135,19 +156,21 @@ export function NotificationTemplateManager() {
           <CardDescription>Selecciona una plantilla para editar.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {DEFAULT_TEMPLATES.map((t) => (
-            <Button
-              key={t.id}
-              variant={selectedId === t.id ? 'default' : 'outline'}
-              className="w-full justify-start text-left h-auto py-3 px-4"
-              onClick={() => handleSelect(t.id)}
-            >
-              <div className="flex flex-col gap-1 overflow-hidden">
-                <span className="font-bold truncate">{t.name}</span>
-                <span className="text-[10px] opacity-70 uppercase tracking-tighter truncate">{t.id}</span>
-              </div>
-            </Button>
-          ))}
+          <ScrollArea className="h-[600px] pr-4">
+            {DEFAULT_TEMPLATES.map((t) => (
+              <Button
+                key={t.id}
+                variant={selectedId === t.id ? 'default' : 'outline'}
+                className="w-full justify-start text-left h-auto py-3 px-4 mb-2"
+                onClick={() => handleSelect(t.id)}
+              >
+                <div className="flex flex-col gap-1 overflow-hidden">
+                  <span className="font-bold truncate text-xs">{t.name}</span>
+                  <span className="text-[9px] opacity-70 uppercase tracking-tighter truncate">{t.id}</span>
+                </div>
+              </Button>
+            ))}
+          </ScrollArea>
         </CardContent>
       </Card>
 
@@ -189,7 +212,7 @@ export function NotificationTemplateManager() {
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {editState.variables?.map((v) => (
-                    <Badge key={v} variant="secondary" className="font-mono">
+                    <Badge key={v} variant="secondary" className="font-mono text-[10px]">
                       {`{{${v}}}`}
                     </Badge>
                   ))}
