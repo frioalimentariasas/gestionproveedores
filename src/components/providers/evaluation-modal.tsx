@@ -29,15 +29,17 @@ import { useFirestore, useUser, errorEmitter, useCollection, useMemoFirebase, us
 import { FirestorePermissionError } from '@/firebase/errors';
 import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Info } from 'lucide-react';
-import { getCriteriaForType, CategoryType, EVALUATION_TYPES } from '@/lib/evaluations';
+import { Loader2, Info, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { getCriteriaForType, CategoryType, EVALUATION_TYPES, requiresActionPlan } from '@/lib/evaluations';
 import { Badge } from '../ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface Provider {
   id: string;
   businessName: string;
   providerType?: string[];
   categoryIds?: string[];
+  criticalityLevel?: 'Crítico' | 'No Crítico';
 }
 
 interface Category {
@@ -116,12 +118,17 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   });
 
   useEffect(() => {
-    if (selectedCategoryData) {
-      const criteria = getCriteriaForType(selectedCategoryData.categoryType);
+    if (selectedCategoryData && provider) {
+      const isCritical = provider.criticalityLevel === 'Crítico';
+      const criteria = getCriteriaForType(selectedCategoryData.categoryType, isCritical);
+      
+      // Si el administrador ha configurado pesos específicos para la categoría, los respetamos.
+      // Si no, usamos los sugeridos por ISO para la criticidad.
       const configuredCriteria = criteria.map(crit => ({
         ...crit,
         weight: selectedCategoryData.evaluationCriteriaWeights?.[crit.id] ?? crit.defaultWeight,
       }));
+      
       setCriteriaForForm(configuredCriteria);
 
       const defaultScores = configuredCriteria.reduce((acc, crit) => {
@@ -131,7 +138,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
 
       form.reset({ scores: defaultScores, comments: '', fracttalOrderIds: '' });
     }
-  }, [selectedCategoryData, form]);
+  }, [selectedCategoryData, provider, form]);
 
   useEffect(() => {
     const subscription = form.watch((value) => {
@@ -198,6 +205,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       categoryId: selectedCategoryData.id,
       scores: values.scores,
       totalScore: totalScore,
+      isActionPlanRequired: requiresActionPlan(totalScore),
       comments: values.comments || '',
       createdAt: serverTimestamp(),
       ...(evidenceFileUrl && { evidenceFileUrl }),
@@ -207,7 +215,10 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     const evaluationsCollection = collection(firestore, 'providers', provider.id, 'evaluations');
     addDoc(evaluationsCollection, dataToSave)
       .then(() => {
-        toast({ title: 'Evaluación Guardada', description: `Se ha guardado la evaluación para ${provider?.businessName}.` });
+        toast({ 
+          title: 'Evaluación Guardada', 
+          description: `Se ha registrado el desempeño ISO 9001 para ${provider?.businessName}.` 
+        });
         handleClose();
       })
       .catch((error) => {
@@ -218,28 +229,37 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
 
   const isFormSubmitting = isSubmitting || isUploading;
   const evaluationTitle = selectedCategoryData ? EVALUATION_TYPES[selectedCategoryData.categoryType] : "Evaluación";
-  const showFracttalField = selectedCategoryData?.categoryType === 'Productos';
+  const needsAction = requiresActionPlan(totalScore);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[650px]" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-[700px] border-t-8 border-t-primary" onCloseAutoFocus={(e) => e.preventDefault()}>
         {!provider ? (
           <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : !selectedCategoryId ? (
           <>
             <DialogHeader>
-              <DialogTitle>Seleccionar Categoría para la Evaluación</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                Nueva Evaluación de Desempeño ISO 9001
+              </DialogTitle>
               <DialogDescription>
-                Elige la categoría en la que deseas evaluar a <strong>{provider.businessName}</strong>.
+                Selecciona la categoría operativa para evaluar a <strong>{provider.businessName}</strong>.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
               {providerCategories.length > 0 ? providerCategories.map((cat) => (
-                <Button key={cat.id} variant="outline" className="justify-start h-auto py-3 text-left" onClick={() => setSelectedCategoryId(cat.id)}>
-                  <span className="font-semibold">{cat.name}</span>
+                <Button key={cat.id} variant="outline" className="justify-between h-auto py-4 text-left group hover:border-primary" onClick={() => setSelectedCategoryId(cat.id)}>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-base group-hover:text-primary">{cat.name}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase">{cat.categoryType}</span>
+                  </div>
+                  <Info className="h-4 w-4 opacity-20 group-hover:opacity-100 transition-opacity" />
                 </Button>
               )) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Este proveedor no tiene categorías asignadas. Por favor, asígnale una desde la tabla de proveedores para poder evaluarlo.</p>
+                <p className="text-sm text-muted-foreground text-center py-4 bg-muted/30 rounded-lg border-2 border-dashed">
+                    Este proveedor no tiene categorías asignadas. Por favor, asígnale categorías en la Gestión de Proveedores.
+                </p>
               )}
             </div>
             <DialogFooter><Button type="button" variant="secondary" onClick={handleClose}>Cancelar</Button></DialogFooter>
@@ -249,101 +269,112 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{evaluationTitle}</DialogTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <DialogTitle className="text-xl">{evaluationTitle}</DialogTitle>
+                <Badge variant={provider.criticalityLevel === 'Crítico' ? 'destructive' : 'secondary'} className="uppercase text-[10px]">
+                    Impacto: {provider.criticalityLevel}
+                </Badge>
+              </div>
               <DialogDescription>
-                Evalúa a <strong>{provider.businessName}</strong> para la categoría <strong>{selectedCategoryData?.name}</strong>.
+                Califica el desempeño según el cumplimiento de requisitos del periodo evaluado.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-4">
-                  <div className="bg-muted/50 p-3 rounded-md border text-[10px] sm:text-xs">
-                    <h4 className="font-bold flex items-center gap-1 mb-2">
-                      <Info className="h-3 w-3 text-primary" />
-                      Escala:
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">5</Badge> <span className="truncate">Cumple totalmente</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">4</Badge> <span className="truncate">Con observaciones</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">3</Badge> <span className="truncate">Parcialmente</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">2</Badge> <span className="truncate">Deficiente</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="bg-background px-1 h-4 text-[9px]">1</Badge> <span className="truncate">No cumple</span>
-                      </div>
-                    </div>
+                <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-4">
+                  
+                  {/* Alerta de Criticidad ISO */}
+                  {provider.criticalityLevel === 'Crítico' && (
+                      <Alert className="bg-orange-50 border-orange-200">
+                          <ShieldAlert className="h-4 w-4 text-orange-600" />
+                          <AlertTitle className="text-orange-800 text-xs font-bold uppercase">Refuerzo Técnico Aplicado</AlertTitle>
+                          <AlertDescription className="text-[10px] text-orange-700">
+                              Bajo ISO 9001, los proveedores críticos tienen una ponderación mayor en Calidad y Competencia Técnica (45%).
+                          </AlertDescription>
+                      </Alert>
+                  )}
+
+                  <div className="space-y-4">
+                    {criteriaForForm.map((criterion) => (
+                        <FormField key={criterion.id} control={form.control} name={`scores.${criterion.id}`} render={({ field }) => (
+                        <FormItem className="bg-muted/30 p-4 rounded-lg border shadow-sm">
+                            <div className="flex justify-between items-center mb-2">
+                                <FormLabel className="text-sm font-bold flex-1">{criterion.label}</FormLabel>
+                                <Badge variant="outline" className="ml-2 font-mono">{(criterion.weight * 100).toFixed(0)}%</Badge>
+                            </div>
+                            <div className="flex items-center gap-6">
+                            <FormControl>
+                                <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={(value) => field.onChange(value[0])} className="flex-1" />
+                            </FormControl>
+                            <div className="w-12 h-12 rounded-full border-2 border-primary flex items-center justify-center font-black text-lg bg-background shadow-inner">
+                                {field.value}
+                            </div>
+                            </div>
+                            <div className="flex justify-between text-[10px] text-muted-foreground px-1 uppercase tracking-tighter">
+                                <span>No Cumple</span>
+                                <span>Excelente</span>
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                        )} />
+                    ))}
                   </div>
 
-                  <div className="space-y-4 rounded-md border bg-muted/50 p-4">
-                    <h4 className="font-semibold text-sm mb-2">Soportes de la Evaluación</h4>
-                    {showFracttalField ? (
-                      <>
-                        <FormField control={form.control} name="fracttalOrderIds" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>IDs Órdenes de Compra (Fracttal)</FormLabel>
-                            <FormControl><Textarea placeholder="Listar IDs separados por coma, ej: FA-123, FA-124" {...field} /></FormControl>
-                            <FormDescription>Registre los identificadores de las órdenes de compra evaluadas.</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="evidenceFile" render={() => (
-                          <FormItem>
-                            <FormLabel>Adjuntar Soporte Adicional (Opcional)</FormLabel>
-                            <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} /></FormControl>
-                            <FormDescription>Puede adjuntar un informe de resumen u otro soporte.</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </>
-                    ) : (
-                       <FormField control={form.control} name="evidenceFile" render={() => (
-                          <FormItem>
-                            <FormLabel>Adjuntar Soporte (Opcional)</FormLabel>
-                            <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                    )}
-                  </div>
-                  {criteriaForForm.map((criterion) => (
-                    criterion.weight > 0 &&
-                    <FormField key={criterion.id} control={form.control} name={`scores.${criterion.id}`} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{criterion.label} <span className="text-muted-foreground">({(criterion.weight * 100).toFixed(0)}%)</span></FormLabel>
-                        <div className="flex items-center gap-4">
-                          <FormControl>
-                            <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={(value) => field.onChange(value[0])} className="flex-1" />
-                          </FormControl>
-                          <span className="w-8 text-center font-bold">{field.value}</span>
-                        </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="fracttalOrderIds" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel className="text-xs">Evidencia Órdenes de Trabajo / Compra</FormLabel>
+                        <FormControl><Textarea placeholder="IDs separados por coma..." {...field} className="text-xs min-h-[80px]" /></FormControl>
                         <FormMessage />
-                      </FormItem>
+                        </FormItem>
                     )} />
-                  ))}
-                  <FormField control={form.control} name="comments" render={({ field }) => (
+                    <FormField control={form.control} name="comments" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel className="text-xs">Observaciones Generales</FormLabel>
+                        <FormControl><Textarea placeholder="Detalles del desempeño..." {...field} className="text-xs min-h-[80px]" /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )} />
+                  </div>
+
+                  <FormField control={form.control} name="evidenceFile" render={() => (
                     <FormItem>
-                      <FormLabel>Comentarios Adicionales</FormLabel>
-                      <FormControl><Textarea placeholder="Añade tus observaciones aquí..." {...field} /></FormControl>
-                      <FormMessage />
+                        <FormLabel className="text-xs">Anexo de Soporte (Opcional - PDF)</FormLabel>
+                        <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} className="text-xs" /></FormControl>
+                        <FormMessage />
                     </FormItem>
                   )} />
                 </div>
-                <div className="flex items-center justify-end gap-4 rounded-lg bg-muted/50 p-4">
-                  <span className="text-lg font-semibold">Puntaje Total:</span>
-                  <span className="text-2xl font-bold text-primary">{totalScore.toFixed(2)} / 5.00</span>
+
+                <div className="flex flex-col gap-4">
+                    {needsAction && totalScore > 0 && (
+                        <Alert variant="destructive" className="animate-pulse">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle className="font-bold">REQUIERE PLAN DE ACCIÓN CORRECTIVO</AlertTitle>
+                            <AlertDescription className="text-xs">
+                                Según ISO 9001, un desempeño inferior al 70% exige medidas inmediatas para mitigar riesgos de calidad.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    
+                    <div className="flex items-center justify-between p-6 rounded-xl bg-primary text-primary-foreground shadow-lg">
+                        <div className="flex flex-col">
+                            <span className="text-xs font-bold uppercase tracking-widest opacity-80">Calificación Final</span>
+                            <span className="text-3xl font-black">{totalScore.toFixed(2)} <span className="text-sm font-normal">/ 5.00</span></span>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-xs font-bold uppercase tracking-widest opacity-80">Equivalente</span>
+                            <div className="text-3xl font-black">{(totalScore * 20).toFixed(0)}%</div>
+                        </div>
+                    </div>
                 </div>
-                <DialogFooter>
+
+                <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={handleClose}>Cancelar</Button>
-                  <Button type="submit" disabled={isFormSubmitting}>
-                    {(isUploading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isUploading ? 'Subiendo archivo...' : 'Guardar Evaluación'}
+                  <Button type="submit" disabled={isFormSubmitting} className="min-w-[150px]">
+                    {isFormSubmitting ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {isUploading ? 'Subiendo...' : 'Guardando...'}</>
+                    ) : 'Cerrar Evaluación'}
                   </Button>
                 </DialogFooter>
               </form>

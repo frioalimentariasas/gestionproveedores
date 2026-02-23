@@ -8,7 +8,7 @@ import {
 } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import React, { useMemo } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2, TrendingUp, Info } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -22,10 +22,13 @@ import {
   EVALUATION_TYPES,
   getCriteriaForType,
   type EvaluationType,
+  requiresActionPlan,
 } from '@/lib/evaluations';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { Button } from '../ui/button';
 import Link from 'next/link';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface Provider {
   id: string;
@@ -33,6 +36,7 @@ interface Provider {
   categoryIds?: string[];
   documentNumber: string;
   email: string;
+  criticalityLevel?: 'Crítico' | 'No Crítico';
 }
 
 interface Evaluation {
@@ -41,6 +45,7 @@ interface Evaluation {
   totalScore: number;
   scores: Record<string, number>;
   createdAt: Timestamp;
+  isActionPlanRequired?: boolean;
 }
 
 interface ComparisonViewProps {
@@ -74,7 +79,7 @@ function useProviderEvaluations(providerId: string) {
   return useCollection<Evaluation>(evaluationsQuery);
 }
 
-const EvaluationScoreCard = ({ evaluations }: { evaluations: WithId<Evaluation>[] | null }) => {
+const EvaluationScoreCard = ({ evaluations, provider }: { evaluations: WithId<Evaluation>[] | null, provider: Provider }) => {
   const latestEvaluations = useMemo(() => {
     if (!evaluations) return {};
 
@@ -87,34 +92,66 @@ const EvaluationScoreCard = ({ evaluations }: { evaluations: WithId<Evaluation>[
     return latest;
   }, [evaluations]);
 
+  const hasFailingScores = useMemo(() => {
+      return Object.values(latestEvaluations).some(ev => requiresActionPlan(ev!.totalScore));
+  }, [latestEvaluations]);
+
   if (Object.keys(latestEvaluations).length === 0) {
-    return <p className="text-sm text-muted-foreground">Sin evaluaciones.</p>;
+    return <p className="text-xs text-muted-foreground py-4 text-center border-2 border-dashed rounded-md">Sin historial de desempeño.</p>;
   }
 
   return (
     <div className="space-y-6">
+      {hasFailingScores && (
+          <div className="bg-destructive/10 border border-destructive/20 p-2 rounded flex items-start gap-2 animate-pulse">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <p className="text-[10px] text-destructive font-bold uppercase leading-tight">Acción Correctiva ISO 9001 Obligatoria</p>
+          </div>
+      )}
+
       {(Object.keys(latestEvaluations) as EvaluationType[]).map((type) => {
         const evaluation = latestEvaluations[type];
         if (!evaluation) return null;
         
-        const chartData = getCriteriaForType(type).map(crit => ({
+        const isCritical = provider.criticalityLevel === 'Crítico';
+        const criteria = getCriteriaForType(evaluation.evaluationType, isCritical);
+        
+        const chartData = criteria.map(crit => ({
             name: crit.label,
             Puntaje: evaluation.scores[crit.id] || 0
         }));
 
+        const isLow = requiresActionPlan(evaluation.totalScore);
+
         return (
-          <div key={type}>
-            <h4 className="font-semibold text-sm mb-2">{EVALUATION_TYPES[type]}</h4>
-            <div className="flex items-end gap-2 mb-2">
-                 <p className="text-2xl font-bold text-primary">{evaluation.totalScore.toFixed(2)}</p>
-                 <p className="text-sm text-muted-foreground -translate-y-0.5">/ 5.00</p>
+          <div key={type} className="border-b last:border-0 pb-4">
+            <div className="flex justify-between items-start mb-2">
+                <h4 className="font-bold text-[10px] uppercase text-muted-foreground">{EVALUATION_TYPES[type]}</h4>
+                <Badge variant={isLow ? "destructive" : "default"} className="h-5 text-[10px]">
+                    {(evaluation.totalScore * 20).toFixed(0)}%
+                </Badge>
             </div>
-            <ResponsiveContainer width="100%" height={150}>
-              <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 0, left: 50, bottom: 5 }}>
+            
+            <div className="flex items-baseline gap-1 mb-3">
+                 <p className={cn("text-2xl font-black", isLow ? "text-destructive" : "text-primary")}>
+                    {evaluation.totalScore.toFixed(2)}
+                 </p>
+                 <p className="text-[10px] text-muted-foreground">/ 5.00</p>
+            </div>
+
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
                 <XAxis type="number" domain={[0, 5]} hide />
-                <YAxis type="category" dataKey="name" hide />
-                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
-                <Bar dataKey="Puntaje" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={12}/>
+                <YAxis type="category" dataKey="name" width={10} axisLine={false} tickLine={false} hide/>
+                <Tooltip 
+                    cursor={{fill: 'hsl(var(--muted))'}} 
+                    contentStyle={{fontSize: '10px', borderRadius: '8px'}}
+                />
+                <Bar dataKey="Puntaje" radius={[0, 4, 4, 0]} barSize={10}>
+                    {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.Puntaje < 3.5 ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} />
+                    ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -131,20 +168,47 @@ const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) =>
     error,
   } = useProviderEvaluations(provider.id);
 
+  const isAtRisk = useMemo(() => {
+      if (!evaluations || evaluations.length === 0) return false;
+      const latest = evaluations.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())[0];
+      return requiresActionPlan(latest.totalScore);
+  }, [evaluations]);
+
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle>{provider.businessName}</CardTitle>
+    <Card className={cn(
+        "flex flex-col border-t-4 transition-all hover:shadow-md",
+        isAtRisk ? "border-t-destructive bg-destructive/5" : "border-t-primary"
+    )}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start gap-2">
+            <CardTitle className="text-lg leading-tight">{provider.businessName}</CardTitle>
+            <Badge variant={provider.criticalityLevel === 'Crítico' ? 'destructive' : 'outline'} className="text-[9px] shrink-0">
+                {provider.criticalityLevel || 'No asignado'}
+            </Badge>
+        </div>
+        <CardDescription className="text-[10px] uppercase font-mono">NIT: {provider.documentNumber}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        {isLoading && <Loader2 className="h-6 w-6 animate-spin" />}
-        {error && <p className="text-destructive text-sm">Error al cargar evaluaciones.</p>}
-        {!isLoading && !error && <EvaluationScoreCard evaluations={evaluations} />}
+        {isLoading && <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+        {error && <p className="text-destructive text-xs">Error al cargar datos ISO.</p>}
+        {!isLoading && !error && <EvaluationScoreCard evaluations={evaluations} provider={provider} />}
       </CardContent>
-       <CardFooter>
-        <Button asChild className="w-full">
+       <CardFooter className="pt-2 flex flex-col gap-2">
+        {isAtRisk ? (
+            <Alert variant="destructive" className="py-2 px-3 border-dashed">
+                <AlertDescription className="text-[10px] font-bold">
+                    RIESGO ISO: DESEMPEÑO INSUFICIENTE.
+                </AlertDescription>
+            </Alert>
+        ) : evaluations && evaluations.length > 0 && (
+            <div className="w-full flex items-center justify-center gap-2 text-green-600 text-[10px] font-bold bg-green-50 py-1 rounded border border-green-100">
+                <CheckCircle2 className="h-3 w-3" /> CUMPLE ISO 9001
+            </div>
+        )}
+        
+        <Button asChild variant={isAtRisk ? "destructive" : "default"} className="w-full text-xs font-bold uppercase tracking-tighter">
           <Link href={`/selection/new?name=${encodeURIComponent(provider.businessName)}&nit=${provider.documentNumber}&email=${provider.email}`}>
-            Iniciar Proceso de Selección
+            {isAtRisk ? "Sustituir Proveedor (Acción Correctiva)" : "Nuevo Proceso de Selección"}
           </Link>
         </Button>
       </CardFooter>
@@ -170,10 +234,9 @@ export function ComparisonView({ categoryId }: ComparisonViewProps) {
   if (error) {
     return (
       <Alert variant="destructive">
-        <AlertTitle>Error al cargar proveedores</AlertTitle>
+        <AlertTitle>Error de Acceso</AlertTitle>
         <AlertDescription>
-          No se pudieron cargar los proveedores de esta categoría. Es posible
-          que necesites configurar un índice en Firestore.
+          No se pudieron consultar los registros de desempeño para esta categoría.
         </AlertDescription>
       </Alert>
     );
@@ -181,23 +244,31 @@ export function ComparisonView({ categoryId }: ComparisonViewProps) {
 
   if (!providers || providers.length === 0) {
     return (
-      <div className="text-center py-16 border-2 border-dashed rounded-lg">
-        <h3 className="text-lg font-semibold">
-          No hay proveedores en esta categoría
-        </h3>
-        <p className="text-muted-foreground mt-2">
-          Asigna proveedores a esta categoría desde la página de Gestión de
-          Proveedores.
+      <div className="text-center py-16 border-2 border-dashed rounded-lg bg-muted/30">
+        <TrendingUp className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold">Sin proveedores en esta categoría</h3>
+        <p className="text-muted-foreground mt-2 max-w-xs mx-auto">
+          Asigna proveedores a esta categoría operativa para comparar su desempeño histórico.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {providers.map((provider) => (
-        <ProviderComparisonCard key={provider.id} provider={provider} />
-      ))}
+    <div className="space-y-8">
+        <div className="bg-primary/5 p-4 rounded-lg border flex items-center gap-4">
+            <div className="bg-white p-2 rounded shadow-sm">
+                <Info className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Control ISO 9001:</strong> Esta vista permite el re-evaluación periódica. Los proveedores resaltados en rojo representan un riesgo para el sistema de gestión y requieren la apertura de un proceso de selección para su posible sustitución.
+            </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {providers.map((provider) => (
+                <ProviderComparisonCard key={provider.id} provider={provider} />
+            ))}
+        </div>
     </div>
   );
 }
