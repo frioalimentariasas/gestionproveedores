@@ -140,9 +140,9 @@ export const providerFormSchema = z
     taxRegimeType: z.string().min(1, 'El tipo de régimen es requerido.'),
     isLargeTaxpayer: z.string().optional(),
     largeTaxpayerResolution: z.string().optional(),
-    isIncomeSelfRetainer: z.string().min(1, 'Requerido.'),
+    isIncomeSelfRetainer: z.string().optional(),
     incomeSelfRetainerResolution: z.string().optional(),
-    isIcaSelfRetainer: z.string().min(1, 'Requerido.'),
+    isIcaSelfRetainer: z.string().optional(),
     icaSelfRetainerMunicipality: z.string().optional(),
     icaSelfRetainerResolution: z.string().optional(),
     ciiuCode: z.string().min(1, 'El código CIIU es requerido.'),
@@ -234,6 +234,14 @@ export const providerFormSchema = z
       }
       if (data.isLargeTaxpayer === 'Sí' && !data.largeTaxpayerResolution) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Resolución requerida.', path: ['largeTaxpayerResolution'] });
+      }
+
+      // Mandatory self-retainer questions for Regime Común
+      if (!data.isIncomeSelfRetainer) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Requerido.', path: ['isIncomeSelfRetainer'] });
+      }
+      if (!data.isIcaSelfRetainer) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Requerido.', path: ['isIcaSelfRetainer'] });
       }
     }
 

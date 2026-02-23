@@ -507,70 +507,72 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             <FormField control={form.control} name="taxRegimeType" render={({ field }) => (<FormItem><FormLabel>Tipo de Régimen</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
             
             {watchedTaxRegimeType === 'Común' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
-                {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
-              </div>
-            )}
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                  {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-                <FormField control={form.control} name="isIncomeSelfRetainer" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>¿Es Autorretenedor de Renta?</FormLabel>
-                        <FormControl>
-                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
-                                {yesNoOptions.map((opt) => (
-                                    <FormItem key={opt} className="flex items-center space-x-2">
-                                        <FormControl><RadioGroupItem value={opt} /></FormControl>
-                                        <Label className="font-normal">{opt}</Label>
-                                    </FormItem>
-                                ))}
-                            </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                {watchedIsIncomeSelfRetainer === 'Sí' && (
-                    <FormField control={form.control} name="incomeSelfRetainerResolution" render={({ field }) => (
-                        <FormItem><FormLabel>Resolución Autorretenedor Renta</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                    <FormField control={form.control} name="isIncomeSelfRetainer" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>¿Es Autorretenedor de Renta?</FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                                    {yesNoOptions.map((opt) => (
+                                        <FormItem key={opt} className="flex items-center space-x-2">
+                                            <FormControl><RadioGroupItem value={opt} /></FormControl>
+                                            <Label className="font-normal">{opt}</Label>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
                     )} />
-                )}
-            </div>
+                    {watchedIsIncomeSelfRetainer === 'Sí' && (
+                        <FormField control={form.control} name="incomeSelfRetainerResolution" render={({ field }) => (
+                            <FormItem><FormLabel>Resolución Autorretenedor Renta</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    )}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-                <FormField control={form.control} name="isIcaSelfRetainer" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>¿Es Autorretenedor de ICA?</FormLabel>
-                        <FormControl>
-                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
-                                {yesNoOptions.map((opt) => (
-                                    <FormItem key={opt} className="flex items-center space-x-2">
-                                        <FormControl><RadioGroupItem value={opt} /></FormControl>
-                                        <Label className="font-normal">{opt}</Label>
-                                    </FormItem>
-                                ))}
-                            </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                {watchedIsIcaSelfRetainer === 'Sí' && (
-                    <div className="grid grid-cols-1 gap-4">
-                        <FormField control={form.control} name="icaSelfRetainerMunicipality" render={({ field }) => (
-                            <FormItem><FormLabel>Municipio ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="icaSelfRetainerResolution" render={({ field }) => (
-                            <FormItem><FormLabel>Resolución Autorretenedor ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="icaPercentage" render={({ field }) => (
-                            <FormItem><FormLabel>Porcentaje según ICA (%)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="icaCode" render={({ field }) => (
-                            <FormItem><FormLabel>Código actividad económica ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                    </div>
-                )}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                    <FormField control={form.control} name="isIcaSelfRetainer" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>¿Es Autorretenedor de ICA?</FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                                    {yesNoOptions.map((opt) => (
+                                        <FormItem key={opt} className="flex items-center space-x-2">
+                                            <FormControl><RadioGroupItem value={opt} /></FormControl>
+                                            <Label className="font-normal">{opt}</Label>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    {watchedIsIcaSelfRetainer === 'Sí' && (
+                        <div className="grid grid-cols-1 gap-4">
+                            <FormField control={form.control} name="icaSelfRetainerMunicipality" render={({ field }) => (
+                                <FormItem><FormLabel>Municipio ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="icaSelfRetainerResolution" render={({ field }) => (
+                                <FormItem><FormLabel>Resolución Autorretenedor ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="icaPercentage" render={({ field }) => (
+                                <FormItem><FormLabel>Porcentaje según ICA (%)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="icaCode" render={({ field }) => (
+                                <FormItem><FormLabel>Código actividad económica ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                    )}
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
                 <FormField control={form.control} name="ciiuCode" render={({ field }) => (
