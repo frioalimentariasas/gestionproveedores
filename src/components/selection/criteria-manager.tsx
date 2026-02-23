@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -14,7 +13,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Save, Scale, Gavel, AlertCircle, Wrench, Truck, CircleDollarSign, ShieldCheck, Info } from 'lucide-react';
+import { Save, Scale, Gavel, AlertCircle, Wrench, Truck, CircleDollarSign, ShieldCheck, Info, CheckCircle2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
@@ -165,8 +164,8 @@ export function CriteriaManager({
      return (
         <div className="space-y-6">
             <div className="flex items-center gap-2 border-b pb-2">
-                <Scale className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-lg">Criterios de Selección Aplicados</h3>
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-lg">Criterios ISO 9001 Aplicados</h3>
             </div>
             {(!criteria || criteria.length === 0) ? (
                 <p className="text-center text-sm text-muted-foreground">No se definieron criterios para este proceso cerrado.</p>
@@ -181,7 +180,7 @@ export function CriteriaManager({
                     ))}
                 </div>
                 <div className="flex items-center gap-4 pt-4 border-t">
-                    <span className="text-sm font-bold">Total Peso:</span>
+                    <span className="text-sm font-bold">Cumplimiento Total:</span>
                     <Progress value={criteria.reduce((s, c) => s + c.weight, 0)} className="flex-1" />
                     <span className="text-sm font-bold">{criteria.reduce((s, c) => s + c.weight, 0)}%</span>
                 </div>
@@ -196,14 +195,12 @@ export function CriteriaManager({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="bg-primary/5 p-4 rounded-lg border flex items-start gap-3">
-            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="text-sm">
-                <p className="font-bold">Ajuste por Criticidad: {criticalityLevel}</p>
+                <p className="font-bold">Protocolo de Selección ISO 9001 - Criticidad: {criticalityLevel}</p>
                 <p className="text-muted-foreground">
-                    Los pesos se han inicializado según el nivel de criticidad seleccionado. 
-                    {criticalityLevel === 'Crítico' ? 
-                        ' Se ha incrementado la Capacidad Técnica (40%) y Gestión de Riesgo (15%).' : 
-                        ' Se mantiene la ponderación estándar.'}
+                    Los pesos se han inicializado según el estándar normativo. Para proveedores <strong>Críticos</strong>, 
+                    se ha priorizado la Capacidad Técnica (40%) y la Gestión de Continuidad (15%) para mitigar riesgos operativos.
                 </p>
             </div>
         </div>
@@ -211,7 +208,7 @@ export function CriteriaManager({
         {form.formState.errors.criteria?.root && (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4"/>
-                <AlertTitle>Error en los Pesos</AlertTitle>
+                <AlertTitle>Error de Ponderación</AlertTitle>
                 <AlertDescription>{form.formState.errors.criteria.root?.message}</AlertDescription>
             </Alert>
         )}
@@ -410,7 +407,7 @@ export function CriteriaManager({
         <div className="flex justify-end">
           <Button type="submit" size="lg" disabled={totalWeight !== 100}>
             <Save className="mr-2 h-5 w-5" />
-            Guardar Criterios
+            Guardar Criterios ISO
           </Button>
         </div>
       </form>

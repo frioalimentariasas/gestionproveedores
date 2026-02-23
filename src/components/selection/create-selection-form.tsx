@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +18,7 @@ import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -93,11 +92,14 @@ export default function CreateSelectionForm() {
   }
 
   return (
-    <Card>
+    <Card className="border-t-4 border-t-primary">
       <CardHeader>
-        <CardTitle>1. Definir el Proceso</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            Definición del Proceso ISO
+        </CardTitle>
         <CardDescription>
-          Dale un nombre a este proceso de selección, define el sector y el nivel de criticidad.
+          Establezca los parámetros iniciales para la selección competitiva de proveedores según el Sistema de Gestión de Calidad.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -111,7 +113,7 @@ export default function CreateSelectionForm() {
                   <FormLabel>Nombre del Proceso de Selección</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Ej: Compra de papelería para oficina"
+                      placeholder="Ej: Suministro de Repuestos Críticos para Maquinaria"
                       {...field}
                     />
                   </FormControl>
@@ -126,7 +128,7 @@ export default function CreateSelectionForm() {
                 name="type"
                 render={({ field }) => (
                     <FormItem className="space-y-3">
-                    <FormLabel>Sector</FormLabel>
+                    <FormLabel>Sector de Suministro</FormLabel>
                     <FormControl>
                         <RadioGroup
                         onValueChange={field.onChange}
@@ -137,14 +139,14 @@ export default function CreateSelectionForm() {
                             <FormControl>
                             <RadioGroupItem value="Productos" />
                             </FormControl>
-                            <FormLabel className="font-normal">Productos</FormLabel>
+                            <FormLabel className="font-normal">Productos (Bienes tangibles)</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
                             <RadioGroupItem value="Servicios" />
                             </FormControl>
                             <FormLabel className="font-normal">
-                            Servicios
+                            Servicios (Prestaciones técnicas)
                             </FormLabel>
                         </FormItem>
                         </RadioGroup>
@@ -159,7 +161,7 @@ export default function CreateSelectionForm() {
                 name="criticalityLevel"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Nivel de Criticidad</FormLabel>
+                    <FormLabel>Impacto en el Proceso (Criticidad)</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger>
@@ -167,8 +169,8 @@ export default function CreateSelectionForm() {
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                        <SelectItem value="Crítico">Crítico</SelectItem>
-                        <SelectItem value="No Crítico">No Crítico</SelectItem>
+                        <SelectItem value="Crítico">Crítico (Impacto directo en calidad final)</SelectItem>
+                        <SelectItem value="No Crítico">No Crítico (Insumos de soporte)</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />
@@ -177,12 +179,12 @@ export default function CreateSelectionForm() {
                 />
             </div>
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={isSubmitting} size="lg">
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Siguiente: Definir Criterios'
+                  'Siguiente: Definir Criterios ISO'
                 )}
               </Button>
             </div>

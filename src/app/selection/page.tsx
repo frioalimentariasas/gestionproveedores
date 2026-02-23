@@ -4,7 +4,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ClipboardCheck } from 'lucide-react';
 import SelectionEventsList from '@/components/selection/selection-events-list';
 
 export default function SelectionPage() {
@@ -28,16 +28,20 @@ export default function SelectionPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto p-4">
-        <h1 className="my-8 text-center text-4xl font-bold tracking-tight">
-          Selección de Proveedores
-        </h1>
-        <p className="text-center text-muted-foreground mb-8">
-          Crea y gestiona procesos de selección para comparar y elegir al mejor proveedor para cada necesidad.
-        </p>
+        <div className="flex flex-col items-center gap-2 my-8">
+            <div className="bg-primary/10 p-3 rounded-full mb-2">
+                <ClipboardCheck className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight text-center">
+                Selección de Proveedores ISO 9001
+            </h1>
+            <p className="text-center text-muted-foreground max-w-2xl">
+                Gestión de procesos de selección bajo el marco normativo ISO 9001:2015. 
+                Asegure la transparencia, competencia técnica y cumplimiento legal en la elección de nuevos suministros y servicios.
+            </p>
+        </div>
         <SelectionEventsList />
       </div>
     </AuthGuard>
   );
 }
-
-    
