@@ -233,13 +233,13 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="sm:max-w-[750px] max-h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary" 
+        className="sm:max-w-[750px] h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary" 
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {!provider ? (
-          <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          <div className="flex items-center justify-center flex-1"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : !selectedCategoryId ? (
-          <div className="flex flex-col h-full p-6">
+          <div className="flex flex-col flex-1 p-6 overflow-hidden">
             <DialogHeader className="shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -249,7 +249,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                 Selecciona la categoría operativa para evaluar a <strong>{provider.businessName}</strong>.
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-1 mt-4 pr-4">
+            <ScrollArea className="flex-grow mt-4 pr-4">
               <div className="grid gap-4 py-1">
                 {providerCategories.length > 0 ? providerCategories.map((cat) => (
                   <Button key={cat.id} variant="outline" className="justify-between h-auto py-4 text-left group hover:border-primary" onClick={() => setSelectedCategoryId(cat.id)}>
@@ -260,36 +260,40 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                     <Info className="h-4 w-4 opacity-20 group-hover:opacity-100 transition-opacity" />
                   </Button>
                 )) : (
-                  <p className="text-sm text-muted-foreground text-center py-8 bg-muted/30 rounded-lg border-2 border-dashed">
-                      Este proveedor no tiene categorías asignadas. Por favor, asígnale categorías en la Gestión de Proveedores.
-                  </p>
+                  <div className="text-sm text-muted-foreground text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed flex flex-col items-center gap-2">
+                      <AlertTriangle className="h-8 w-8 opacity-20" />
+                      <p>Este proveedor no tiene categorías asignadas.</p>
+                      <p className="text-xs">Por favor, asígnale categorías en la Gestión de Proveedores.</p>
+                  </div>
                 )}
               </div>
             </ScrollArea>
-            <DialogFooter className="shrink-0 pt-4 border-t">
+            <DialogFooter className="shrink-0 pt-4 border-t mt-4">
               <Button type="button" variant="secondary" onClick={handleClose}>Cancelar</Button>
             </DialogFooter>
           </div>
         ) : isLoadingCategory ? (
-            <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            <div className="flex items-center justify-center flex-1"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <div className="flex flex-col h-full p-6 overflow-hidden">
-            <DialogHeader className="shrink-0">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <DialogTitle className="text-xl">{evaluationTitle}</DialogTitle>
-                <Badge variant={provider.criticalityLevel === 'Crítico' ? 'destructive' : 'secondary'} className="uppercase text-[10px]">
-                    Impacto: {provider.criticalityLevel}
-                </Badge>
-              </div>
-              <DialogDescription>
-                Califica el desempeño según el cumplimiento de requisitos del periodo evaluado.
-              </DialogDescription>
-            </DialogHeader>
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="p-6 pb-2 shrink-0">
+              <DialogHeader>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <DialogTitle className="text-xl">{evaluationTitle}</DialogTitle>
+                  <Badge variant={provider.criticalityLevel === 'Crítico' ? 'destructive' : 'secondary'} className="uppercase text-[10px]">
+                      Impacto: {provider.criticalityLevel}
+                  </Badge>
+                </div>
+                <DialogDescription>
+                  Califica el desempeño según el cumplimiento de requisitos del periodo evaluado.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <ScrollArea className="flex-1 mt-4 pr-4 -mr-2">
-                  <div className="space-y-6 pb-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+                <ScrollArea className="flex-grow px-6">
+                  <div className="space-y-6 py-4">
                     {/* Alerta de Criticidad ISO */}
                     {provider.criticalityLevel === 'Crítico' && (
                         <Alert className="bg-orange-50 border-orange-200">
@@ -354,9 +358,9 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                   </div>
                 </ScrollArea>
 
-                <div className="shrink-0 pt-4 space-y-4 bg-background border-t mt-2">
+                <div className="p-6 pt-2 shrink-0 border-t bg-background space-y-4 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
                     {needsAction && totalScore > 0 && (
-                        <Alert variant="destructive" className="py-2">
+                        <Alert variant="destructive" className="py-2 border-dashed animate-pulse">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertTitle className="text-xs font-bold">REQUIERE PLAN DE ACCIÓN CORRECTIVO</AlertTitle>
                             <AlertDescription className="text-[10px]">
@@ -367,7 +371,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                     
                     <div className="flex items-center justify-between p-4 rounded-xl bg-primary text-primary-foreground shadow-lg">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Calificación</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Calificación Final</span>
                             <span className="text-2xl font-black">{totalScore.toFixed(2)} <span className="text-xs font-normal opacity-60">/ 5.00</span></span>
                         </div>
                         <div className="text-right">
