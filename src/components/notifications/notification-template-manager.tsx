@@ -59,6 +59,13 @@ const DEFAULT_TEMPLATES: Template[] = [
     variables: ['providerName'],
   },
   {
+    id: 'evaluation_failed_provider',
+    name: 'Notificación de Hallazgos en Evaluación (Plan de Mejora)',
+    subject: 'Hallazgos en Evaluación de Desempeño: {{evaluationType}}',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Su evaluación de desempeño ha arrojado un resultado de {{score}} / 5.00.</p><p>Debe radicar un compromiso de mejora aquí: <a href="{{evaluationsUrl}}">Radicar Compromiso</a></p>',
+    variables: ['providerName', 'score', 'evaluationType', 'evaluationsUrl'],
+  },
+  {
     id: 'password_reset_provider',
     name: 'Restablecimiento de Contraseña',
     subject: 'Restablecimiento de Contraseña de su Cuenta',

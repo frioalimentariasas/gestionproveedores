@@ -50,7 +50,10 @@ service cloud.firestore {
       allow delete: if isExistingOwner(providerId);
       
       match /evaluations/{evaluationId} {
-        allow read, write: if isAdmin();
+        allow read: if isOwner(providerId) || isAdmin();
+        // Allow providers to ONLY update the improvementCommitment fields
+        allow update: if isOwner(providerId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['improvementCommitment', 'commitmentSubmittedAt']);
+        allow write: if isAdmin();
       }
     }
 

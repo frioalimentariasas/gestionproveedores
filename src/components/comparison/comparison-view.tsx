@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -7,8 +8,8 @@ import {
   WithId,
 } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
-import React, { useMemo } from 'react';
-import { Loader2, AlertTriangle, CheckCircle2, TrendingUp, Info } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Loader2, AlertTriangle, CheckCircle2, TrendingUp, Info, Mail, Send } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -29,6 +30,8 @@ import { Button } from '../ui/button';
 import Link from 'next/link';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { notifyProviderEvaluationFailed } from '@/actions/email';
 
 interface Provider {
   id: string;
@@ -162,17 +165,45 @@ const EvaluationScoreCard = ({ evaluations, provider }: { evaluations: WithId<Ev
 };
 
 const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) => {
+  const { toast } = useToast();
+  const [isNotifying, setIsNotifying] = useState(false);
   const {
     data: evaluations,
     isLoading,
     error,
   } = useProviderEvaluations(provider.id);
 
-  const isAtRisk = useMemo(() => {
-      if (!evaluations || evaluations.length === 0) return false;
-      const latest = evaluations.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())[0];
-      return requiresActionPlan(latest.totalScore);
+  const latestEvaluation = useMemo(() => {
+      if (!evaluations || evaluations.length === 0) return null;
+      return [...evaluations].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())[0];
   }, [evaluations]);
+
+  const isAtRisk = useMemo(() => {
+      if (!latestEvaluation) return false;
+      return requiresActionPlan(latestEvaluation.totalScore);
+  }, [latestEvaluation]);
+
+  const handleNotifyFailure = async () => {
+      if (!latestEvaluation) return;
+      setIsNotifying(true);
+      try {
+          const result = await notifyProviderEvaluationFailed({
+              providerEmail: provider.email,
+              providerName: provider.businessName,
+              score: latestEvaluation.totalScore,
+              evaluationType: EVALUATION_TYPES[latestEvaluation.evaluationType]
+          });
+          if (result.success) {
+              toast({ title: 'Hallazgos Notificados', description: 'Se ha enviado un correo al proveedor con los detalles técnicos para su mejora.' });
+          } else {
+              throw new Error(result.error);
+          }
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: 'Error al Notificar', description: e.message });
+      } finally {
+          setIsNotifying(false);
+      }
+  };
 
   return (
     <Card className={cn(
@@ -195,11 +226,23 @@ const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) =>
       </CardContent>
        <CardFooter className="pt-2 flex flex-col gap-2">
         {isAtRisk ? (
-            <Alert variant="destructive" className="py-2 px-3 border-dashed">
-                <AlertDescription className="text-[10px] font-bold">
-                    RIESGO ISO: DESEMPEÑO INSUFICIENTE.
-                </AlertDescription>
-            </Alert>
+            <div className="space-y-2 w-full">
+                <Alert variant="destructive" className="py-2 px-3 border-dashed">
+                    <AlertDescription className="text-[10px] font-bold">
+                        RIESGO ISO: DESEMPEÑO INSUFICIENTE.
+                    </AlertDescription>
+                </Alert>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-[10px] h-8 font-bold border-destructive text-destructive hover:bg-destructive hover:text-white"
+                    onClick={handleNotifyFailure}
+                    disabled={isNotifying}
+                >
+                    {isNotifying ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Mail className="h-3 w-3 mr-1" />}
+                    Notificar Hallazgos al Proveedor
+                </Button>
+            </div>
         ) : evaluations && evaluations.length > 0 && (
             <div className="w-full flex items-center justify-center gap-2 text-green-600 text-[10px] font-bold bg-green-50 py-1 rounded border border-green-100">
                 <CheckCircle2 className="h-3 w-3" /> CUMPLE ISO 9001
@@ -261,7 +304,7 @@ export function ComparisonView({ categoryId }: ComparisonViewProps) {
                 <Info className="h-5 w-5 text-primary" />
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Control ISO 9001:</strong> Esta vista permite el re-evaluación periódica. Los proveedores resaltados en rojo representan un riesgo para el sistema de gestión y requieren la apertura de un proceso de selección para su posible sustitución.
+                <strong className="text-foreground">Control ISO 9001:</strong> Esta vista permite el re-evaluación periódica. Si un proveedor tiene hallazgos, el administrador debe notificarlo para que este radique su compromiso de mejora. De no haber mejora, se procede a la sustitución.
             </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

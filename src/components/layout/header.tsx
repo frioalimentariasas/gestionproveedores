@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import { doc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, ChevronDown, User as UserIcon, BellRing, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch, Home } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, BellRing, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch, Home, ClipboardList } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +50,8 @@ const adminNavLinks = [
 ];
 
 const providerNavLinks = [
-  { href: '/providers/form', label: 'Mi Perfil de Proveedor', icon: UserIcon }
+  { href: '/providers/form', label: 'Mi Perfil de Proveedor', icon: UserIcon },
+  { href: '/evaluations', label: 'Mis Evaluaciones ISO', icon: ClipboardList }
 ];
 
 interface ProviderData {

@@ -24,12 +24,17 @@ import {
   Calendar,
   FileText,
   FileBadge,
+  Eye,
+  MessageSquareQuote,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   EVALUATION_TYPES,
   type EvaluationType,
+  requiresActionPlan,
 } from '@/lib/evaluations';
 import {
   Card,
@@ -53,6 +58,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { EvaluationDetailModal } from '@/components/evaluations/evaluation-detail-modal';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface Evaluation {
   id: string;
@@ -63,6 +71,8 @@ interface Evaluation {
   scores: Record<string, number>;
   totalScore: number;
   comments: string;
+  improvementCommitment?: string;
+  commitmentSubmittedAt?: Timestamp;
   createdAt: Timestamp;
   evidenceFileUrl?: string;
   fracttalOrderIds?: string;
@@ -76,6 +86,7 @@ export default function ProviderEvaluationsPage() {
   const { isAdmin, isLoading: isRoleLoading } = useRole();
   const { toast } = useToast();
   const { user } = useUser();
+  const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
 
   const evaluationsCollectionRef = useMemoFirebase(
     () =>
@@ -164,139 +175,163 @@ export default function ProviderEvaluationsPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto max-w-5xl p-4 py-12">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between gap-4">
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Historial de Evaluaciones
+          <h1 className="text-3xl font-bold tracking-tight text-center flex-grow">
+            Historial de Desempeño ISO 9001
           </h1>
-          <div className="w-24"></div> {/* Spacer */}
+          <div className="w-24 hidden md:block"></div>
         </div>
 
         {sortedEvaluations && sortedEvaluations.length > 0 ? (
-          <div className="space-y-4">
-            {sortedEvaluations.map((evaluation) => (
-              <Card key={evaluation.id}>
-                <CardHeader>
-                  <CardTitle className="flex justify-between items-start">
-                    <div>
-                      {EVALUATION_TYPES[evaluation.evaluationType]}
-                      <div className="flex items-center text-yellow-500 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-5 w-5 ${
-                              evaluation.totalScore > i
-                                ? 'fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                        <span className="ml-2 text-lg font-bold text-gray-700">
-                          {evaluation.totalScore.toFixed(2)} / 5.00
-                        </span>
-                      </div>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            ¿Estás seguro de eliminar esta evaluación?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará
-                            permanentemente la evaluación del{' '}
-                            {format(
-                              evaluation.createdAt.toDate(),
-                              'dd MMMM, yyyy',
-                              { locale: es }
-                            )}
-                            .
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(evaluation.id)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </CardTitle>
-                  <CardDescription className="flex items-center text-sm pt-2">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Realizada por {evaluation.evaluatorName} el{' '}
-                    {format(evaluation.createdAt.toDate(), 'dd MMMM, yyyy', {
-                      locale: es,
-                    })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <h4 className="font-semibold mb-2">Comentarios:</h4>
-                  <p className="text-sm text-muted-foreground italic">
-                    {evaluation.comments || 'Sin comentarios.'}
-                  </p>
-                </CardContent>
-                {(evaluation.evidenceFileUrl ||
-                  evaluation.fracttalOrderIds) && (
-                  <CardFooter className="flex-col items-start gap-3 bg-muted/50 pt-4">
-                    <h4 className="font-semibold text-sm">
-                      Soportes de la Evaluación
-                    </h4>
-                    <div className="space-y-2 text-sm w-full">
-                      {evaluation.fracttalOrderIds && (
-                        <div>
-                          <span className="font-medium flex items-center gap-2">
-                             <FileBadge className="h-4 w-4 text-muted-foreground" />
-                            IDs Órdenes de Compra (Fracttal):
+          <div className="space-y-6">
+            {sortedEvaluations.map((evaluation) => {
+              const needsAction = requiresActionPlan(evaluation.totalScore);
+              
+              return (
+                <Card key={evaluation.id} className={cn(
+                    "border-l-8",
+                    needsAction ? "border-l-destructive" : "border-l-green-500"
+                )}>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex justify-between items-start flex-wrap gap-2">
+                      <div className="space-y-1">
+                        <span className="text-lg">{EVALUATION_TYPES[evaluation.evaluationType]}</span>
+                        <div className="flex items-center text-yellow-500">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                evaluation.totalScore > i
+                                  ? 'fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-xl font-black text-foreground">
+                            {evaluation.totalScore.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ 5.00</span>
                           </span>
-                          <p className="text-xs text-muted-foreground whitespace-pre-wrap bg-background p-2 rounded-md mt-1 border">
+                          <Badge variant={needsAction ? "destructive" : "default"} className="ml-4 h-6">
+                             {(evaluation.totalScore * 20).toFixed(0)}% Cumplimiento
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedEvaluation(evaluation)}>
+                            <Eye className="h-4 w-4 mr-2" /> Detalle scores
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar esta evaluación?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción eliminará permanentemente los registros de desempeño del{' '}
+                                {format(evaluation.createdAt.toDate(), 'dd/MM/yyyy')}.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(evaluation.id)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardTitle>
+                    <CardDescription className="flex items-center text-xs pt-1">
+                      <Calendar className="mr-2 h-3 w-3" />
+                      Auditoría por {evaluation.evaluatorName} el{' '}
+                      {format(evaluation.createdAt.toDate(), 'dd MMMM, yyyy', {
+                        locale: es,
+                      })}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                        <h4 className="font-bold text-xs uppercase text-muted-foreground mb-1">Observaciones del Evaluador:</h4>
+                        <p className="text-sm italic">
+                        {evaluation.comments || 'Sin comentarios.'}
+                        </p>
+                    </div>
+
+                    {evaluation.improvementCommitment ? (
+                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+                            <h4 className="font-bold text-xs uppercase text-primary flex items-center gap-2">
+                                <MessageSquareQuote className="h-4 w-4" /> Compromiso de Mejora del Proveedor:
+                            </h4>
+                            <p className="text-sm whitespace-pre-wrap text-foreground">
+                                {evaluation.improvementCommitment}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground text-right italic">
+                                Radicado el {format(evaluation.commitmentSubmittedAt?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
+                            </p>
+                        </div>
+                    ) : needsAction && (
+                        <div className="flex items-center gap-2 text-destructive font-bold text-xs bg-destructive/5 p-3 rounded-lg animate-pulse">
+                            <AlertTriangle className="h-4 w-4" />
+                            PENDIENTE: EL PROVEEDOR DEBE RADICAR COMPROMISO DE MEJORA
+                        </div>
+                    )}
+                  </CardContent>
+                  {(evaluation.evidenceFileUrl ||
+                    evaluation.fracttalOrderIds) && (
+                    <CardFooter className="flex-col items-start gap-3 bg-muted/50 py-4 rounded-b-lg border-t">
+                      <div className="flex items-center justify-between w-full">
+                        <h4 className="font-bold text-xs uppercase text-muted-foreground">Soportes de Verificación:</h4>
+                        <div className="flex gap-4">
+                            {evaluation.evidenceFileUrl && (
+                                <Button asChild variant="link" className="p-0 h-auto text-xs">
+                                    <a href={evaluation.evidenceFileUrl} target="_blank" rel="noopener noreferrer">
+                                        <FileText className="mr-1 h-3 w-3" /> Ver Documento PDF
+                                    </a>
+                                </Button>
+                            )}
+                        </div>
+                      </div>
+                      {evaluation.fracttalOrderIds && (
+                        <div className="w-full">
+                          <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase">
+                             <FileBadge className="h-3 w-3" /> Órdenes de Compra/Servicio (Bitácora):
+                          </p>
+                          <p className="text-[10px] text-muted-foreground bg-background p-2 rounded border mt-1 font-mono">
                             {evaluation.fracttalOrderIds}
                           </p>
                         </div>
                       )}
-                       {evaluation.evidenceFileUrl && (
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Documento adjunto:</span>
-                          <Button
-                            asChild
-                            variant="link"
-                            className="p-0 h-auto"
-                          >
-                            <a
-                              href={evaluation.evidenceFileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Ver Documento
-                            </a>
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardFooter>
-                )}
-              </Card>
-            ))}
+                    </CardFooter>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-lg font-semibold">No hay evaluaciones</h3>
+          <div className="text-center py-16 border-2 border-dashed rounded-lg bg-muted/20">
+            <CheckCircle2 className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold">Sin historial de desempeño</h3>
             <p className="text-muted-foreground mt-2">
-              Todavía no se ha realizado ninguna evaluación para este proveedor.
+              No se han registrado evaluaciones de calidad para este proveedor.
             </p>
           </div>
+        )}
+
+        {selectedEvaluation && (
+            <EvaluationDetailModal
+                isOpen={!!selectedEvaluation}
+                onClose={() => setSelectedEvaluation(null)}
+                evaluation={selectedEvaluation}
+            />
         )}
       </div>
     </AuthGuard>

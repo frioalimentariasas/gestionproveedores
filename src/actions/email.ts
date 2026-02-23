@@ -1,3 +1,4 @@
+
 'use server';
 
 import admin from '@/lib/firebase-admin';
@@ -70,7 +71,6 @@ async function sendTransactionalEmail({
   },
   replyTo
 }: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
-  // Reading key inside the function to ensure it's not cached as undefined during build
   const apiKey = process.env.BREVO_API_KEY;
 
   if (!apiKey) {
@@ -263,6 +263,42 @@ export async function notifyProviderFormUnlocked({
   });
 }
 
+export async function notifyProviderEvaluationFailed({
+  providerEmail,
+  providerName,
+  score,
+  evaluationType,
+}: {
+  providerEmail: string;
+  providerName: string;
+  score: number;
+  evaluationType: string;
+}) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
+  const evaluationsUrl = `${baseUrl}/evaluations`;
+  
+  const variables = { providerName, score: score.toFixed(2), evaluationType, evaluationsUrl };
+  const dynamic = await getDynamicTemplate('evaluation_failed_provider', variables);
+
+  const subject = dynamic?.subject || `Hallazgos en Evaluación de Desempeño: ${evaluationType}`;
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Hola, ${providerName}</h1>
+    <p>Le informamos que se ha registrado una evaluación de desempeño para su empresa con un resultado de <strong>${score.toFixed(2)} / 5.00</strong>.</p>
+    <p>Bajo la norma ISO 9001, este puntaje requiere la presentación de un <strong>Compromiso de Mejora</strong> para asegurar la continuidad de nuestra relación comercial.</p>
+    <p>Por favor, ingrese al portal para revisar el detalle de los criterios afectados y radicar su plan de acción:</p>
+    <p><a href="${evaluationsUrl}">Ver mis Evaluaciones y Radicar Compromiso</a></p>
+    <br>
+    <p>Cordialmente,</p>
+    <p>Departamento de Calidad - Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
 export async function notifyProviderPasswordReset({
   providerEmail,
   providerName,
@@ -279,34 +315,6 @@ export async function notifyProviderPasswordReset({
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
     <p>Tu nueva contraseña temporal es: <strong>${newPassword}</strong></p>
-    <br>
-    <p>Gracias,</p>
-    <p>El equipo de Frioalimentaria SAS</p>
-  `;
-  
-  return await sendTransactionalEmail({
-    to: [{ email: providerEmail, name: providerName }],
-    subject,
-    htmlContent,
-  });
-}
-
-export async function notifyProviderAccountStatus({
-  providerEmail,
-  providerName,
-  status,
-}: {
-  providerEmail: string;
-  providerName: string;
-  status: 'activada' | 'desactivada';
-}) {
-  const variables = { providerName, status };
-  const dynamic = await getDynamicTemplate('account_status_provider', variables);
-
-  const subject = dynamic?.subject || `Su cuenta de proveedor ha sido ${status}`;
-  const htmlContent = dynamic?.htmlContent || `
-    <h1>Hola, ${providerName}</h1>
-    <p>Le informamos que su cuenta ha sido <strong>${status}</strong> por un administrador.</p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
