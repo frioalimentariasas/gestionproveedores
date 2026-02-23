@@ -1,3 +1,4 @@
+
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -22,6 +23,7 @@ interface Evaluation {
   scores: Record<string, number>;
   comments: string;
   improvementCommitment?: string;
+  improvementCommitments?: Record<string, string>;
   commitmentSubmittedAt?: Timestamp;
   createdAt: Timestamp;
 }
@@ -71,7 +73,7 @@ export default function ProviderEvaluationsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {evaluations.map((ev) => {
               const needsAction = requiresActionPlan(ev.totalScore);
-              const hasCommitment = !!ev.improvementCommitment;
+              const hasCommitment = !!ev.commitmentSubmittedAt;
 
               return (
                 <Card key={ev.id} className={cn(
@@ -103,7 +105,7 @@ export default function ProviderEvaluationsPage() {
                                 <AlertTriangle className="h-3 w-3" /> Requiere Compromiso ISO
                             </p>
                             <p className="text-[10px] text-muted-foreground leading-tight">
-                                Su puntaje es inferior al 70%. Debe radicar un plan de acción para continuar como proveedor activo.
+                                Su puntaje es inferior al 70%. Debe radicar un plan de acción detallado por cada criterio afectado.
                             </p>
                         </div>
                     ) : (
@@ -116,10 +118,10 @@ export default function ProviderEvaluationsPage() {
                     {hasCommitment && (
                         <div className="p-3 rounded-lg bg-muted border flex flex-col gap-1">
                             <p className="text-[10px] font-bold flex items-center gap-1 uppercase">
-                                <MessageSquareText className="h-3 w-3" /> Compromiso Radicado
+                                <MessageSquareText className="h-3 w-3" /> Plan de Mejora Radicado
                             </p>
                             <p className="text-[10px] text-muted-foreground line-clamp-2 italic">
-                                "{ev.improvementCommitment}"
+                                Plan de acción registrado en el sistema para auditoría.
                             </p>
                         </div>
                     )}
@@ -130,7 +132,7 @@ export default function ProviderEvaluationsPage() {
                         variant={needsAction && !hasCommitment ? "destructive" : "outline"}
                         onClick={() => setSelectedEvaluation(ev)}
                     >
-                        {needsAction && !hasCommitment ? "Radicar Compromiso de Mejora" : "Ver Detalle Completo"}
+                        {needsAction && !hasCommitment ? "Radicar Planes de Acción" : "Ver Detalle Completo"}
                     </Button>
                   </CardFooter>
                 </Card>
