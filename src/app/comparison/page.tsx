@@ -99,6 +99,7 @@ export default function ComparisonPage() {
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
               <Command filter={(value, search) => {
+                // Personalizamos el filtro para que busque en nombre e ID
                 if (value.toLowerCase().includes(search.toLowerCase())) return 1;
                 return 0;
               }}>
