@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -44,6 +45,13 @@ const DEFAULT_TEMPLATES: Template[] = [
     variables: ['competitorName', 'selectionProcessName', 'registrationUrl'],
   },
   {
+    id: 'form_submitted_provider',
+    name: 'Confirmación de Formulario Recibido (Para Proveedor)',
+    subject: 'Confirmación: Formulario de Registro Recibido',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Hemos recibido tu formulario. Tu información ha sido bloqueada y está en proceso de revisión por nuestro equipo.</p>',
+    variables: ['providerName'],
+  },
+  {
     id: 'form_unlocked_provider',
     name: 'Notificación de Formulario Habilitado',
     subject: 'Tu formulario de proveedor ha sido habilitado para edición',
@@ -68,8 +76,8 @@ const DEFAULT_TEMPLATES: Template[] = [
     id: 'new_provider_admin',
     name: 'Aviso de Nuevo Proveedor Registrado (Para Administrador)',
     subject: 'Nuevo Proveedor Registrado: {{businessName}}',
-    htmlContent: '<h1>Nuevo Proveedor en la Plataforma</h1><p>Se ha registrado un nuevo proveedor: <strong>{{businessName}}</strong> ({{documentNumber}}).</p><p>Email: {{email}}</p>',
-    variables: ['businessName', 'documentNumber', 'email'],
+    htmlContent: '<h1>Nuevo Proveedor en la Plataforma</h1><p>Se ha registrado un nuevo proveedor: <strong>{{businessName}}</strong> ({{documentNumber}}).</p><p>Email: {{email}}</p><p>Origen: {{eventId}}</p>',
+    variables: ['businessName', 'documentNumber', 'email', 'eventId'],
   },
   {
     id: 'form_update_admin',

@@ -119,12 +119,14 @@ export async function notifyAdminOfNewProvider({
   businessName,
   documentNumber,
   email,
+  eventId,
 }: {
   businessName: string;
   documentNumber: string;
   email: string;
+  eventId?: string | null;
 }) {
-  const variables = { businessName, documentNumber, email };
+  const variables = { businessName, documentNumber, email, eventId: eventId || 'Registro Directo' };
   const dynamic = await getDynamicTemplate('new_provider_admin', variables);
 
   const subject = dynamic?.subject || `Nuevo Proveedor Registrado: ${businessName}`;
@@ -135,6 +137,7 @@ export async function notifyAdminOfNewProvider({
       <li><strong>Razón Social:</strong> ${businessName}</li>
       <li><strong>Documento:</strong> ${documentNumber}</li>
       <li><strong>Email:</strong> ${email}</li>
+      <li><strong>Origen:</strong> ${eventId ? `Proceso de Selección (ID: ${eventId})` : 'Registro Directo / Invitación'}</li>
     </ul>
     <p>Puedes revisar los detalles en el panel de administración.</p>
   `;
@@ -187,12 +190,9 @@ export async function notifyAdminOfReactivationRequest({
   const subject = dynamic?.subject || `Solicitud de Reactivación de Cuenta: ${businessName}`;
   const htmlContent = dynamic?.htmlContent || `
     <h1>Solicitud de Reactivación de Cuenta</h1>
-    <p>El proveedor <strong>${businessName}</strong> (${providerEmail}) ha solicitado la reactivación de su cuenta de acceso o formulario.</p>
-    <p><strong>Justificación del proveedor:</strong></p>
-    <div style="padding: 10px; border: 1px solid #ccc; background: #f9f9f9; font-style: italic;">
-      ${justification || 'No proporcionada'}
-    </div>
-    <p>Por favor, revisa el estado del proveedor en el panel de administración y toma las medidas correspondientes.</p>
+    <p>El proveedor <strong>${businessName}</strong> (${providerEmail}) solicita reactivar su cuenta.</p>
+    <p><strong>Justificación:</strong></p>
+    <p>${justification || 'No proporcionada'}</p>
   `;
 
   return await sendTransactionalEmail({
@@ -200,6 +200,34 @@ export async function notifyAdminOfReactivationRequest({
     subject,
     htmlContent,
     replyTo: { email: providerEmail, name: businessName },
+  });
+}
+
+export async function notifyProviderFormSubmitted({
+  providerEmail,
+  providerName,
+}: {
+  providerEmail: string;
+  providerName: string;
+}) {
+  const variables = { providerName };
+  const dynamic = await getDynamicTemplate('form_submitted_provider', variables);
+
+  const subject = dynamic?.subject || 'Confirmación: Formulario de Registro Recibido';
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Hola, ${providerName}</h1>
+    <p>Hemos recibido tu formulario de registro en nuestra plataforma de gestión de proveedores.</p>
+    <p>Tu información ha sido bloqueada y se encuentra ahora en proceso de revisión por nuestro equipo técnico y de calidad.</p>
+    <p>Te notificaremos cualquier novedad a través de este correo electrónico.</p>
+    <br>
+    <p>Gracias,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
   });
 }
 
@@ -216,9 +244,8 @@ export async function notifyProviderFormUnlocked({
   const subject = dynamic?.subject || 'Tu formulario de proveedor ha sido habilitado para edición';
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
-    <p>Te informamos que tu formulario de proveedor en la plataforma de Frioalimentaria ha sido <strong>habilitado para edición</strong>.</p>
-    <p>Ahora puedes iniciar sesión y realizar los cambios necesarios en tu información.</p>
-    <p>Una vez que guardes los cambios, el formulario se volverá a bloquear.</p>
+    <p>Te informamos que tu formulario de proveedor ha sido <strong>habilitado para edición</strong>.</p>
+    <p>Ahora puedes realizar los cambios necesarios. Una vez guardes, el formulario se volverá a bloquear.</p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
@@ -243,12 +270,10 @@ export async function notifyProviderPasswordReset({
   const variables = { providerName, newPassword };
   const dynamic = await getDynamicTemplate('password_reset_provider', variables);
 
-  const subject = dynamic?.subject || 'Restablecimiento de Contraseña de su Cuenta de Proveedor';
+  const subject = dynamic?.subject || 'Restablecimiento de Contraseña de su Cuenta';
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
-    <p>Un administrador ha restablecido la contraseña de su cuenta en el portal de proveedores de Frioalimentaria.</p>
-    <p>Su nueva contraseña temporal es: <strong>${newPassword}</strong></p>
-    <p>Le recomendamos iniciar sesión y cambiarla lo antes posible desde la sección "Mi Cuenta".</p>
+    <p>Tu nueva contraseña temporal es: <strong>${newPassword}</strong></p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
@@ -276,8 +301,7 @@ export async function notifyProviderAccountStatus({
   const subject = dynamic?.subject || `Su cuenta de proveedor ha sido ${status}`;
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
-    <p>Le informamos que su cuenta en el portal de proveedores de Frioalimentaria ha sido <strong>${status}</strong> por un administrador.</p>
-    ${status === 'desactivada' ? '<p>No podrá acceder a la plataforma hasta que su cuenta sea reactivada. Si cree que esto es un error, por favor póngase en contacto con nosotros.</p>' : '<p>Ya puede acceder a la plataforma con sus credenciales.</p>'}
+    <p>Le informamos que su cuenta ha sido <strong>${status}</strong> por un administrador.</p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
@@ -310,11 +334,9 @@ export async function notifyWinnerOfSelection({
   const subject = dynamic?.subject || `¡Felicitaciones! Has sido seleccionado en el proceso: ${selectionProcessName}`;
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${competitorName}</h1>
-    <p>Nos complace informarte que has sido seleccionado para el proceso de selección: <strong>${selectionProcessName}</strong>.</p>
-    <p>El siguiente paso es completar tu registro en nuestro portal de proveedores. Por favor, haz clic en el siguiente enlace para comenzar:</p>
-    <p><a href="${registrationUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Registrarse como Proveedor</a></p>
-    <p>Si el botón no funciona, puedes copiar y pegar la siguiente URL en tu navegador:</p>
-    <p>${registrationUrl}</p>
+    <p>Has sido seleccionado para el proceso: <strong>${selectionProcessName}</strong>.</p>
+    <p>El siguiente paso es completar tu registro:</p>
+    <p><a href="${registrationUrl}">Registrarse como Proveedor</a></p>
     <br>
     <p>¡Esperamos trabajar contigo!</p>
     <p>El equipo de Frioalimentaria SAS</p>
@@ -343,18 +365,7 @@ export async function sendDirectInvitation({
   const subject = dynamic?.subject || 'REGISTRO DE PROVEEDOR FRIOALIMENTARIA SAS';
   const htmlContent = dynamic?.htmlContent || `
     <p>Buen día Estimado Proveedor <strong>${providerName}</strong>,</p>
-    <br>
-    <p>Nos permitimos informarle que será vinculado como proveedor autorizado de nuestra compañía. Le damos una cordial bienvenida. Confiamos en que esta relación será productiva y que juntos alcanzaremos importantes logros. Le invitamos a registrarse y actualizar la informacion en el siguiente link: <a href="${registrationUrl}">${registrationUrl}</a></p>
-    <br>
-    <h3>Documentación y Facturación:</h3>
-    <ol>
-      <li><strong>Revisión de facturas y pagos:</strong> Para cualquier consulta relacionada con la revisión de facturas y pagos, por favor contacte a <a href="mailto:administracion@frioalimentaria.com.co">administracion@frioalimentaria.com.co</a>. Asegúrese de que las facturas se presenten correctamente y a tiempo para evitar retrasos en los pagos.</li>
-      <li><strong>Orden de Compra (OC):</strong> Es indispensable contar con una Orden de Compra (OC) antes de proceder con la facturación. Esta debe ser solicitada al funcionario que requirió el servicio. Por favor, tenga en cuenta que sin este documento no es posible realizar la radicación de la factura.</li>
-      <li><strong>Radicación de facturas electrónicas:</strong> Las facturas electrónicas deben ser enviadas al correo: <a href="mailto:asistente@frioalimentaria.com.co">asistente@frioalimentaria.com.co</a>.</li>
-      <li><strong>Actualización documental y solicitudes adicionales:</strong> Para actualizaciones documentales o solicitudes adicionales, puede comunicarse al correo: <a href="mailto:asistente@frioalimentaria.com.co">asistente@frioalimentaria.com.co</a>.</li>
-    </ol>
-    <br>
-    <p>Estamos a su disposición para resolver cualquier inquietud que pueda tener. Nuevamente, le damos la bienvenida y esperamos construir una relación comercial sólida y beneficiosa.</p>
+    <p>Le invitamos a registrarse en nuestro portal: <a href="${registrationUrl}">${registrationUrl}</a></p>
     <br>
     <p>Cordialmente,</p>
     <p><strong>El equipo de Frioalimentaria SAS</strong></p>
@@ -382,15 +393,12 @@ export async function notifyProviderPendingForm({
   const variables = { providerName, loginUrl, daysLeft: daysLeft?.toString() || 'pocos' };
   const dynamic = await getDynamicTemplate('pending_form_reminder_provider', variables);
 
-  const subject = dynamic?.subject || 'Recordatorio: Diligenciamiento de Formulario de Proveedor Pendiente';
+  const subject = dynamic?.subject || 'Recordatorio: Diligenciamiento de Formulario Pendiente';
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
-    <p>Hemos notado que aún no has finalizado el diligenciamiento de tu formulario de registro en nuestra plataforma de proveedores de Frioalimentaria.</p>
-    ${daysLeft ? `<p style="color: #e11d48; font-weight: bold;">Atención: Solo cuentas con ${daysLeft} días restantes antes de que tu acceso sea bloqueado automáticamente.</p>` : ''}
-    <p>Es indispensable completar toda la información y adjuntar los documentos obligatorios para que nuestro equipo pueda validar tu perfil y proceder con la vinculación formal.</p>
-    <p>Por favor, ingresa con tus credenciales (NIT) en el siguiente enlace y completa los campos pendientes:</p>
-    <p><a href="${loginUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #165793; text-decoration: none; border-radius: 5px;">Ir al Formulario</a></p>
-    <p>Una vez guardes y bloquees el formulario, recibiremos una notificación automática para su revisión.</p>
+    <p>Aún no has finalizado el diligenciamiento de tu registro.</p>
+    ${daysLeft ? `<p>Solo cuentas con ${daysLeft} días antes del bloqueo automático.</p>` : ''}
+    <p><a href="${loginUrl}">Ir al Formulario</a></p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>
@@ -416,10 +424,7 @@ export async function notifyProviderWelcomePlazo({
   const subject = dynamic?.subject || 'Bienvenido a Frioalimentaria - Inicio de Registro de Proveedor';
   const htmlContent = dynamic?.htmlContent || `
     <h1>Hola, ${providerName}</h1>
-    <p>Tu cuenta ha sido creada exitosamente en nuestro portal de proveedores.</p>
-    <p>Te recordamos que, de acuerdo con nuestras políticas de vinculación, cuentas con un plazo máximo de <strong>8 días calendario</strong> para completar y enviar tu formulario de registro con todos los soportes legales requeridos.</p>
-    <p>Pasado este tiempo, el sistema bloqueará automáticamente el acceso a tu formulario y deberás solicitar una extensión justificada al administrador.</p>
-    <p>¡Esperamos tu pronta respuesta!</p>
+    <p>Tu cuenta ha sido creada. Cuentas con un plazo máximo de <strong>8 días calendario</strong> para completar tu registro.</p>
     <br>
     <p>Gracias,</p>
     <p>El equipo de Frioalimentaria SAS</p>

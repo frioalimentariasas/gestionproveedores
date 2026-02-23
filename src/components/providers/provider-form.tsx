@@ -58,9 +58,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { notifyAdminOfFormUpdate, notifyAdminOfReactivationRequest, notifyProviderPendingForm } from '@/actions/email';
+import { notifyAdminOfFormUpdate, notifyAdminOfReactivationRequest, notifyProviderPendingForm, notifyProviderFormSubmitted } from '@/actions/email';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '../ui/label';
+import { cn } from '@/lib/utils';
 
 type ProviderFormValues = z.infer<typeof providerFormSchema>;
 
@@ -334,9 +335,22 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
-      if(providerData?.email) {
-          notifyAdminOfFormUpdate({ businessName: dataToSave.businessName, email: providerData.email }).catch(console.error);
+      
+      const providerEmail = providerData?.email;
+      if(providerEmail) {
+          // Notify Admin
+          notifyAdminOfFormUpdate({ 
+            businessName: dataToSave.businessName, 
+            email: providerEmail 
+          }).catch(console.error);
+
+          // Notify Provider
+          notifyProviderFormSubmitted({
+            providerEmail: providerEmail,
+            providerName: dataToSave.businessName
+          }).catch(console.error);
       }
+
       localStorage.removeItem(getAutoSaveKey(user.uid));
       toast({ title: '¡Información guardada!', description: 'Tus datos han sido guardados y bloqueados.' });
     } catch (error: any) {
@@ -530,7 +544,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
           </CardContent>
         </Card>
 
-        {/* Section 2 to 8 omitted for brevity, logic remains identical to original */}
+        {/* Section 2 to 8 */}
         <Card><CardHeader><CardTitle>2. Información Tributaria</CardTitle></CardHeader><CardContent className="space-y-6"><FormField control={form.control} name="taxRegimeType" render={({ field }) => (<FormItem><FormLabel>Tipo de Régimen</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} /></CardContent></Card>
         <Card><CardHeader><CardTitle>3. Información Ambiental</CardTitle></CardHeader><CardContent className="space-y-6"><FormField control={form.control} name="implementsEnvironmentalMeasures" render={({ field }) => (<FormItem><FormLabel>¿Implementa medidas ambientales?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((type) => (<FormItem key={type} className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value={type} /></FormControl><FormLabel className="font-normal">{type}</FormLabel></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} /></CardContent></Card>
         
@@ -555,7 +569,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
 
         {!isLocked && !previewMode && (
           <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Guardar y Bloquear Formulario'}
+            {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
+            Guardar y Bloquear Formulario
           </Button>
         )}
       </form>

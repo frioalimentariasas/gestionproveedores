@@ -113,6 +113,7 @@ export function RegisterForm() {
         businessName: values.businessName,
         documentNumber: values.documentNumber,
         email: values.email,
+        eventId: eventId,
       }).catch(console.error);
 
       // Notify provider of the 8-day deadline
