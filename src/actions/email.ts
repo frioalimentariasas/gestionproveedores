@@ -179,6 +179,37 @@ export async function notifyAdminOfFormUpdate({
   });
 }
 
+export async function notifyAdminOfCommitmentSubmitted({
+  businessName,
+  providerEmail,
+  evaluationType,
+}: {
+  businessName: string;
+  providerEmail: string;
+  evaluationType: string;
+}) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
+  const providersUrl = `${baseUrl}/providers`;
+  
+  const variables = { businessName, providerEmail, evaluationType, providersUrl };
+  const dynamic = await getDynamicTemplate('commitment_submitted_admin', variables);
+
+  const subject = dynamic?.subject || `Compromiso de Mejora Radicado: ${businessName}`;
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Compromiso de Mejora ISO 9001</h1>
+    <p>El proveedor <strong>${businessName}</strong> ha radicado un plan de acción para la evaluación: <strong>${evaluationType}</strong>.</p>
+    <p>Este compromiso es obligatorio para asegurar la continuidad comercial bajo los estándares de calidad de Frioalimentaria SAS.</p>
+    <p><a href="${providersUrl}">Ir a Gestión de Proveedores para revisar</a></p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: ADMIN_RECIPIENTS,
+    subject,
+    htmlContent,
+    replyTo: { email: providerEmail, name: businessName },
+  });
+}
+
 export async function notifyAdminOfReactivationRequest({
   providerEmail,
   businessName,

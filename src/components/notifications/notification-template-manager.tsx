@@ -65,6 +65,13 @@ const DEFAULT_TEMPLATES: Template[] = [
     variables: ['providerName', 'score', 'evaluationType', 'evaluationsUrl'],
   },
   {
+    id: 'commitment_submitted_admin',
+    name: 'Aviso de Compromiso Radicado (Para Administrador)',
+    subject: 'Compromiso de Mejora Radicado: {{businessName}}',
+    htmlContent: '<h1>Nuevo Compromiso de Mejora</h1><p>El proveedor <strong>{{businessName}}</strong> ha radicado su plan de acción para {{evaluationType}}.</p><p><a href="{{providersUrl}}">Ver en el Panel</a></p>',
+    variables: ['businessName', 'providerEmail', 'evaluationType', 'providersUrl'],
+  },
+  {
     id: 'password_reset_provider',
     name: 'Restablecimiento de Contraseña',
     subject: 'Restablecimiento de Contraseña de su Cuenta',

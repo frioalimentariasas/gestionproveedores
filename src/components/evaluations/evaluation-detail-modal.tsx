@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -23,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { notifyAdminOfCommitmentSubmitted } from '@/actions/email';
 
 interface Evaluation {
   id: string;
@@ -80,8 +80,8 @@ export function EvaluationDetailModal({
     }));
   };
 
-  const handleSubmitCommitment = () => {
-    if (!firestore) return;
+  const handleSubmitCommitment = async () => {
+    if (!firestore || !providerData) return;
     
     // Validate that all low-score criteria have a commitment
     const lowScoreCriteria = criteria.filter(crit => (evaluation.scores[crit.id] || 0) < 3.5);
@@ -105,26 +105,32 @@ export function EvaluationDetailModal({
       commitmentSubmittedAt: serverTimestamp(),
     };
 
-    // Non-blocking mutation with background error handling
-    updateDoc(evalRef, updateData)
-      .catch(async (serverError) => {
+    try {
+        // Perform the update
+        await updateDoc(evalRef, updateData);
+        
+        // Notify admins
+        notifyAdminOfCommitmentSubmitted({
+            businessName: providerData.businessName,
+            providerEmail: providerData.email,
+            evaluationType: EVALUATION_TYPES[evaluation.evaluationType as keyof typeof EVALUATION_TYPES] || evaluation.evaluationType
+        }).catch(console.error);
+
+        toast({ 
+            title: 'Compromiso Radicado', 
+            description: 'Su plan de mejora detallado ha sido registrado exitosamente y los administradores han sido notificados.' 
+        });
+        onClose();
+    } catch (serverError) {
         const permissionError = new FirestorePermissionError({
           path: evalRef.path,
           operation: 'update',
           requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
+    } finally {
         setIsSubmitting(false);
-      });
-
-    // Optimistic UI update
-    toast({ 
-      title: 'Compromiso Radicado', 
-      description: 'Su plan de mejora detallado ha sido registrado exitosamente conforme a ISO 9001.' 
-    });
-    onClose();
+    }
   };
 
   return (
@@ -138,7 +144,7 @@ export function EvaluationDetailModal({
                     Detalle de Auditoría ISO 9001
                 </DialogTitle>
                 <DialogDescription className="font-bold text-primary">
-                    {EVALUATION_TYPES[evaluation.evaluationType as any]}
+                    {EVALUATION_TYPES[evaluation.evaluationType as keyof typeof EVALUATION_TYPES] || evaluation.evaluationType}
                 </DialogDescription>
             </div>
             <div className="text-right">
