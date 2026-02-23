@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EVALUATION_TYPES, getCriteriaForType, requiresActionPlan } from '@/lib/evaluations';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase, errorEmitter } from '@/firebase';
+import { FirestorePermissionError } from '@/firebase/errors';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useState, useMemo } from 'react';
 import { Loader2, ClipboardCheck, MessageSquareText, Send, AlertTriangle } from 'lucide-react';
@@ -78,7 +80,7 @@ export function EvaluationDetailModal({
     }));
   };
 
-  const handleSubmitCommitment = async () => {
+  const handleSubmitCommitment = () => {
     if (!firestore) return;
     
     // Validate that all low-score criteria have a commitment
@@ -97,27 +99,37 @@ export function EvaluationDetailModal({
     setIsSubmitting(true);
     const evalRef = doc(firestore, 'providers', evaluation.providerId, 'evaluations', evaluation.id);
     
-    try {
-      await updateDoc(evalRef, {
-        improvementCommitments: commitments,
-        improvementCommitment: Object.values(commitments).filter(Boolean).join(' | '),
-        commitmentSubmittedAt: serverTimestamp(),
+    const updateData = {
+      improvementCommitments: commitments,
+      improvementCommitment: Object.values(commitments).filter(Boolean).join(' | '),
+      commitmentSubmittedAt: serverTimestamp(),
+    };
+
+    // Non-blocking mutation with background error handling
+    updateDoc(evalRef, updateData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: evalRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      toast({ 
-        title: 'Compromiso Radicado', 
-        description: 'Su plan de mejora detallado ha sido registrado exitosamente conforme a ISO 9001.' 
-      });
-      onClose();
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo registrar el compromiso.' });
-    } finally {
-      setIsSubmitting(false);
-    }
+
+    // Optimistic UI update
+    toast({ 
+      title: 'Compromiso Radicado', 
+      description: 'Su plan de mejora detallado ha sido registrado exitosamente conforme a ISO 9001.' 
+    });
+    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
+      <DialogContent className="sm:max-w-[850px] h-[90vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
         {/* Cabecera Fija */}
         <DialogHeader className="p-6 border-b shrink-0 bg-muted/20">
           <div className="flex justify-between items-start gap-4">
@@ -139,9 +151,9 @@ export function EvaluationDetailModal({
         </DialogHeader>
 
         {/* Área de Contenido con Scroll Independiente */}
-        <div className="flex-grow overflow-y-auto p-6 space-y-8 pb-12">
+        <div className="flex-grow overflow-y-auto p-6 space-y-8 pb-12 bg-muted/5">
             <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-2">
+                <div className="flex items-center justify-between border-b pb-2 border-primary/10">
                     <h4 className="font-bold text-xs uppercase text-muted-foreground flex items-center gap-2">
                         <ClipboardCheck className="h-4 w-4" /> Calificación por Criterio
                     </h4>
@@ -160,7 +172,7 @@ export function EvaluationDetailModal({
                         return (
                             <div key={crit.id} className={cn(
                                 "flex flex-col p-5 rounded-xl border transition-all shadow-sm",
-                                isLow ? "border-destructive/40 bg-destructive/5" : "bg-card"
+                                isLow ? "border-destructive/40 bg-destructive/5" : "bg-card border-primary/5"
                             )}>
                                 <div className="flex justify-between items-center mb-4">
                                     <div className="space-y-1">
@@ -245,7 +257,7 @@ export function EvaluationDetailModal({
         </div>
 
         {/* Pie de Página Fijo */}
-        <DialogFooter className="p-6 border-t shrink-0 bg-muted/10">
+        <DialogFooter className="p-6 border-t shrink-0 bg-background shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
           <Button variant="outline" onClick={onClose} className="font-bold">Cerrar Detalle</Button>
           {isProviderView && needsAction && !isAlreadySubmitted && (
               <Button onClick={handleSubmitCommitment} disabled={isSubmitting} className="min-w-[220px] shadow-lg">

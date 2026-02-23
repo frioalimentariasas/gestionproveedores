@@ -98,8 +98,7 @@
           "description": "Indicates whether the provider has accepted the SARLAFT terms and conditions."
         },
         "formLocked": {
-          "type": "boolean",
-          "description": "If true, the provider's form is locked and cannot be edited."
+          "boolean": "If true, the provider's form is locked and cannot be edited."
         },
         "disabled": {
           "type": "boolean",
@@ -300,6 +299,10 @@
         "improvementCommitment": {
           "type": "string",
           "description": "The commitment submitted by the provider to improve failing criteria."
+        },
+        "improvementCommitments": {
+          "type": "object",
+          "description": "Granular improvement commitments mapped by criterion ID."
         },
         "commitmentSubmittedAt": {
           "type": "string",

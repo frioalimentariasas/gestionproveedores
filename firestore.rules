@@ -51,8 +51,8 @@ service cloud.firestore {
       
       match /evaluations/{evaluationId} {
         allow read: if isOwner(providerId) || isAdmin();
-        // Allow providers to ONLY update the improvementCommitment fields
-        allow update: if isOwner(providerId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['improvementCommitment', 'commitmentSubmittedAt']);
+        // Allow providers to update both aggregated and granular improvement commitment fields
+        allow update: if isOwner(providerId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['improvementCommitment', 'improvementCommitments', 'commitmentSubmittedAt']);
         allow write: if isAdmin();
       }
     }
