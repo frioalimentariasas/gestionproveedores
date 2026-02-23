@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 const ADMIN_EMAILS = [
@@ -35,11 +34,10 @@ export const registerSchema = z
     path: ['confirmPassword'],
   })
   .superRefine((data, ctx) => {
-    // Check if email is an admin email
     if (ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase() === data.email.toLowerCase())) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Este correo electrónico está reservado para uso administrativo y no puede ser usado para proveedores.',
+        message: 'Este correo electrónico está reservado para uso administrativo.',
         path: ['email'],
       });
     }
@@ -92,6 +90,9 @@ const fileSchemaOptional = z
 
 export const providerFormSchema = z
   .object({
+    // Initial description
+    serviceDescription: z.string().min(10, 'Por favor, describe brevemente qué ofreces (mín. 10 caracteres).'),
+    
     // Section 1
     providerType: z.array(z.string()).refine((value) => value.length > 0, {
       message: 'Debes seleccionar al menos un sector.',
@@ -173,41 +174,37 @@ export const providerFormSchema = z
       .string()
       .min(1, 'El nombre del titular es requerido.')
       .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre del titular solo debe contener letras y espacios.'),
-    // Section 6 - Documentos
+    
+    // Section 6 - Documentos (Inputs)
     rutFile: fileSchemaOptional,
     camaraComercioFile: fileSchemaOptional,
     cedulaRepresentanteLegalFile: fileSchemaOptional,
     certificacionBancariaFile: fileSchemaOptional,
     estadosFinancierosFile: fileSchemaOptional,
     declaracionRentaFile: fileSchemaOptional,
-    // Hidden URL fields
+    
+    // Hidden URL fields (Stored in Firestore)
     rutFileUrl: z.string().optional(),
     camaraComercioFileUrl: z.string().optional(),
     cedulaRepresentanteLegalFileUrl: z.string().optional(),
     certificacionBancariaFileUrl: z.string().optional(),
     estadosFinancierosFileUrl: z.string().optional(),
     declaracionRentaFileUrl: z.string().optional(),
+    
     // Section 7 - HSEQ
     hseqSgsst: z.string().min(1, 'Este campo es requerido.'),
+    
     // Section 8 - SARLAFT
     sarlaftAccepted: z
       .boolean()
       .refine((val) => val === true, 'Debe aceptar los términos.'),
+    
     // Status fields
     formLocked: z.boolean().optional(),
     disabled: z.boolean().optional(),
     criticalityLevel: z.enum(['Crítico', 'No Crítico']).optional(),
   })
   .superRefine((data, ctx) => {
-    // Check if email is an admin email in the main form too
-    if (ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase() === data.email.toLowerCase())) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Este correo electrónico está reservado para uso administrativo.',
-        path: ['email'],
-      });
-    }
-
     // Section 4: Legal Representative validation
     if (data.personType === 'Persona Jurídica') {
       if (!data.legalRepresentativeName) {
@@ -216,31 +213,18 @@ export const providerFormSchema = z
           message: 'El nombre del representante legal es requerido.',
           path: ['legalRepresentativeName'],
         });
-      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(data.legalRepresentativeName)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El nombre del representante solo debe contener letras.',
-          path: ['legalRepresentativeName'],
-        });
       }
-
       if (!data.legalRepresentativeDocumentType) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'El tipo de documento del representante es requerido.',
+          message: 'El tipo de documento es requerido.',
           path: ['legalRepresentativeDocumentType'],
         });
       }
       if (!data.legalRepresentativeDocumentNumber) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'El número de documento del representante es requerido.',
-          path: ['legalRepresentativeDocumentNumber'],
-        });
-      } else if (!/^[0-9]+$/.test(data.legalRepresentativeDocumentNumber)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El número de documento solo debe contener números.',
+          message: 'El número de documento es requerido.',
           path: ['legalRepresentativeDocumentNumber'],
         });
       }
@@ -249,78 +233,10 @@ export const providerFormSchema = z
     // Section 2: Tax Information validation
     if (data.taxRegimeType === 'Común') {
       if (!data.isLargeTaxpayer) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Este campo es requerido.',
-          path: ['isLargeTaxpayer'],
-        });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Requerido.', path: ['isLargeTaxpayer'] });
       }
       if (data.isLargeTaxpayer === 'Sí' && !data.largeTaxpayerResolution) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'La resolución es requerida.',
-          path: ['largeTaxpayerResolution'],
-        });
-      }
-
-      if (data.personType === 'Persona Jurídica') {
-        if (!data.isIncomeSelfRetainer) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Este campo es requerido.',
-            path: ['isIncomeSelfRetainer'],
-          });
-        }
-        if (
-          data.isIncomeSelfRetainer === 'Sí' &&
-          !data.incomeSelfRetainerResolution
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'La resolución es requerida.',
-            path: ['incomeSelfRetainerResolution'],
-          });
-        }
-      }
-
-      if (data.isLargeTaxpayer === 'Sí') {
-        if (!data.isIcaSelfRetainer) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Este campo es requerido.',
-            path: ['isIcaSelfRetainer'],
-          });
-        }
-        if (data.isIcaSelfRetainer === 'Sí') {
-          if (!data.icaSelfRetainerMunicipality) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'El municipio es requerido.',
-              path: ['icaSelfRetainerMunicipality'],
-            });
-          }
-          if (!data.icaSelfRetainerResolution) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'La resolución es requerida.',
-              path: ['icaSelfRetainerResolution'],
-            });
-          }
-          if (!data.icaCode) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'El código ICA es requerido.',
-              path: ['icaCode'],
-            });
-          }
-          if (!data.icaPercentage) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'El porcentaje ICA es requerido.',
-              path: ['icaPercentage'],
-            });
-          }
-        }
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Resolución requerida.', path: ['largeTaxpayerResolution'] });
       }
     }
     
@@ -342,7 +258,7 @@ export const providerFormSchema = z
         if (!url && (!fileList || fileList.length === 0)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `El archivo de ${name} es requerido.`,
+            message: `Adjunte el ${name}.`,
             path: [field as string],
           });
         }
@@ -409,7 +325,6 @@ export const criteriaWeightsSchema = z.object({
   }))
 }).refine(data => {
     const totalWeight = data.criteria.reduce((sum, crit) => sum + (Number(crit.weight) || 0), 0);
-    // Use a small epsilon for floating point comparison to handle potential floating point inaccuracies
     return Math.abs(totalWeight - 100) < 0.01;
 }, {
     message: 'La suma de los pesos debe ser exactamente 100%.',

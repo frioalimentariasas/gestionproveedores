@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,7 +42,7 @@ import {
 } from '@/firebase';
 import { doc, setDoc, collection, query, Timestamp } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -72,6 +71,7 @@ interface Category {
 }
 
 const initialFormValues: ProviderFormValues = {
+  serviceDescription: '',
   providerType: [],
   categoryIds: [],
   documentType: '',
@@ -148,8 +148,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [persistedData, setPersistedData] = useState<ProviderFormValues | null>(null);
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
-  
-  // Justification states
   const [isSendingJustification, setIsSendingJustification] = useState(false);
   const [justification, setJustification] = useState('');
 
@@ -169,7 +167,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   );
   const { data: categories, isLoading: isCategoriesLoading } = useCollection<Category>(categoriesQuery);
 
-  // Time calculations
   const daysSinceRegistration = useMemo(() => {
     if (!providerData?.createdAt) return 0;
     const createdAt = (providerData.createdAt as Timestamp).toDate();
@@ -184,24 +181,20 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   }, [daysSinceRegistration, providerData, previewMode]);
 
   const daysLeft = Math.max(0, 8 - daysSinceRegistration);
-
   const isLocked = previewMode ? false : (providerData?.formLocked ?? false);
 
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerFormSchema),
     defaultValues: initialFormValues,
   });
+  
   const { reset } = form;
-
   const watchedProviderType = form.watch('providerType');
-  const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
   const watchedPersonType = form.watch('personType');
   const watchedTaxRegimeType = form.watch('taxRegimeType');
   const watchedIsLargeTaxpayer = form.watch('isLargeTaxpayer');
-  const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
-  const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
+  const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
 
-  // Welcome modal logic
   useEffect(() => {
     if (user && !isProviderDataLoading && !previewMode && !isBlockedByTime && !providerData?.formLocked) {
       const welcomeKey = getWelcomeKey(user.uid);
@@ -212,7 +205,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
     }
   }, [user, isProviderDataLoading, previewMode, isBlockedByTime, providerData]);
 
-  // Restore logic
   useEffect(() => {
     if (user && !isProviderDataLoading && !providerData?.formLocked && !previewMode && !isBlockedByTime) {
       const autoSaveKey = getAutoSaveKey(user.uid);
@@ -229,38 +221,24 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
     }
   }, [user, isProviderDataLoading, providerData, previewMode, isBlockedByTime]);
 
-  // Auto-save logic
   const watchedValues = form.watch();
   useEffect(() => {
     if (isLocked || !user || previewMode || isBlockedByTime) return;
     const autoSaveKey = getAutoSaveKey(user.uid);
     const handler = setTimeout(() => {
       const dataToSave = { ...watchedValues };
+      // Don't autosave large FileList objects
       delete (dataToSave as any).rutFile;
       delete (dataToSave as any).camaraComercioFile;
       delete (dataToSave as any).cedulaRepresentanteLegalFile;
       delete (dataToSave as any).certificacionBancariaFile;
+      delete (dataToSave as any).estadosFinancierosFile;
+      delete (dataToSave as any).declaracionRentaFile;
       localStorage.setItem(autoSaveKey, JSON.stringify(dataToSave));
     }, 1000);
     return () => clearTimeout(handler);
   }, [watchedValues, isLocked, user, previewMode, isBlockedByTime]);
 
-  // Handle 5-day reminder trigger
-  useEffect(() => {
-    if (user && providerData?.createdAt && daysSinceRegistration === 5 && !providerData?.formLocked && !previewMode) {
-        const reminderKey = `reminder-day-5-${user.uid}`;
-        if (!localStorage.getItem(reminderKey)) {
-            notifyProviderPendingForm({
-                providerEmail: providerData.email,
-                providerName: providerData.businessName,
-                daysLeft: 3
-            }).catch(console.error);
-            localStorage.setItem(reminderKey, 'true');
-        }
-    }
-  }, [user, providerData, daysSinceRegistration, previewMode]);
-
-  // Populate form with data from Firestore
   const stableReset = useCallback(reset, []);
   useEffect(() => {
     if (providerData && !previewMode) {
@@ -338,21 +316,12 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       
       const providerEmail = providerData?.email;
       if(providerEmail) {
-          // Notify Admin
-          notifyAdminOfFormUpdate({ 
-            businessName: dataToSave.businessName, 
-            email: providerEmail 
-          }).catch(console.error);
-
-          // Notify Provider
-          notifyProviderFormSubmitted({
-            providerEmail: providerEmail,
-            providerName: dataToSave.businessName
-          }).catch(console.error);
+          notifyAdminOfFormUpdate({ businessName: dataToSave.businessName, email: providerEmail }).catch(console.error);
+          notifyProviderFormSubmitted({ providerEmail: providerEmail, providerName: dataToSave.businessName }).catch(console.error);
       }
 
       localStorage.removeItem(getAutoSaveKey(user.uid));
-      toast({ title: '¡Información guardada!', description: 'Tus datos han sido guardados y bloqueados.' });
+      toast({ title: '¡Información guardada!', description: 'Tus datos han sido guardados y bloqueados para revisión.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error al guardar', description: error.message });
     } finally {
@@ -415,15 +384,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                 value={justification}
                 onChange={(e) => setJustification(e.target.value)}
               />
-              <p className="text-[10px] text-muted-foreground italic">
-                Tu solicitud será enviada al departamento de calidad para su evaluación.
-              </p>
             </div>
-            <Button 
-              className="w-full" 
-              disabled={!justification.trim() || isSendingJustification}
-              onClick={handleSendJustification}
-            >
+            <Button className="w-full" disabled={!justification.trim() || isSendingJustification} onClick={handleSendJustification}>
               {isSendingJustification ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Enviar Justificación al Administrador
             </Button>
@@ -435,7 +397,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
 
   return (
     <Form {...form}>
-      {/* Restore Dialog */}
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>¿Restaurar datos?</AlertDialogTitle><AlertDialogDescription>Detectamos información no guardada. ¿Deseas restaurarla?</AlertDialogDescription></AlertDialogHeader>
@@ -443,7 +404,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Welcome Plazo Dialog */}
       <AlertDialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
         <AlertDialogContent className="border-t-8 border-t-primary">
           <AlertDialogHeader>
@@ -453,13 +413,9 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             </div>
             <AlertDialogDescription className="text-base text-foreground">
               Bienvenido al portal de proveedores. Para asegurar la agilidad de nuestros procesos ISO 9001, cuentas con un plazo máximo de <strong>8 días calendario</strong> para completar este formulario.
-              <br /><br />
-              Si el formulario no es bloqueado manualmente por ti antes del día 9, el sistema restringirá tu acceso automáticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction className="w-full">Entendido, empezar registro</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogAction className="w-full">Empezar registro</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -471,12 +427,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             )}>
                 <div className="flex items-center gap-3">
                     <Clock className="h-5 w-5" />
-                    <span className="font-bold uppercase tracking-wider text-sm">
-                        Plazo Restante de Registro: {daysLeft} Días
-                    </span>
-                </div>
-                <div className="text-[10px] uppercase font-medium opacity-80 hidden md:block">
-                    Evite el bloqueo automático del sistema
+                    <span className="font-bold uppercase tracking-wider text-sm">Plazo Restante de Registro: {daysLeft} Días</span>
                 </div>
             </div>
         )}
@@ -489,9 +440,18 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
           </Alert>
         )}
 
-        {previewMode && (
-          <Alert className="bg-blue-50 border-blue-200"><Eye className="h-4 w-4 text-blue-600" /><AlertTitle className="text-blue-800">Modo Vista Previa</AlertTitle><AlertDescription className="text-blue-700">Visualización administrativa.</AlertDescription></Alert>
-        )}
+        <Card>
+          <CardHeader><CardTitle>Descripción Inicial</CardTitle></CardHeader>
+          <CardContent>
+            <FormField control={form.control} name="serviceDescription" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descripción detallada del bien y/o servicio que ofrece</FormLabel>
+                <FormControl><Textarea placeholder="Indique claramente qué suministra o qué servicios presta..." {...field} disabled={isLocked} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader><CardTitle>1. Información del Proveedor</CardTitle></CardHeader>
@@ -506,72 +466,127 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
               <FormField control={form.control} name="documentNumber" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Número</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="businessName" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Razón social o nombre</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="businessName" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Razón social o nombre completo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="personType" render={({ field }) => (
                   <FormItem><FormLabel>Tipo de Persona</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1" disabled={isLocked}>{personTypes.map((type) => (<FormItem key={type} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={type} /></FormControl><FormLabel className="font-normal">{type}</FormLabel></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
             <FormField control={form.control} name="providerType" render={({ field }) => (
-                <FormItem><FormLabel>Sector</FormLabel><div className="flex flex-col space-y-2 pt-2 sm:flex-row sm:space-y-0 sm:space-x-4">{providerTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={(field.value as string[])?.includes(item.id)} onCheckedChange={(checked) => { const currentValue = (field.value as string[]) || []; return checked ? field.onChange([...currentValue, item.id]) : field.onChange(currentValue.filter((value) => value !== item.id)); }} disabled={isLocked} /></FormControl><FormLabel className="font-normal">{item.label}</FormLabel></FormItem>))}</div><FormMessage /></FormItem>
+                <FormItem><FormLabel>Sector</FormLabel><div className="flex flex-col space-y-2 pt-2 sm:flex-row sm:space-y-0 sm:space-x-4">{providerTypeOptions.map((item) => (<FormItem key={item.id} className="flex row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={(field.value as string[])?.includes(item.id)} onCheckedChange={(checked) => { const currentValue = (field.value as string[]) || []; return checked ? field.onChange([...currentValue, item.id]) : field.onChange(currentValue.filter((value) => value !== item.id)); }} disabled={isLocked} /></FormControl><FormLabel className="font-normal">{item.label}</FormLabel></FormItem>))}</div><FormMessage /></FormItem>
               )} />
             <FormField control={form.control} name="categoryIds" render={({ field }) => (
-                <FormItem><FormLabel>Categorías</FormLabel><div className="space-y-4"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Buscar categorías..." value={categorySearchTerm} onChange={(e) => setCategorySearchTerm(e.target.value)} className="pl-10" disabled={isLocked} /></div><ScrollArea className="h-60 rounded-md border"><div className="p-4 space-y-4">{searchableCategoryOptions.length > 0 ? (searchableCategoryOptions.map((option) => (<FormItem key={option.value} className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(option.value)} onCheckedChange={(checked) => { const currentValue = field.value || []; return checked ? field.onChange([...currentValue, option.value]) : field.onChange(currentValue.filter((value) => value !== option.value)); }} disabled={isLocked} /></FormControl><FormLabel className="font-normal cursor-pointer">{option.label}</FormLabel></FormItem>))) : (<p className="text-sm text-muted-foreground text-center">{isCategoriesLoading ? 'Cargando...' : 'No hay categorías.'}</p>)}</div></ScrollArea></div><FormMessage /></FormItem>
+                <FormItem><FormLabel>Categorías de Suministro</FormLabel><div className="space-y-4"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Filtrar categorías..." value={categorySearchTerm} onChange={(e) => setCategorySearchTerm(e.target.value)} className="pl-10" disabled={isLocked} /></div><ScrollArea className="h-60 rounded-md border"><div className="p-4 space-y-4">{searchableCategoryOptions.length > 0 ? (searchableCategoryOptions.map((option) => (<FormItem key={option.value} className="flex row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(option.value)} onCheckedChange={(checked) => { const currentValue = field.value || []; return checked ? field.onChange([...currentValue, option.value]) : field.onChange(currentValue.filter((value) => value !== option.value)); }} disabled={isLocked} /></FormControl><FormLabel className="font-normal cursor-pointer">{option.label}</FormLabel></FormItem>))) : (<p className="text-sm text-muted-foreground text-center">Seleccione un sector arriba.</p>)}</div></ScrollArea></div><FormMessage /></FormItem>
               )} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {isLocked && !previewMode ? (<><FormItem><FormLabel>País</FormLabel><FormControl><Input value={form.getValues('country') || ''} disabled /></FormControl></FormItem><FormItem><FormLabel>Departamento</FormLabel><FormControl><Input value={form.getValues('department') || ''} disabled /></FormControl></FormItem><FormItem><FormLabel>Ciudad</FormLabel><FormControl><Input value={form.getValues('city') || ''} disabled /></FormControl></FormItem></>) : (
-                <><FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>País</FormLabel><Select onValueChange={(value) => { field.onChange(value); const country = Country.getAllCountries().find((c) => c.name === value); setStates(country ? State.getStatesOfCountry(country.isoCode) : []); setCities([]); form.setValue('department', ''); form.setValue('city', ''); }} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{Country.getAllCountries().map((country) => (<SelectItem key={country.isoCode} value={country.name}>{country.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="department" render={({ field }) => (<FormItem><FormLabel>Departamento</FormLabel><Select onValueChange={(value) => { field.onChange(value); const countryName = form.getValues('country'); const country = Country.getAllCountries().find((c) => c.name === countryName); const state = country ? State.getStatesOfCountry(country.isoCode)?.find((s) => s.name === value) : undefined; setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []); form.setValue('city', ''); }} value={field.value} disabled={isLocked || !form.getValues('country')}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{states.map((state) => (<SelectItem key={state.isoCode} value={state.name}>{state.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>Ciudad</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !form.getValues('department')}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{cities.map((city) => (<SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} /></>
-              )}
+              <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>País</FormLabel><Select onValueChange={(value) => { field.onChange(value); const country = Country.getAllCountries().find((c) => c.name === value); setStates(country ? State.getStatesOfCountry(country.isoCode) : []); setCities([]); form.setValue('department', ''); form.setValue('city', ''); }} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{Country.getAllCountries().map((country) => (<SelectItem key={country.isoCode} value={country.name}>{country.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="department" render={({ field }) => (<FormItem><FormLabel>Departamento</FormLabel><Select onValueChange={(value) => { field.onChange(value); const countryName = form.getValues('country'); const country = Country.getAllCountries().find((c) => c.name === countryName); const state = country ? State.getStatesOfCountry(country.isoCode)?.find((s) => s.name === value) : undefined; setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []); form.setValue('city', ''); }} value={field.value} disabled={isLocked || !form.getValues('country')}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{states.map((state) => (<SelectItem key={state.isoCode} value={state.name}>{state.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>Ciudad</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !form.getValues('department')}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{cities.map((city) => (<SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><PhoneInput country={'co'} value={field.value} onChange={field.onChange} disabled={isLocked} inputClass="form-control" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Pag web</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono Celular</FormLabel><FormControl><PhoneInput country={'co'} value={field.value} onChange={field.onChange} disabled={isLocked} inputClass="form-control" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax (Opcional)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Sitio Web</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="providerContactName" render={({ field }) => (<FormItem><FormLabel>Contacto Comercial</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="providerContactTitle" render={({ field }) => (<FormItem><FormLabel>Cargo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="providerContactEmail" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="providerContactName" render={({ field }) => (<FormItem><FormLabel>Nombre Contacto Comercial</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="providerContactEmail" render={({ field }) => (<FormItem><FormLabel>Email Contacto Comercial</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="paymentContactName" render={({ field }) => (<FormItem><FormLabel>Persona notificación pago</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="paymentContactTitle" render={({ field }) => (<FormItem><FormLabel>Cargo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="paymentContactEmail" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="paymentContactName" render={({ field }) => (<FormItem><FormLabel>Contacto para Notificación de Pago</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="paymentContactEmail" render={({ field }) => (<FormItem><FormLabel>Email Notificación de Pago</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Notificaciones</FormLabel><FormControl><Input {...field} disabled={!previewMode} /></FormControl><FormMessage /></FormItem>)} />
           </CardContent>
         </Card>
 
-        {/* Section 2 to 8 */}
-        <Card><CardHeader><CardTitle>2. Información Tributaria</CardTitle></CardHeader><CardContent className="space-y-6"><FormField control={form.control} name="taxRegimeType" render={({ field }) => (<FormItem><FormLabel>Tipo de Régimen</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} /></CardContent></Card>
-        <Card><CardHeader><CardTitle>3. Información Ambiental</CardTitle></CardHeader><CardContent className="space-y-6"><FormField control={form.control} name="implementsEnvironmentalMeasures" render={({ field }) => (<FormItem><FormLabel>¿Implementa medidas ambientales?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((type) => (<FormItem key={type} className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value={type} /></FormControl><FormLabel className="font-normal">{type}</FormLabel></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} /></CardContent></Card>
-        
+        {watchedPersonType === 'Persona Jurídica' && (
+          <Card>
+            <CardHeader><CardTitle>4. Datos del Representante Legal</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+              <FormField control={form.control} name="legalRepresentativeName" render={({ field }) => (<FormItem><FormLabel>Nombre del Representante Legal</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="legalRepresentativeDocumentType" render={({ field }) => (<FormItem><FormLabel>Tipo de Documento</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{legalRepDocTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="legalRepresentativeDocumentNumber" render={({ field }) => (<FormItem><FormLabel>Número de Documento</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
-          <CardHeader><CardTitle>Inscripción de cuenta</CardTitle></CardHeader>
+          <CardHeader><CardTitle>2. Información Tributaria</CardTitle></CardHeader>
           <CardContent className="space-y-6">
-            <FormField control={form.control} name="beneficiaryName" render={({ field }) => (<FormItem><FormLabel>Consignar a nombre de:</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              <FormField control={form.control} name="accountType" render={({ field }) => (<FormItem><FormLabel>Tipo de Cuenta</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4 pt-2" disabled={isLocked}><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="Corriente" /></FormControl><FormLabel className="font-normal">Cta. corriente</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="Ahorros" /></FormControl><FormLabel className="font-normal">Cta. de ahorros</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>No de cuenta:</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Banco:</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="taxRegimeType" render={({ field }) => (<FormItem><FormLabel>Tipo de Régimen</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+            {watchedTaxRegimeType === 'Común' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={type} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>3. Información Ambiental</CardTitle></CardHeader>
+          <CardContent className="space-y-6">
+            <FormField control={form.control} name="implementsEnvironmentalMeasures" render={({ field }) => (<FormItem><FormLabel>¿La empresa implementa medidas a favor del medio ambiente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
+            {watchedImplementsEnvironmentalMeasures === 'Sí' && <FormField control={form.control} name="environmentalMeasuresDescription" render={({ field }) => (<FormItem><FormLabel>Descripción de las medidas</FormLabel><FormControl><Textarea {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>5. Inscripción de cuenta para pago electrónico</CardTitle></CardHeader>
+          <CardContent className="space-y-6">
+            <FormField control={form.control} name="beneficiaryName" render={({ field }) => (<FormItem><FormLabel>Autorizamos consignar en nuestra cuenta bancaria a nombre de:</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Banco</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="accountType" render={({ field }) => (<FormItem><FormLabel>Tipo de Cuenta</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4 pt-2" disabled={isLocked}><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Ahorros" /></FormControl><Label className="font-normal">Ahorros</Label></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Corriente" /></FormControl><Label className="font-normal">Corriente</Label></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Número de Cuenta</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>SARLAFT</CardTitle></CardHeader>
+          <CardHeader><CardTitle>6. Documentos Adjuntos (PDF)</CardTitle><CardDescription>Cargue los documentos requeridos para su validación.</CardDescription></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField control={form.control} name="rutFile" render={() => (<FormItem><FormLabel>RUT (Actualizado)</FormLabel><FormControl><Input type="file" accept="application/pdf" {...form.register('rutFile')} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="certificacionBancariaFile" render={() => (<FormItem><FormLabel>Certificación Bancaria (No mayor a 30 días)</FormLabel><FormControl><Input type="file" accept="application/pdf" {...form.register('certificacionBancariaFile')} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+            {watchedPersonType === 'Persona Jurídica' && (
+              <>
+                <FormField control={form.control} name="camaraComercioFile" render={() => (<FormItem><FormLabel>Cámara de Comercio (Vigente)</FormLabel><FormControl><Input type="file" accept="application/pdf" {...form.register('camaraComercioFile')} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="estadosFinancierosFile" render={() => (<FormItem><FormLabel>Estados Financieros</FormLabel><FormControl><Input type="file" accept="application/pdf" {...form.register('estadosFinancierosFile')} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="declaracionRentaFile" render={() => (<FormItem><FormLabel>Declaración de Renta</FormLabel><FormControl><Input type="file" accept="application/pdf" {...form.register('declaracionRentaFile')} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="cedulaRepresentanteLegalFile" render={() => (<FormItem><FormLabel>Cédula del Representante Legal</FormLabel><FormControl><Input type="file" accept="application/pdf" {...form.register('cedulaRepresentanteLegalFile')} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>7. INFORMACION HSEQ</CardTitle></CardHeader>
           <CardContent>
-            <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Acepto la declaración de origen de fondos y protección de datos</FormLabel></div></FormItem>)} />
+            <FormField control={form.control} name="hseqSgsst" render={({ field }) => (
+              <FormItem>
+                <FormLabel>¿Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%?</FormLabel>
+                <FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>8. SARLAFT Y PROTECCIÓN DE DATOS</CardTitle></CardHeader>
+          <CardContent>
+            <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (<FormItem className="flex row items-start space-x-3 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Acepto la declaración de origen de fondos y la política de tratamiento de datos personales.</FormLabel></div></FormItem>)} />
           </CardContent>
         </Card>
 
         {!isLocked && !previewMode && (
-          <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
-            Guardar y Bloquear Formulario
-          </Button>
+          <div className="flex justify-end pb-12">
+            <Button type="submit" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="animate-spin mr-2" /> Guardando y Subiendo...</> : 'Guardar y Bloquear Formulario'}
+            </Button>
+          </div>
         )}
       </form>
     </Form>
