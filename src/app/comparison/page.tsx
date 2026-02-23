@@ -89,34 +89,46 @@ export default function ComparisonPage() {
                 aria-expanded={open}
                 className="w-full justify-between h-12 text-base border-primary/20 hover:border-primary transition-all shadow-sm"
               >
-                {selectedCategory
-                  ? selectedCategoryData?.name
-                  : "Buscar categoría para comparar..."}
+                <span className="truncate">
+                  {selectedCategory
+                    ? selectedCategoryData?.name
+                    : "Escribe para buscar categoría..."}
+                </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Escribe el nombre o ID de la categoría..." className="h-12" />
-                <CommandList className="max-h-80 overflow-y-auto">
-                  <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command filter={(value, search) => {
+                if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+                return 0;
+              }}>
+                <CommandInput 
+                  placeholder="Nombre o ID (ej: 0001)..." 
+                  className="h-12" 
+                />
+                <CommandList className="max-h-72 overflow-y-auto overflow-x-hidden">
+                  <CommandEmpty>No se encontraron coincidencias.</CommandEmpty>
                   <CommandGroup>
                     {categories?.sort((a, b) => a.name.localeCompare(b.name)).map((category) => (
                       <CommandItem
                         key={category.id}
-                        value={category.name}
+                        value={`${category.name} ${category.sequenceId || ''}`}
                         onSelect={() => {
                           setSelectedCategory(category.id);
                           setOpen(false);
                         }}
-                        className="flex items-center justify-between py-3 cursor-pointer"
+                        className="flex items-center justify-between py-3 cursor-pointer aria-selected:bg-primary aria-selected:text-primary-foreground group"
                       >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold">{category.name}</span>
+                        <div className="flex flex-col gap-0.5 w-full">
+                          <span className="font-bold text-foreground group-aria-selected:text-primary-foreground">
+                            {category.name}
+                          </span>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground font-mono">ID: {category.sequenceId || 'S/ID'}</span>
+                            <span className="text-[10px] text-muted-foreground group-aria-selected:text-primary-foreground/70 font-mono">
+                              ID: {category.sequenceId || 'S/ID'}
+                            </span>
                             {category.categoryType && (
-                              <Badge variant="outline" className="text-[9px] h-4 py-0 px-1 uppercase">
+                              <Badge variant="outline" className="text-[9px] h-4 py-0 px-1 uppercase group-aria-selected:border-primary-foreground group-aria-selected:text-primary-foreground">
                                 {category.categoryType}
                               </Badge>
                             )}
@@ -124,7 +136,7 @@ export default function ComparisonPage() {
                         </div>
                         <Check
                           className={cn(
-                            "ml-auto h-4 w-4 text-primary",
+                            "ml-auto h-4 w-4 shrink-0",
                             selectedCategory === category.id ? "opacity-100" : "opacity-0"
                           )}
                         />
