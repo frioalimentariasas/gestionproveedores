@@ -4,21 +4,32 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { useRole } from '@/hooks/use-role';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, Check, ChevronsUpDown } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ComparisonView } from '@/components/comparison/comparison-view';
+import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface Category {
   id: string;
   name: string;
+  categoryType?: string;
+  sequenceId?: string;
 }
 
 export default function ComparisonPage() {
@@ -26,6 +37,7 @@ export default function ComparisonPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [open, setOpen] = useState(false);
 
   const categoriesQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'categories') : null),
@@ -40,6 +52,8 @@ export default function ComparisonPage() {
     }
   }, [isAdmin, isLoading, router]);
 
+  const selectedCategoryData = categories?.find((c) => c.id === selectedCategory);
+
   if (isLoading || isLoadingCategories) {
     return (
       <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
@@ -49,7 +63,6 @@ export default function ComparisonPage() {
   }
   
   if (!isAdmin) {
-    // Should be handled by the useEffect redirect, but as a fallback.
     return (
        <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -64,33 +77,80 @@ export default function ComparisonPage() {
           Comparador de Desempeño
         </h1>
         <p className="text-center text-muted-foreground mb-8">
-          Selecciona una categoría para comparar el desempeño de los proveedores.
+          Busca y selecciona una categoría operativa para comparar el desempeño técnico de sus proveedores.
         </p>
 
-        <div className="max-w-md mx-auto mb-12">
-          <Select onValueChange={setSelectedCategory} value={selectedCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una categoría..." />
-            </SelectTrigger>
-            <SelectContent>
-              {categories?.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="max-w-md mx-auto mb-12 flex justify-center">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between h-12 text-base border-primary/20 hover:border-primary transition-all shadow-sm"
+              >
+                {selectedCategory
+                  ? selectedCategoryData?.name
+                  : "Buscar categoría para comparar..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Escribe el nombre o ID de la categoría..." className="h-12" />
+                <CommandList className="max-h-80 overflow-y-auto">
+                  <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+                  <CommandGroup>
+                    {categories?.sort((a, b) => a.name.localeCompare(b.name)).map((category) => (
+                      <CommandItem
+                        key={category.id}
+                        value={category.name}
+                        onSelect={() => {
+                          setSelectedCategory(category.id);
+                          setOpen(false);
+                        }}
+                        className="flex items-center justify-between py-3 cursor-pointer"
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold">{category.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground font-mono">ID: {category.sequenceId || 'S/ID'}</span>
+                            {category.categoryType && (
+                              <Badge variant="outline" className="text-[9px] h-4 py-0 px-1 uppercase">
+                                {category.categoryType}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Check
+                          className={cn(
+                            "ml-auto h-4 w-4 text-primary",
+                            selectedCategory === category.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {selectedCategory ? (
-          <ComparisonView categoryId={selectedCategory} />
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-center gap-2 mb-8 bg-muted/30 py-2 px-4 rounded-full w-fit mx-auto border">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comparando:</span>
+              <span className="text-sm font-black text-primary">{selectedCategoryData?.name}</span>
+            </div>
+            <ComparisonView categoryId={selectedCategory} />
+          </div>
         ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-lg font-semibold">
-              Selecciona una categoría para comenzar
-            </h3>
-            <p className="text-muted-foreground mt-2">
-              Los resultados de la comparación se mostrarán aquí.
+          <div className="text-center py-24 border-2 border-dashed rounded-2xl bg-muted/10">
+            <Search className="h-16 w-16 text-muted-foreground/20 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold">Inicia una comparación</h3>
+            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+              Utiliza el buscador de arriba para seleccionar una categoría técnica y ver el ranking de cumplimiento ISO 9001 de los proveedores asociados.
             </p>
           </div>
         )}
