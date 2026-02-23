@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,6 +11,7 @@ import { Label } from '../ui/label';
 import { Loader2, Save, Info, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface Template {
   id: string;
