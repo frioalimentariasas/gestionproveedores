@@ -1,10 +1,6 @@
-
 'use server';
 
 import admin from '@/lib/firebase-admin';
-
-// The Brevo API key is sensitive and must be accessed only on the server.
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 // The admin emails to which notifications are sent.
 const ADMIN_RECIPIENTS = [
@@ -38,6 +34,12 @@ function replacePlaceholders(content: string, data: Record<string, string>) {
  */
 async function getDynamicTemplate(templateId: string, variables: Record<string, string>) {
   try {
+    // Check if admin is properly initialized
+    if (!admin || !admin.apps.length) {
+      console.warn('Firebase Admin not initialized. Using fallback email templates.');
+      return null;
+    }
+
     const templateSnap = await admin.firestore().collection('notification_templates').doc(templateId).get();
 
     if (templateSnap.exists) {
@@ -68,9 +70,12 @@ async function sendTransactionalEmail({
   },
   replyTo
 }: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
-  if (!BREVO_API_KEY) {
-    const errorMsg = 'Brevo API key is not configured. Please set the BREVO_API_KEY environment variable.';
-    console.error(`sendTransactionalEmail failed: ${errorMsg}`);
+  // Reading key inside the function to ensure it's not cached as undefined during build
+  const apiKey = process.env.BREVO_API_KEY;
+
+  if (!apiKey) {
+    const errorMsg = 'BREVO_API_KEY is not configured in environment variables.';
+    console.error(`[EMAIL ERROR]: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
 
@@ -91,7 +96,7 @@ async function sendTransactionalEmail({
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'api-key': BREVO_API_KEY,
+        'api-key': apiKey,
       },
       body: JSON.stringify(payload),
     });
@@ -99,15 +104,15 @@ async function sendTransactionalEmail({
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from Brevo API.' }));
       const errorMessage = `Brevo API Error: ${response.status} ${response.statusText}. Details: ${errorData.message || 'No additional details provided.'}`;
-      console.error('Error sending Brevo email:', errorMessage, errorData);
+      console.error('[BREVO API ERROR]:', errorMessage, errorData);
       return { success: false, error: errorMessage };
     }
 
     const data = await response.json();
-    console.log('Brevo email sent successfully. Message ID:', data.messageId);
+    console.log('[EMAIL SUCCESS]: Message ID:', data.messageId, 'Sent to:', to.map(t => t.email).join(', '));
     return { success: true, data };
   } catch (error) {
-    console.error('Error in sendTransactionalEmail fetch call:', error);
+    console.error('[NETWORK ERROR]: Failed to reach Brevo API:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown network error occurred while sending the email.';
     return { success: false, error: errorMessage };
   }
