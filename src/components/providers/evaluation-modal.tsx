@@ -34,10 +34,12 @@ import { getCriteriaForType, CategoryType, EVALUATION_TYPES, requiresActionPlan 
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { notifyProviderEvaluationFailed } from '@/actions/email';
 
 interface Provider {
   id: string;
   businessName: string;
+  email: string;
   providerType?: string[];
   categoryIds?: string[];
   criticalityLevel?: 'Crítico' | 'No Crítico';
@@ -196,6 +198,9 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       setIsUploading(false);
     }
 
+    const needsAction = requiresActionPlan(totalScore);
+    const evaluationTitle = selectedCategoryData ? EVALUATION_TYPES[selectedCategoryData.categoryType as keyof typeof EVALUATION_TYPES] : "Evaluación";
+
     const dataToSave = {
       providerId: provider.id,
       evaluatorId: user.uid,
@@ -204,7 +209,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       categoryId: selectedCategoryData.id,
       scores: values.scores,
       totalScore: totalScore,
-      isActionPlanRequired: requiresActionPlan(totalScore),
+      isActionPlanRequired: needsAction,
       comments: values.comments || '',
       createdAt: serverTimestamp(),
       ...(evidenceFileUrl && { evidenceFileUrl }),
@@ -214,9 +219,19 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     const evaluationsCollection = collection(firestore, 'providers', provider.id, 'evaluations');
     addDoc(evaluationsCollection, dataToSave)
       .then(() => {
+        // Automatic notification if score is low
+        if (needsAction && provider.email) {
+            notifyProviderEvaluationFailed({
+                providerEmail: provider.email,
+                providerName: provider.businessName,
+                score: totalScore,
+                evaluationType: evaluationTitle
+            }).catch(console.error);
+        }
+
         toast({ 
           title: 'Evaluación Guardada', 
-          description: `Se ha registrado el desempeño ISO 9001 para ${provider?.businessName}.` 
+          description: `Se ha registrado el desempeño ISO 9001 para ${provider?.businessName}.${needsAction ? ' Se ha enviado una notificación automática al proveedor por hallazgos detectados.' : ''}` 
         });
         handleClose();
       })
@@ -227,7 +242,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   }
 
   const isFormSubmitting = isSubmitting || isUploading;
-  const evaluationTitle = selectedCategoryData ? EVALUATION_TYPES[selectedCategoryData.categoryType] : "Evaluación";
+  const evaluationTitle = selectedCategoryData ? EVALUATION_TYPES[selectedCategoryData.categoryType as keyof typeof EVALUATION_TYPES] : "Evaluación";
   const needsAction = requiresActionPlan(totalScore);
 
   return (
