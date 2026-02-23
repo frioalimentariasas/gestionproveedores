@@ -202,6 +202,15 @@ export const providerFormSchema = z
     criticalityLevel: z.enum(['Crítico', 'No Crítico']).optional(),
   })
   .superRefine((data, ctx) => {
+    // Validation for Persona Jurídica must be Régimen Común
+    if (data.personType === 'Persona Jurídica' && data.taxRegimeType !== 'Común') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Para personas jurídicas, el régimen debe ser Común.',
+        path: ['taxRegimeType'],
+      });
+    }
+
     // Section 4: Legal Representative validation
     if (data.personType === 'Persona Jurídica') {
       if (!data.legalRepresentativeName) {
