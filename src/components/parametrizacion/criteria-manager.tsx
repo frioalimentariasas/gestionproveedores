@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { useState, useEffect } from 'react';
 import { Loader2, Save, AlertCircle, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
@@ -20,11 +20,11 @@ import {
   FormDescription,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getCriteriaForType, CategoryType } from '@/lib/evaluations';
 import { criteriaWeightsSchema } from '@/lib/schemas';
@@ -78,8 +78,6 @@ export function CriteriaManager() {
     if (selectedCategory) {
       const criteriaForType = getCriteriaForType(selectedCategory.categoryType, showCriticalPreview);
       const formData = criteriaForType.map(crit => {
-        // En parametrización global, si es para No Críticos (estándar), mostramos lo guardado o el default ISO Normal
-        // Si es preview crítico, mostramos solo el default ISO Crítico para referencia
         const savedWeight = !showCriticalPreview ? selectedCategory.evaluationCriteriaWeights?.[crit.id] : undefined;
         return {
           id: crit.id,
@@ -146,7 +144,7 @@ export function CriteriaManager() {
       <CardContent className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-                <FormLabel>Sector / Categoría</FormLabel>
+                <Label className="text-sm font-medium">Sector / Categoría</Label>
                 <Select onValueChange={setSelectedCategoryId} value={selectedCategoryId}>
                 <SelectTrigger>
                     <SelectValue placeholder="Selecciona categoría..." />
@@ -169,7 +167,7 @@ export function CriteriaManager() {
             
             {selectedCategoryId && (
                 <div className="space-y-2">
-                    <FormLabel>Vista de Configuración</FormLabel>
+                    <Label className="text-sm font-medium">Vista de Configuración</Label>
                     <div className="flex gap-2">
                         <Button 
                             variant={!showCriticalPreview ? "default" : "outline"} 
@@ -224,7 +222,7 @@ export function CriteriaManager() {
                     {fields.map((field, index) => (
                       <div key={field.id} className="flex items-center gap-4 bg-background p-3 rounded-md border shadow-sm">
                         <div className="flex-1">
-                            <FormLabel className="text-sm font-bold block">{field.label}</FormLabel>
+                            <Label className="text-sm font-bold block mb-1">{field.label}</Label>
                             <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Criterio ISO 9001</p>
                         </div>
                         <FormField
