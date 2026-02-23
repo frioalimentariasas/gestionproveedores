@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc } from 'firebase/firestore';
@@ -212,6 +211,43 @@ export default function ProviderViewPage() {
             });
         };
         const logoBase64 = await getLogoBase64();
+
+        // Background Watermark Function (Image based)
+        const getWatermarkBase64 = async () => {
+            const logoDataUrl = await getLogoBase64(); 
+            const img = new Image();
+            await new Promise(resolve => {
+                img.onload = resolve;
+                img.src = logoDataUrl;
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return logoDataUrl;
+            ctx.globalAlpha = 0.03; // Máxima transparencia posible
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png');
+        };
+        const watermarkBase64 = await getWatermarkBase64();
+
+        const drawWatermark = () => {
+            const watermarkWidth = 120;
+            const watermarkHeight = (watermarkWidth / 40) * 13;
+            const watermarkX = (pageWidth - watermarkWidth) / 2;
+            const watermarkY = (pageHeight - watermarkHeight) / 2;
+            doc.addImage(watermarkBase64, 'PNG', watermarkX, watermarkY, watermarkWidth, watermarkHeight);
+        };
+
+        const safeAddPage = () => {
+            doc.addPage();
+            yPos = margin;
+            drawWatermark();
+        };
+
+        // Draw watermark on first page BEFORE content
+        drawWatermark();
+
         doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
 
         doc.setFontSize(8);
@@ -240,10 +276,7 @@ export default function ProviderViewPage() {
         yPos += 15;
 
         const addSection = (title: string, fields: { label: string; value?: any }[]) => {
-            if (yPos > pageHeight - margin - 20) {
-                doc.addPage();
-                yPos = margin;
-            }
+            if (yPos > pageHeight - margin - 20) safeAddPage();
             doc.setFontSize(10);
             doc.setFont(undefined, 'bold');
             doc.setFillColor(220, 220, 220);
@@ -270,7 +303,7 @@ export default function ProviderViewPage() {
                         const valueLines = doc.splitTextToSize(displayValue, pageWidth - margin * 2 - (rowPadding*2));
                         const rowHeight = valueLines.length * lineHeight + (rowPadding * 2);
 
-                        if (yPos + rowHeight > pageHeight - margin) { doc.addPage(); yPos = margin; }
+                        if (yPos + rowHeight > pageHeight - margin) safeAddPage();
 
                         doc.rect(margin, yPos, pageWidth - margin * 2, rowHeight);
                         doc.text(valueLines, margin + rowPadding, yPos + lineHeight + rowPadding/2);
@@ -286,7 +319,7 @@ export default function ProviderViewPage() {
                         
                         const rowHeight = Math.max(labelLines.length, valueLines.length) * lineHeight + (rowPadding * 2);
 
-                        if (yPos + rowHeight > pageHeight - margin) { doc.addPage(); yPos = margin; }
+                        if (yPos + rowHeight > pageHeight - margin) safeAddPage();
                         
                         doc.rect(margin, yPos, col1Width, rowHeight);
                         doc.rect(col2X, yPos, col2Width, rowHeight);
@@ -375,36 +408,13 @@ export default function ProviderViewPage() {
         
         sectionsData.forEach(section => addSection(section.title, section.fields));
 
-        const watermarkBase64 = await (async () => {
-            const logoDataUrl = await getLogoBase64(); 
-            
-            const img = new Image();
-            await new Promise(resolve => {
-                img.onload = resolve;
-                img.src = logoDataUrl;
-            });
-
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return logoDataUrl;
-
-            ctx.globalAlpha = 0.1;
-            ctx.drawImage(img, 0, 0);
-
-            return canvas.toDataURL('image/png');
-        })();
-
+        // Page Numbers
         const totalPages = doc.internal.getNumberOfPages();
-        const watermarkWidth = 120;
-        const watermarkHeight = (watermarkWidth / 40) * 13;
-        const watermarkX = (pageWidth - watermarkWidth) / 2;
-        const watermarkY = (pageHeight - watermarkHeight) / 2;
-
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            doc.addImage(watermarkBase64, 'PNG', watermarkX, watermarkY, watermarkWidth, watermarkHeight);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
 
         const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');

@@ -179,6 +179,24 @@ export function ResultsManager({
         const pageHeight = doc.internal.pageSize.getHeight();
         let yPos = margin;
 
+        const drawBackgroundWatermark = () => {
+            const originalColor = doc.getTextColor();
+            doc.setTextColor(250, 250, 250); // Extremadamente tenue
+            doc.setFontSize(50);
+            doc.setFont(undefined, 'bold');
+            doc.text('REPORTE ISO 9001', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
+            doc.setTextColor(originalColor);
+        };
+
+        const safeAddPage = () => {
+            doc.addPage();
+            yPos = margin;
+            drawBackgroundWatermark();
+        };
+
+        // Draw watermark on first page
+        drawBackgroundWatermark();
+
         // Header Function
         const getLogoBase64 = async () => {
             const response = await fetch('/logo.png');
@@ -249,7 +267,7 @@ export function ResultsManager({
         doc.setFont(undefined, 'normal');
         doc.setFontSize(8);
         criteria.filter(c => c.weight > 0).forEach(c => {
-            if (yPos > pageHeight - 20) { doc.addPage(); yPos = margin; }
+            if (yPos > pageHeight - 20) safeAddPage();
             doc.text(`- ${c.label}`, margin + 5, yPos);
             doc.text(`${c.weight}%`, pageWidth - margin - 15, yPos, { align: 'right' });
             yPos += 5;
@@ -265,7 +283,6 @@ export function ResultsManager({
         yPos += 8;
 
         // Table Header
-        const colWidths = [60, 25, 30, 30]; // Empresa, Puntaje, %, Resultado
         const startX = margin;
         doc.setFontSize(8);
         doc.rect(startX, yPos - 4, pageWidth - margin * 2, 6);
@@ -276,7 +293,7 @@ export function ResultsManager({
         yPos += 6;
 
         sortedCompetitors.forEach(c => {
-            if (yPos > pageHeight - 20) { doc.addPage(); yPos = margin; }
+            if (yPos > pageHeight - 20) safeAddPage();
             const decision = getDecisionStatus(c.totalScore);
             doc.setFont(undefined, c.id === selectedCompetitorId ? 'bold' : 'normal');
             doc.rect(startX, yPos - 4, pageWidth - margin * 2, 6);
@@ -297,7 +314,7 @@ export function ResultsManager({
         yPos += 8;
 
         sortedCompetitors.forEach(c => {
-            if (yPos > pageHeight - 30) { doc.addPage(); yPos = margin; }
+            if (yPos > pageHeight - 30) safeAddPage();
             doc.setFontSize(9);
             doc.setFont(undefined, 'bold');
             doc.text(`> ${c.name}:`, margin + 2, yPos);
@@ -311,7 +328,7 @@ export function ResultsManager({
 
         // Section 5: Justification
         if (selectedCompetitor) {
-            if (yPos > pageHeight - 50) { doc.addPage(); yPos = margin; }
+            if (yPos > pageHeight - 50) safeAddPage();
             yPos += 5;
             doc.setFont(undefined, 'bold');
             doc.setFontSize(10);
@@ -334,22 +351,23 @@ export function ResultsManager({
         }
 
         // Footer signatures
-        if (yPos > pageHeight - 40) { doc.addPage(); yPos = margin + 20; }
-        yPos += 20;
+        if (yPos > pageHeight - 40) {
+            safeAddPage();
+            yPos += 20;
+        } else {
+            yPos += 20;
+        }
         doc.line(margin + 10, yPos, margin + 70, yPos);
         doc.line(pageWidth - margin - 70, yPos, pageWidth - margin - 10, yPos);
         doc.setFontSize(8);
         doc.text('Firma Responsable Selección', margin + 15, yPos + 5);
         doc.text('Firma Aprobación Calidad', pageWidth - margin - 65, yPos + 5);
 
-        // Watermark and watermark function
+        // Page Numbers
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            doc.setTextColor(240, 240, 240);
-            doc.setFontSize(40);
-            doc.text('REPORTE ISO 9001', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
-            doc.setTextColor(0);
+            doc.setTextColor(150);
             doc.setFontSize(8);
             doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
