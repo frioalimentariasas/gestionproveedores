@@ -1,4 +1,3 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -13,6 +12,7 @@ import { EVALUATION_TYPES, type EvaluationType, requiresActionPlan } from '@/lib
 import { EvaluationDetailModal } from '@/components/evaluations/evaluation-detail-modal';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface Evaluation {
   id: string;
