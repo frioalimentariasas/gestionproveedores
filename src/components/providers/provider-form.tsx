@@ -71,7 +71,6 @@ interface Category {
 }
 
 const initialFormValues: ProviderFormValues = {
-  serviceDescription: '',
   providerType: [],
   categoryIds: [],
   documentType: '',
@@ -441,19 +440,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         )}
 
         <Card>
-          <CardHeader><CardTitle>Descripción Inicial</CardTitle></CardHeader>
-          <CardContent>
-            <FormField control={form.control} name="serviceDescription" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descripción detallada del bien y/o servicio que ofrece</FormLabel>
-                <FormControl><Textarea placeholder="Indique claramente qué suministra o qué servicios presta..." {...field} disabled={isLocked} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </CardContent>
-        </Card>
-
-        <Card>
           <CardHeader><CardTitle>1. Información del Proveedor</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
@@ -518,7 +504,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             <FormField control={form.control} name="taxRegimeType" render={({ field }) => (<FormItem><FormLabel>Tipo de Régimen</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
             {watchedTaxRegimeType === 'Común' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={type} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
                 {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
               </div>
             )}

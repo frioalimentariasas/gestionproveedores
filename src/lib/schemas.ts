@@ -90,9 +90,6 @@ const fileSchemaOptional = z
 
 export const providerFormSchema = z
   .object({
-    // Initial description
-    serviceDescription: z.string().min(10, 'Por favor, describe brevemente qué ofreces (mín. 10 caracteres).'),
-    
     // Section 1
     providerType: z.array(z.string()).refine((value) => value.length > 0, {
       message: 'Debes seleccionar al menos un sector.',

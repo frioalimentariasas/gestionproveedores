@@ -100,12 +100,6 @@ export default function ProviderViewPage() {
     if (!providerData) return;
 
     const data = [
-      {
-        Section: 'Descripción',
-        Field: 'Descripción del bien y/o servicio',
-        Value: providerData.serviceDescription,
-      },
-
       { Section: '1. Información del Proveedor' },
       { Section: '', Field: 'Razón social o nombre', Value: providerData.businessName },
       { Section: '', Field: 'Tipo de Proveedor', Value: providerData.providerType?.join(', ') },
@@ -338,7 +332,6 @@ export default function ProviderViewPage() {
         };
 
         const sectionsData = [
-            { title: "DESCRIPCIÓN DEL BIEN Y/O SERVICIO", fields: [{ label: '', value: providerData.serviceDescription }] },
             { title: "1. Información del Proveedor", fields: [
                 { label: "Razón Social o nombre", value: providerData.businessName },
                 { label: "Nivel de Criticidad", value: providerData.criticalityLevel || 'No Asignado' },
@@ -506,11 +499,6 @@ export default function ProviderViewPage() {
           <div className="rounded-t-lg bg-primary p-3 text-center font-bold text-primary-foreground">
             OBLIGATORIO DILIGENCIAMIENTO POR PARTE DEL PROVEEDOR
           </div>
-          <Card className="-mt-8 rounded-t-none">
-            <CardContent className="pt-6">
-              <p className="text-sm">{providerData.serviceDescription}</p>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
