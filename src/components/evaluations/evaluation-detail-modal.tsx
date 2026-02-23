@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -11,12 +10,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { EVALUATION_TYPES, getCriteriaForType, requiresActionPlan } from '@/lib/evaluations';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { useState, useMemo, useEffect } from 'react';
-import { Loader2, ClipboardCheck, MessageSquareText, ShieldAlert, Send, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Loader2, ClipboardCheck, MessageSquareText, Send, AlertTriangle } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -31,8 +29,8 @@ interface Evaluation {
   totalScore: number;
   scores: Record<string, number>;
   comments: string;
-  improvementCommitment?: string; // Legacy field for summary
-  improvementCommitments?: Record<string, string>; // New granular field
+  improvementCommitment?: string;
+  improvementCommitments?: Record<string, string>;
   commitmentSubmittedAt?: Timestamp;
   createdAt: Timestamp;
 }
@@ -73,7 +71,6 @@ export function EvaluationDetailModal({
   const needsAction = requiresActionPlan(evaluation.totalScore);
   const isAlreadySubmitted = !!evaluation.commitmentSubmittedAt;
 
-  // Function to handle change in specific commitment
   const handleCommitmentChange = (criterionId: string, value: string) => {
     setCommitments(prev => ({
       ...prev,
@@ -92,7 +89,7 @@ export function EvaluationDetailModal({
       toast({
         variant: 'destructive',
         title: 'Información Faltante',
-        description: 'Debe radicar un compromiso para cada uno de los criterios con puntaje bajo.'
+        description: 'Debe radicar un compromiso de mejora para CADA criterio marcado en rojo.'
       });
       return;
     }
@@ -103,13 +100,12 @@ export function EvaluationDetailModal({
     try {
       await updateDoc(evalRef, {
         improvementCommitments: commitments,
-        // Also save a concatenated summary for compatibility with the card view
         improvementCommitment: Object.values(commitments).filter(Boolean).join(' | '),
         commitmentSubmittedAt: serverTimestamp(),
       });
       toast({ 
         title: 'Compromiso Radicado', 
-        description: 'Su plan de mejora detallado ha sido registrado exitosamente.' 
+        description: 'Su plan de mejora detallado ha sido registrado exitosamente conforme a ISO 9001.' 
       });
       onClose();
     } catch (e) {
@@ -121,7 +117,8 @@ export function EvaluationDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
+      <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
+        {/* Cabecera Fija */}
         <DialogHeader className="p-6 border-b shrink-0 bg-muted/20">
           <div className="flex justify-between items-start gap-4">
             <div className="space-y-1">
@@ -136,22 +133,21 @@ export function EvaluationDetailModal({
                 <Badge variant={needsAction ? "destructive" : "default"} className="text-xl py-1 px-4 mb-1">
                     {(evaluation.totalScore * 20).toFixed(0)}%
                 </Badge>
-                <p className="text-[10px] text-muted-foreground uppercase font-mono">Resultado Final</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Cumplimiento Final</p>
             </div>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow">
-          <div className="p-6 space-y-8 pb-12">
-            {/* Scores Table with commitments integration */}
+        {/* Área de Contenido con Scroll Independiente */}
+        <div className="flex-grow overflow-y-auto p-6 space-y-8 pb-12">
             <div className="space-y-4">
                 <div className="flex items-center justify-between border-b pb-2">
                     <h4 className="font-bold text-xs uppercase text-muted-foreground flex items-center gap-2">
                         <ClipboardCheck className="h-4 w-4" /> Calificación por Criterio
                     </h4>
                     {needsAction && (
-                        <Badge variant="outline" className="text-destructive border-destructive bg-destructive/5 animate-pulse text-[9px] uppercase">
-                            Hallazgos Detectados
+                        <Badge variant="outline" className="text-destructive border-destructive bg-destructive/5 animate-pulse text-[9px] uppercase font-bold">
+                            Hallazgos Críticos Detectados
                         </Badge>
                     )}
                 </div>
@@ -163,42 +159,51 @@ export function EvaluationDetailModal({
                         
                         return (
                             <div key={crit.id} className={cn(
-                                "flex flex-col p-4 rounded-xl border transition-all shadow-sm",
-                                isLow ? "border-destructive/30 bg-destructive/5" : "bg-card"
+                                "flex flex-col p-5 rounded-xl border transition-all shadow-sm",
+                                isLow ? "border-destructive/40 bg-destructive/5" : "bg-card"
                             )}>
-                                <div className="flex justify-between items-center mb-3">
-                                    <div className="space-y-0.5">
-                                        <span className="font-bold text-sm text-foreground">{crit.label}</span>
-                                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Peso Relativo: {(crit.defaultWeight * 100).toFixed(0)}%</p>
+                                <div className="flex justify-between items-center mb-4">
+                                    <div className="space-y-1">
+                                        <span className={cn(
+                                            "font-bold text-sm",
+                                            isLow ? "text-destructive" : "text-foreground"
+                                        )}>
+                                            {crit.label}
+                                        </span>
+                                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest">
+                                            Peso Relativo: {(crit.defaultWeight * 100).toFixed(0)}%
+                                        </p>
                                     </div>
                                     <div className={cn(
-                                        "w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-lg shrink-0",
-                                        isLow ? "border-destructive bg-white text-destructive shadow-[0_0_10px_rgba(239,68,68,0.2)]" : "border-primary bg-muted/30 text-primary"
+                                        "w-14 h-14 rounded-full border-4 flex items-center justify-center font-black text-xl shrink-0 transition-transform hover:scale-105",
+                                        isLow 
+                                            ? "border-destructive bg-white text-destructive shadow-[0_0_15px_rgba(239,68,68,0.3)]" 
+                                            : "border-primary bg-muted/30 text-primary"
                                     )}>
-                                        {score}
+                                        {score.toFixed(1)}
                                     </div>
                                 </div>
 
                                 {isLow && (
-                                    <div className="mt-3 space-y-2 border-t pt-3 border-destructive/10">
+                                    <div className="mt-2 space-y-3 border-t pt-4 border-destructive/20">
                                         <div className="flex items-center gap-2 text-destructive">
-                                            <AlertTriangle className="h-3 w-3" />
-                                            <Label className="text-[10px] font-black uppercase tracking-tight">Acción Correctiva Requerida:</Label>
+                                            <AlertTriangle className="h-4 w-4" />
+                                            <Label className="text-[11px] font-black uppercase tracking-tight">Acción Correctiva Requerida:</Label>
                                         </div>
                                         
                                         {isProviderView && !isAlreadySubmitted ? (
                                             <Textarea
-                                                placeholder="Especifique las medidas que tomará su empresa para mejorar este indicador..."
-                                                className="text-xs bg-white border-destructive/20 focus-visible:ring-destructive"
+                                                placeholder="Describa el compromiso de mejora para este hallazgo específico..."
+                                                className="text-sm bg-white border-destructive/30 focus-visible:ring-destructive min-h-[100px]"
                                                 value={commitments[crit.id] || ''}
                                                 onChange={(e) => handleCommitmentChange(crit.id, e.target.value)}
                                             />
                                         ) : (
-                                            <div className="p-3 rounded-lg bg-white/50 border border-destructive/10 text-xs italic text-foreground">
+                                            <div className="p-4 rounded-lg bg-white/60 border border-destructive/10 text-sm italic text-foreground shadow-inner">
                                                 {commitments[crit.id] ? (
                                                     <p>"{commitments[crit.id]}"</p>
                                                 ) : (
-                                                    <p className="text-muted-foreground">No se ha radicado compromiso para este punto.</p>
+                                                    <p className="text-muted-foreground">Pendiente de radicación de compromiso por parte del proveedor.</p>
                                                 )}
                                             </div>
                                         )}
@@ -210,38 +215,40 @@ export function EvaluationDetailModal({
                 </div>
             </div>
 
-            {/* Evaluator Comments */}
+            {/* Observaciones del Auditor */}
             <div className="space-y-3">
-                <h4 className="font-bold text-xs uppercase text-muted-foreground">Observaciones del Auditor</h4>
-                <div className="p-4 rounded-lg bg-muted border text-sm italic text-muted-foreground shadow-inner">
-                    {evaluation.comments || 'Sin observaciones adicionales registradas.'}
+                <h4 className="font-bold text-xs uppercase text-muted-foreground">Observaciones de la Auditoría</h4>
+                <div className="p-4 rounded-lg bg-muted/50 border text-sm italic text-muted-foreground">
+                    {evaluation.comments || 'Sin observaciones adicionales registradas por el auditor.'}
                 </div>
             </div>
 
             {/* Status Info */}
             {isAlreadySubmitted && (
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="p-5 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
                         <div className="bg-primary/10 p-2 rounded-full">
-                            <MessageSquareText className="h-5 w-5 text-primary" />
+                            <MessageSquareText className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-primary uppercase">Compromiso de Mejora Radicado</p>
-                            <p className="text-[10px] text-muted-foreground">Este documento forma parte integral del historial de cumplimiento del proveedor.</p>
+                            <p className="text-sm font-black text-primary uppercase">Compromiso Radicado</p>
+                            <p className="text-[11px] text-muted-foreground">El plan de acción ha sido registrado en el sistema para trazabilidad ISO.</p>
                         </div>
                     </div>
-                    <p className="text-[10px] font-mono text-muted-foreground bg-white px-2 py-1 rounded border">
-                        {format(evaluation.commitmentSubmittedAt?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
-                    </p>
+                    <div className="text-right">
+                        <p className="text-[10px] font-mono font-bold text-muted-foreground bg-white px-3 py-1 rounded-full border">
+                            {format(evaluation.commitmentSubmittedAt?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        </p>
+                    </div>
                 </div>
             )}
-          </div>
-        </ScrollArea>
+        </div>
 
+        {/* Pie de Página Fijo */}
         <DialogFooter className="p-6 border-t shrink-0 bg-muted/10">
-          <Button variant="outline" onClick={onClose} className="font-bold">Cerrar Ventana</Button>
+          <Button variant="outline" onClick={onClose} className="font-bold">Cerrar Detalle</Button>
           {isProviderView && needsAction && !isAlreadySubmitted && (
-              <Button onClick={handleSubmitCommitment} disabled={isSubmitting} className="min-w-[200px] shadow-lg">
+              <Button onClick={handleSubmitCommitment} disabled={isSubmitting} className="min-w-[220px] shadow-lg">
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
                   Radicar Compromiso ISO 9001
               </Button>
