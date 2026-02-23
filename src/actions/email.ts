@@ -1,9 +1,8 @@
-'use client';
+'use server';
 
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import admin from '@/lib/firebase-admin';
 
-// The Brevo API key is sensitive and should be stored in an environment variable.
+// The Brevo API key is sensitive and must be accessed only on the server.
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 // The admin email to which notifications are sent.
@@ -31,18 +30,16 @@ function replacePlaceholders(content: string, data: Record<string, string>) {
 }
 
 /**
- * Attempts to load a dynamic template from Firestore.
+ * Attempts to load a dynamic template from Firestore using Admin SDK.
  */
 async function getDynamicTemplate(templateId: string, variables: Record<string, string>) {
   try {
-    const { firestore } = initializeFirebase();
-    if (!firestore) return null;
+    const templateSnap = await admin.firestore().collection('notification_templates').doc(templateId).get();
 
-    const templateRef = doc(firestore, 'notification_templates', templateId);
-    const templateSnap = await getDoc(templateRef);
-
-    if (templateSnap.exists()) {
+    if (templateSnap.exists) {
       const templateData = templateSnap.data();
+      if (!templateData) return null;
+      
       return {
         subject: replacePlaceholders(templateData.subject, variables),
         htmlContent: replacePlaceholders(templateData.htmlContent, variables),
@@ -68,7 +65,7 @@ async function sendTransactionalEmail({
   replyTo
 }: SendEmailParams): Promise<{ success: boolean; error?: string; data?: any }> {
   if (!BREVO_API_KEY) {
-    const errorMsg = 'Brevo API key is not configured. Cannot send email.';
+    const errorMsg = 'Brevo API key is not configured. Please set the BREVO_API_KEY environment variable.';
     console.error(`sendTransactionalEmail failed: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
