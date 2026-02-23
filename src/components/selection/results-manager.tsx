@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Competitor } from './manage-selection-event';
+import type { Competitor, Criterion } from './manage-selection-event';
 import {
   BarChart,
   Bar,
@@ -14,7 +13,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { Crown, Trophy, Mail, Copy, Loader2, Info, NotebookPen, MessageSquareQuote } from 'lucide-react';
+import { Crown, Trophy, Mail, Copy, Loader2, Info, NotebookPen, MessageSquareQuote, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { Textarea } from '../ui/textarea';
@@ -27,6 +26,9 @@ import { cn } from '@/lib/utils';
 interface ResultsManagerProps {
   eventId: string;
   eventName: string;
+  eventType: string;
+  criticality?: string;
+  criteria: Criterion[];
   competitors: Competitor[];
   onSelectCompetitor: (competitor: Competitor, justification: string) => void;
   selectedCompetitorId?: string;
@@ -53,6 +55,9 @@ function getDecisionStatus(score: number = 0) {
 export function ResultsManager({
   eventId,
   eventName,
+  eventType,
+  criticality,
+  criteria,
   competitors,
   onSelectCompetitor,
   selectedCompetitorId,
@@ -62,6 +67,7 @@ export function ResultsManager({
   
   const { toast } = useToast();
   const [isResending, setIsResending] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [dialogState, setDialogState] = useState<{ isOpen: boolean; competitor: Competitor | null; justification: string }>({ isOpen: false, competitor: null, justification: '' });
 
   const sortedCompetitors = useMemo(() => {
@@ -145,7 +151,7 @@ export function ResultsManager({
   };
 
   const handleCopyLink = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.gestionproveedores.frioalimentaria.com.co';
+    const baseUrl = window.location.origin;
     const registrationUrl = `${baseUrl}/auth/register?eventId=${eventId}`;
     navigator.clipboard.writeText(registrationUrl).then(() => {
         toast({
@@ -161,13 +167,218 @@ export function ResultsManager({
     });
   };
 
+  const handleExportPdf = async () => {
+    setIsGeneratingPdf(true);
+    const { default: jsPDF } = await import('jspdf');
+    const { format } = await import('date-fns');
+
+    try {
+        const doc = new jsPDF();
+        const margin = 15;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPos = margin;
+
+        // Header Function
+        const getLogoBase64 = async () => {
+            const response = await fetch('/logo.png');
+            const blob = await response.blob();
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        };
+
+        const logoBase64 = await getLogoBase64();
+        doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
+
+        // Doc Info Box
+        doc.setFontSize(8);
+        doc.setDrawColor(0);
+        const boxX = pageWidth - margin - 50;
+        const boxY = 12;
+        const boxWidth = 50;
+        const boxHeight = 15;
+        doc.rect(boxX, boxY, boxWidth, boxHeight);
+        doc.text('Codigo: FA-GFC-F05', boxX + 2, boxY + 4);
+        doc.line(boxX, boxY + 5, boxX + boxWidth, boxY + 5);
+        doc.text('Version: 1', boxX + 2, boxY + 9);
+        doc.line(boxX, boxY + 10, boxX + boxWidth, boxY + 10);
+        doc.text('Vigencia: 12/06/2025', boxX + 2, boxY + 14);
+        
+        yPos += 20;
+
+        // Title
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('ACTA DE SELECCIÓN DE PROVEEDORES ISO 9001', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 15;
+
+        // Section 1: General Info
+        doc.setFontSize(10);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+        doc.text('1. INFORMACIÓN GENERAL DEL PROCESO', margin + 2, yPos);
+        yPos += 8;
+
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(9);
+        const generalInfo = [
+            `Nombre del Proceso: ${eventName}`,
+            `Sector: ${eventType}`,
+            `Nivel de Criticidad: ${criticality || 'No Asignado'}`,
+            `Fecha de Generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
+            `Estado: ${isLocked ? 'CERRADO' : 'ABIERTO'}`
+        ];
+        generalInfo.forEach(line => {
+            doc.text(line, margin + 5, yPos);
+            yPos += 5;
+        });
+        yPos += 5;
+
+        // Section 2: Criteria
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(10);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+        doc.text('2. CRITERIOS DE EVALUACIÓN Y PONDERACIÓN', margin + 2, yPos);
+        yPos += 8;
+
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8);
+        criteria.filter(c => c.weight > 0).forEach(c => {
+            if (yPos > pageHeight - 20) { doc.addPage(); yPos = margin; }
+            doc.text(`- ${c.label}`, margin + 5, yPos);
+            doc.text(`${c.weight}%`, pageWidth - margin - 15, yPos, { align: 'right' });
+            yPos += 5;
+        });
+        yPos += 5;
+
+        // Section 3: Comparative Matrix
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(10);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+        doc.text('3. MATRIZ COMPARATIVA DE RESULTADOS', margin + 2, yPos);
+        yPos += 8;
+
+        // Table Header
+        const colWidths = [60, 25, 30, 30]; // Empresa, Puntaje, %, Resultado
+        const startX = margin;
+        doc.setFontSize(8);
+        doc.rect(startX, yPos - 4, pageWidth - margin * 2, 6);
+        doc.text('EMPRESA COMPETIDORA', startX + 2, yPos);
+        doc.text('PUNTAJE (1-5)', startX + 62, yPos);
+        doc.text('% CUMPLIMIENTO', startX + 92, yPos);
+        doc.text('DECISIÓN ISO', startX + 127, yPos);
+        yPos += 6;
+
+        sortedCompetitors.forEach(c => {
+            if (yPos > pageHeight - 20) { doc.addPage(); yPos = margin; }
+            const decision = getDecisionStatus(c.totalScore);
+            doc.setFont(undefined, c.id === selectedCompetitorId ? 'bold' : 'normal');
+            doc.rect(startX, yPos - 4, pageWidth - margin * 2, 6);
+            doc.text(c.name.substring(0, 35), startX + 2, yPos);
+            doc.text(c.totalScore?.toFixed(2) || '0.00', startX + 62, yPos);
+            doc.text(`${((c.totalScore || 0) * 20).toFixed(0)}%`, startX + 92, yPos);
+            doc.text(decision.label, startX + 127, yPos);
+            yPos += 6;
+        });
+        yPos += 10;
+
+        // Section 4: Audit notes
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(10);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+        doc.text('4. BITÁCORA DE VERIFICACIÓN (AUDITORÍA)', margin + 2, yPos);
+        yPos += 8;
+
+        sortedCompetitors.forEach(c => {
+            if (yPos > pageHeight - 30) { doc.addPage(); yPos = margin; }
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            doc.text(`> ${c.name}:`, margin + 2, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'italic');
+            doc.setFontSize(8);
+            const notesLines = doc.splitTextToSize(c.auditNotes || 'Sin notas de verificación registradas.', pageWidth - margin * 2 - 10);
+            doc.text(notesLines, margin + 5, yPos);
+            yPos += (notesLines.length * 4) + 5;
+        });
+
+        // Section 5: Justification
+        if (selectedCompetitor) {
+            if (yPos > pageHeight - 50) { doc.addPage(); yPos = margin; }
+            yPos += 5;
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(10);
+            doc.setFillColor(220, 220, 255);
+            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+            doc.text('5. RESULTADO FINAL Y JUSTIFICACIÓN DE ADJUDICACIÓN', margin + 2, yPos);
+            yPos += 8;
+
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            doc.text(`Proveedor Seleccionado: ${selectedCompetitor.name}`, margin + 5, yPos);
+            yPos += 7;
+            doc.setFont(undefined, 'bold');
+            doc.text('Motivo de Selección:', margin + 5, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            const justLines = doc.splitTextToSize(justification || 'No proporcionada.', pageWidth - margin * 2 - 10);
+            doc.text(justLines, margin + 5, yPos);
+            yPos += (justLines.length * 4) + 10;
+        }
+
+        // Footer signatures
+        if (yPos > pageHeight - 40) { doc.addPage(); yPos = margin + 20; }
+        yPos += 20;
+        doc.line(margin + 10, yPos, margin + 70, yPos);
+        doc.line(pageWidth - margin - 70, yPos, pageWidth - margin - 10, yPos);
+        doc.setFontSize(8);
+        doc.text('Firma Responsable Selección', margin + 15, yPos + 5);
+        doc.text('Firma Aprobación Calidad', pageWidth - margin - 65, yPos + 5);
+
+        // Watermark and watermark function
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setTextColor(240, 240, 240);
+            doc.setFontSize(40);
+            doc.text('REPORTE ISO 9001', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
+            doc.setTextColor(0);
+            doc.setFontSize(8);
+            doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
+
+        doc.save(`Acta_Seleccion_${eventName.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+        toast({ title: 'Reporte Generado', description: 'El acta de selección se ha descargado correctamente.' });
+    } catch (e) {
+        console.error("Error generating PDF:", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar el PDF.' });
+    } finally {
+        setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Gráfico de Resultados</CardTitle>
-            <CardDescription>Comparación visual de los puntajes totales de los competidores.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Gráfico de Resultados</CardTitle>
+                <CardDescription>Comparación visual de los puntajes totales de los competidores.</CardDescription>
+            </div>
+            {isLocked && (
+                <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isGeneratingPdf}>
+                    {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Printer className="h-4 w-4 mr-2" />}
+                    Descargar Reporte PDF
+                </Button>
+            )}
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -327,6 +326,9 @@ export default function ManageSelectionEvent({ eventId }: { eventId: string }) {
                 <ResultsManager
                     eventId={event.id}
                     eventName={event.name}
+                    eventType={event.type}
+                    criticality={event.criticalityLevel}
+                    criteria={event.criteria || []}
                     competitors={event.competitors || []}
                     onSelectCompetitor={handleSelectCompetitor}
                     selectedCompetitorId={event.selectedCompetitorId}
