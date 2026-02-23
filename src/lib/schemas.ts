@@ -100,17 +100,18 @@ export const providerFormSchema = z
     documentType: z.string().min(1, 'El tipo de documento es requerido.'),
     documentNumber: z
       .string()
+      .trim()
       .min(1, 'El número de documento es requerido.')
       .regex(
         /^[0-9-]*$/,
         'El número de documento solo debe contener números y guiones.'
       ),
-    businessName: z.string().min(1, 'La razón social es requerida.'),
+    businessName: z.string().trim().min(1, 'La razón social es requerida.'),
     personType: z.string().min(1, 'El tipo de persona es requerido.'),
     city: z.string().min(1, 'La ciudad es requerida.'),
     department: z.string().min(1, 'El departamento es requerido.'),
     country: z.string().min(1, 'El país es requerido.'),
-    address: z.string().min(1, 'La dirección es requerida.'),
+    address: z.string().trim().min(1, 'La dirección es requerida.'),
     fax: z.string().optional(),
     phone: z.string().min(1, 'El teléfono es requerido.'),
     website: z
@@ -120,21 +121,26 @@ export const providerFormSchema = z
       .or(z.literal('')),
     providerContactName: z
       .string()
+      .trim()
       .min(1, 'El contacto comercial es requerido.'),
     providerContactTitle: z
       .string()
+      .trim()
       .min(1, 'El cargo del contacto es requerido.'),
-    providerContactEmail: z.string().email('Email de contacto no válido.').min(1, 'El email de contacto es requerido.'),
+    providerContactEmail: z.string().trim().email('Email de contacto no válido.').min(1, 'El email de contacto es requerido.'),
     paymentContactName: z
       .string()
+      .trim()
       .min(1, 'El nombre de la persona para notificar pago es requerido.'),
     paymentContactTitle: z
       .string()
+      .trim()
       .min(1, 'El cargo de la persona para notificar pago es requerido.'),
     paymentContactEmail:
       z.string()
+      .trim()
       .email('El email para notificación de pago no es válido.').min(1, 'El email para notificación de pago es requerido.'),
-    email: z.string().trim().email('Email no válido.'),
+    email: z.string().optional(), // Opcional para evitar errores silenciosos en el formulario
 
     // Section 2 - Tributaria
     taxRegimeType: z.string().min(1, 'El tipo de régimen es requerido.'),
@@ -145,32 +151,33 @@ export const providerFormSchema = z
     isIcaSelfRetainer: z.string().optional(),
     icaSelfRetainerMunicipality: z.string().optional(),
     icaSelfRetainerResolution: z.string().optional(),
-    ciiuCode: z.string().min(1, 'El código CIIU es requerido.'),
-    icaCode: z.string().optional(),
-    declarationCity: z.string().min(1, 'La ciudad donde declara es requerida.'),
-    icaPercentage: z.string().optional(),
+    ciiuCode: z.string().trim().min(1, 'El código CIIU es requerido.'),
+    icaCode: z.string().trim().optional(),
+    declarationCity: z.string().trim().min(1, 'La ciudad donde declara es requerida.'),
+    icaPercentage: z.string().trim().optional(),
 
     // Section 3 - Ambiental
     implementsEnvironmentalMeasures: z.string().min(1, 'Este campo es requerido.'),
-    environmentalMeasuresDescription: z.string().optional(),
+    environmentalMeasuresDescription: z.string().trim().optional(),
 
     // Section 4 - Representante Legal
-    legalRepresentativeName: z.string().optional(),
+    legalRepresentativeName: z.string().trim().optional(),
     legalRepresentativeDocumentType: z.string().optional(),
-    legalRepresentativeDocumentNumber: z.string().optional(),
+    legalRepresentativeDocumentNumber: z.string().trim().optional(),
 
     // Section 5 - Financiera
-    bankName: z.string().min(1, 'El nombre del banco es requerido.'),
+    bankName: z.string().trim().min(1, 'El nombre del banco es requerido.'),
     accountType: z.string().min(1, 'El tipo de cuenta es requerido.'),
     accountNumber: z
       .string()
+      .trim()
       .min(1, 'El número de cuenta es requerido.')
       .regex(/^[0-9]+$/, 'El número de cuenta solo debe contener números.')
       .max(20, 'El número de cuenta no puede tener más de 20 dígitos.'),
     beneficiaryName: z
       .string()
-      .min(1, 'El nombre del titular es requerido.')
-      .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre del titular solo debe contener letras y espacios.'),
+      .trim()
+      .min(1, 'El nombre del titular es requerido.'),
     
     // Section 6 - Documentos (Inputs)
     rutFile: fileSchemaOptional,
@@ -255,12 +262,12 @@ export const providerFormSchema = z
     }
 
     // Renta self-retainer resolution
-    if (data.isIncomeSelfRetainer === 'Sí' && !data.incomeSelfRetainerResolution) {
+    if (data.taxRegimeType === 'Común' && data.isIncomeSelfRetainer === 'Sí' && !data.incomeSelfRetainerResolution) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Resolución requerida.', path: ['incomeSelfRetainerResolution'] });
     }
 
     // ICA self-retainer fields
-    if (data.isIcaSelfRetainer === 'Sí') {
+    if (data.taxRegimeType === 'Común' && data.isIcaSelfRetainer === 'Sí') {
         if (!data.icaSelfRetainerMunicipality) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Municipio requerido.', path: ['icaSelfRetainerMunicipality'] });
         }

@@ -316,7 +316,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
 
       await Promise.all(fileUploadPromises);
       const dataToSave = { ...values, ...updatedFileUrls, id: user.uid, formLocked: true };
-      delete (dataToSave as any).email;
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
@@ -359,6 +358,13 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   };
 
   const hasErrors = Object.keys(errors).length > 0;
+
+  // Debugging: Log errors to console when attempt to submit
+  useEffect(() => {
+    if (hasErrors) {
+      console.log('Form validation errors:', errors);
+    }
+  }, [hasErrors, errors]);
 
   if (isProviderDataLoading && !previewMode) {
     return (
@@ -456,7 +462,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
               <FormField control={form.control} name="documentType" render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Tipo de Documento</FormLabel>
-                    <FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{documentTypes.map((type) => (<FormItem key={type} className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value={type} /></FormControl><FormLabel className="font-normal">{type}</FormLabel></FormItem>))}</RadioGroup></FormControl><FormMessage />
+                    <FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{documentTypes.map((type) => (<FormItem key={type} className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value={type} /></FormControl><FormLabel className="font-normal">{type}</FormLabel></FormItem>))}</RadioGroup></FormControl>
+                    <FormMessage />
                   </FormItem>
                 )} />
               <FormField control={form.control} name="documentNumber" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Número</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
@@ -539,7 +546,22 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             {watchedTaxRegimeType === 'Común' && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>¿Es Gran Contribuyente?</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                          {yesNoOptions.map((opt) => (
+                            <FormItem key={opt} className="flex items-center space-x-2">
+                              <FormControl><RadioGroupItem value={opt} /></FormControl>
+                              <Label className="font-normal">{opt}</Label>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                   {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
                 </div>
 
@@ -667,7 +689,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         <Card>
           <CardHeader><CardTitle>8. SARLAFT Y PROTECCIÓN DE DATOS</CardTitle></CardHeader>
           <CardContent>
-            <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (<FormItem className="flex row items-start space-x-3 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Acepto la declaración de origen de fondos y la política de tratamiento de datos personales.</FormLabel></div></FormItem>)} />
+            <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (<FormItem className="flex row items-start space-x-3 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Acepto la declaración de origen de fondos y la política de tratamiento de datos personales.</FormLabel><FormMessage /></div></FormItem>)} />
           </CardContent>
         </Card>
 
@@ -676,7 +698,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Faltan Campos Obligatorios</AlertTitle>
                 <AlertDescription>
-                    Por favor revisa el formulario. Hay campos obligatorios sin completar o con errores de formato.
+                    Por favor revisa el formulario. Hay campos obligatorios sin completar o con errores de formato. 
+                    (Verifica secciones de Información Tributaria y Documentos).
                 </AlertDescription>
             </Alert>
         )}
