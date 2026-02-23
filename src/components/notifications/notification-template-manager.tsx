@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +11,7 @@ import { Label } from '../ui/label';
 import { Loader2, Save, Info, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Template {
   id: string;
@@ -71,6 +70,13 @@ const DEFAULT_TEMPLATES: Template[] = [
     subject: 'Restablecimiento de Contraseña de su Cuenta',
     htmlContent: '<h1>Hola, {{providerName}}</h1><p>Tu nueva contraseña es: {{newPassword}}</p>',
     variables: ['providerName', 'newPassword'],
+  },
+  {
+    id: 'account_status_provider',
+    name: 'Cambio de Estado de Cuenta (Activada/Desactivada)',
+    subject: 'Estado de su cuenta en Frioalimentaria: {{status}}',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Su cuenta ha sido <strong>{{status}}</strong> por un administrador.</p>',
+    variables: ['providerName', 'status'],
   },
   {
     id: 'reactivation_request_admin',

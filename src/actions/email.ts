@@ -1,4 +1,3 @@
-
 'use server';
 
 import admin from '@/lib/firebase-admin';
@@ -320,6 +319,35 @@ export async function notifyProviderPasswordReset({
     <p>El equipo de Frioalimentaria SAS</p>
   `;
   
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
+export async function notifyProviderAccountStatus({
+  providerEmail,
+  providerName,
+  status,
+}: {
+  providerEmail: string;
+  providerName: string;
+  status: 'activada' | 'desactivada';
+}) {
+  const variables = { providerName, status };
+  const dynamic = await getDynamicTemplate('account_status_provider', variables);
+
+  const subject = dynamic?.subject || `Estado de su cuenta en Frioalimentaria: ${status.toUpperCase()}`;
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Hola, ${providerName}</h1>
+    <p>Le informamos que su cuenta en nuestro portal de proveedores ha sido <strong>${status}</strong> por un administrador.</p>
+    ${status === 'activada' ? '<p>Ya puede ingresar al portal con sus credenciales habituales.</p>' : '<p>Si considera que esto es un error, por favor contacte a soporte.</p>'}
+    <br>
+    <p>Cordialmente,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
   return await sendTransactionalEmail({
     to: [{ email: providerEmail, name: providerName }],
     subject,
