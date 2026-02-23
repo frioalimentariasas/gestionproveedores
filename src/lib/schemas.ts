@@ -140,14 +140,14 @@ export const providerFormSchema = z
     taxRegimeType: z.string().min(1, 'El tipo de régimen es requerido.'),
     isLargeTaxpayer: z.string().optional(),
     largeTaxpayerResolution: z.string().optional(),
-    isIncomeSelfRetainer: z.string().optional(),
+    isIncomeSelfRetainer: z.string().min(1, 'Requerido.'),
     incomeSelfRetainerResolution: z.string().optional(),
-    isIcaSelfRetainer: z.string().optional(),
+    isIcaSelfRetainer: z.string().min(1, 'Requerido.'),
     icaSelfRetainerMunicipality: z.string().optional(),
     icaSelfRetainerResolution: z.string().optional(),
-    ciiuCode: z.string().optional(),
+    ciiuCode: z.string().min(1, 'El código CIIU es requerido.'),
     icaCode: z.string().optional(),
-    declarationCity: z.string().optional(),
+    declarationCity: z.string().min(1, 'La ciudad donde declara es requerida.'),
     icaPercentage: z.string().optional(),
 
     // Section 3 - Ambiental
@@ -235,6 +235,27 @@ export const providerFormSchema = z
       if (data.isLargeTaxpayer === 'Sí' && !data.largeTaxpayerResolution) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Resolución requerida.', path: ['largeTaxpayerResolution'] });
       }
+    }
+
+    // Renta self-retainer resolution
+    if (data.isIncomeSelfRetainer === 'Sí' && !data.incomeSelfRetainerResolution) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Resolución requerida.', path: ['incomeSelfRetainerResolution'] });
+    }
+
+    // ICA self-retainer fields
+    if (data.isIcaSelfRetainer === 'Sí') {
+        if (!data.icaSelfRetainerMunicipality) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Municipio requerido.', path: ['icaSelfRetainerMunicipality'] });
+        }
+        if (!data.icaSelfRetainerResolution) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Resolución requerida.', path: ['icaSelfRetainerResolution'] });
+        }
+        if (!data.icaCode) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Código ICA requerido.', path: ['icaCode'] });
+        }
+        if (!data.icaPercentage) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Porcentaje requerido.', path: ['icaPercentage'] });
+        }
     }
     
     // Section 3: Environmental validation

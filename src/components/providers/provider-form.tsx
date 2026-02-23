@@ -42,7 +42,7 @@ import {
 } from '@/firebase';
 import { doc, setDoc, collection, query, Timestamp } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText } from 'lucide-react';
+import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -187,12 +187,14 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
     defaultValues: initialFormValues,
   });
   
-  const { reset } = form;
+  const { reset, formState: { errors } } = form;
   const watchedProviderType = form.watch('providerType');
   const watchedPersonType = form.watch('personType');
   const watchedTaxRegimeType = form.watch('taxRegimeType');
   const watchedIsLargeTaxpayer = form.watch('isLargeTaxpayer');
   const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
+  const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
+  const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
 
   useEffect(() => {
     if (user && !isProviderDataLoading && !previewMode && !isBlockedByTime && !providerData?.formLocked) {
@@ -226,7 +228,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
     const autoSaveKey = getAutoSaveKey(user.uid);
     const handler = setTimeout(() => {
       const dataToSave = { ...watchedValues };
-      // Don't autosave large FileList objects
       delete (dataToSave as any).rutFile;
       delete (dataToSave as any).camaraComercioFile;
       delete (dataToSave as any).cedulaRepresentanteLegalFile;
@@ -349,6 +350,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       setIsSendingJustification(false);
     }
   };
+
+  const hasErrors = Object.keys(errors).length > 0;
 
   if (isProviderDataLoading && !previewMode) {
     return (
@@ -502,12 +505,81 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
           <CardHeader><CardTitle>2. Información Tributaria</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <FormField control={form.control} name="taxRegimeType" render={({ field }) => (<FormItem><FormLabel>Tipo de Régimen</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+            
             {watchedTaxRegimeType === 'Común' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (<FormItem><FormLabel>¿Es Gran Contribuyente?</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>{yesNoOptions.map((opt) => (<FormItem key={opt} className="flex items-center space-x-2"><FormControl><RadioGroupItem value={opt} /></FormControl><Label className="font-normal">{opt}</Label></FormItem>))}</RadioGroup></FormControl><FormMessage /></FormItem>)} />
                 {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
               </div>
             )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                <FormField control={form.control} name="isIncomeSelfRetainer" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>¿Es Autorretenedor de Renta?</FormLabel>
+                        <FormControl>
+                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                                {yesNoOptions.map((opt) => (
+                                    <FormItem key={opt} className="flex items-center space-x-2">
+                                        <FormControl><RadioGroupItem value={opt} /></FormControl>
+                                        <Label className="font-normal">{opt}</Label>
+                                    </FormItem>
+                                ))}
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                {watchedIsIncomeSelfRetainer === 'Sí' && (
+                    <FormField control={form.control} name="incomeSelfRetainerResolution" render={({ field }) => (
+                        <FormItem><FormLabel>Resolución Autorretenedor Renta</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                <FormField control={form.control} name="isIcaSelfRetainer" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>¿Es Autorretenedor de ICA?</FormLabel>
+                        <FormControl>
+                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                                {yesNoOptions.map((opt) => (
+                                    <FormItem key={opt} className="flex items-center space-x-2">
+                                        <FormControl><RadioGroupItem value={opt} /></FormControl>
+                                        <Label className="font-normal">{opt}</Label>
+                                    </FormItem>
+                                ))}
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                {watchedIsIcaSelfRetainer === 'Sí' && (
+                    <div className="grid grid-cols-1 gap-4">
+                        <FormField control={form.control} name="icaSelfRetainerMunicipality" render={({ field }) => (
+                            <FormItem><FormLabel>Municipio ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="icaSelfRetainerResolution" render={({ field }) => (
+                            <FormItem><FormLabel>Resolución Autorretenedor ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="icaPercentage" render={({ field }) => (
+                            <FormItem><FormLabel>Porcentaje según ICA (%)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="icaCode" render={({ field }) => (
+                            <FormItem><FormLabel>Código actividad económica ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                <FormField control={form.control} name="ciiuCode" render={({ field }) => (
+                    <FormItem><FormLabel>Código actividad económica CIIU</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="declarationCity" render={({ field }) => (
+                    <FormItem><FormLabel>Ciudad donde declara impuestos</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
           </CardContent>
         </Card>
 
@@ -566,6 +638,16 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (<FormItem className="flex row items-start space-x-3 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Acepto la declaración de origen de fondos y la política de tratamiento de datos personales.</FormLabel></div></FormItem>)} />
           </CardContent>
         </Card>
+
+        {hasErrors && !isLocked && !previewMode && (
+            <Alert variant="destructive" className="animate-in fade-in slide-in-from-bottom-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Faltan Campos Obligatorios</AlertTitle>
+                <AlertDescription>
+                    Por favor revisa el formulario. Hay campos obligatorios sin completar o con errores de formato.
+                </AlertDescription>
+            </Alert>
+        )}
 
         {!isLocked && !previewMode && (
           <div className="flex justify-end pb-12">
