@@ -491,13 +491,21 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
               <FormField control={form.control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax (Opcional)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Sitio Web</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="providerContactName" render={({ field }) => (<FormItem><FormLabel>Nombre Contacto Comercial</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="providerContactEmail" render={({ field }) => (<FormItem><FormLabel>Email Contacto Comercial</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-semibold text-sm text-primary uppercase tracking-tight">Contacto Comercial</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField control={form.control} name="providerContactName" render={({ field }) => (<FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="providerContactTitle" render={({ field }) => (<FormItem><FormLabel>Cargo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="providerContactEmail" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="paymentContactName" render={({ field }) => (<FormItem><FormLabel>Contacto para Notificación de Pago</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="paymentContactEmail" render={({ field }) => (<FormItem><FormLabel>Email Notificación de Pago</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-semibold text-sm text-primary uppercase tracking-tight">Contacto para Notificación de Pago</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField control={form.control} name="paymentContactName" render={({ field }) => (<FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="paymentContactTitle" render={({ field }) => (<FormItem><FormLabel>Cargo</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="paymentContactEmail" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -699,7 +707,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                 <AlertTitle>Faltan Campos Obligatorios</AlertTitle>
                 <AlertDescription>
                     Por favor revisa el formulario. Hay campos obligatorios sin completar o con errores de formato. 
-                    (Verifica secciones de Información Tributaria y Documentos).
+                    (Verifica secciones de Información Tributaria, Contactos y Documentos).
                 </AlertDescription>
             </Alert>
         )}
