@@ -42,8 +42,8 @@ import {
   useCollection,
 } from '@/firebase';
 import { doc, setDoc, collection, query, Timestamp } from 'firebase/firestore';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -174,16 +174,19 @@ export default function ProviderForm({
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isSendingJustification, setIsSendingJustification] = useState(false);
   const [justification, setJustification] = useState('');
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  const effectiveProviderId = manualProviderId || user?.uid;
-
-  const getAutoSaveKey = (userId: string) => `provider-form-autosave-${userId}`;
-  const getWelcomeKey = (userId: string) => `provider-welcome-shown-${userId}`;
+  // Robustly determine which provider ID to use
+  const effectiveProviderId = useMemo(() => {
+    if (previewMode) return null;
+    if (adminMode && manualProviderId) return manualProviderId;
+    return manualProviderId || user?.uid || null;
+  }, [adminMode, manualProviderId, user?.uid, previewMode]);
 
   const providerDocRef = useMemoFirebase(() => {
-    if (!effectiveProviderId || !firestore || previewMode) return null;
+    if (!effectiveProviderId || !firestore) return null;
     return doc(firestore, 'providers', effectiveProviderId);
-  }, [effectiveProviderId, firestore, previewMode]);
+  }, [effectiveProviderId, firestore]);
 
   const { data: providerData, isLoading: isProviderDataLoading } = useDoc<any>(providerDocRef);
 
@@ -191,7 +194,7 @@ export default function ProviderForm({
     () => (firestore ? query(collection(firestore, 'categories')) : null),
     [firestore]
   );
-  const { data: categories, isLoading: isCategoriesLoading } = useCollection<Category>(categoriesQuery);
+  const { data: categories } = useCollection<Category>(categoriesQuery);
 
   const daysSinceRegistration = useMemo(() => {
     if (!providerData?.createdAt) return 0;
@@ -223,9 +226,10 @@ export default function ProviderForm({
   const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
   const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
 
+  // Welcome dialog logic
   useEffect(() => {
     if (user && !isProviderDataLoading && !previewMode && !adminMode && !isBlockedByTime && !providerData?.formLocked) {
-      const welcomeKey = getWelcomeKey(user.uid);
+      const welcomeKey = `provider-welcome-shown-${user.uid}`;
       if (!localStorage.getItem(welcomeKey)) {
         setShowWelcomeDialog(true);
         localStorage.setItem(welcomeKey, 'true');
@@ -233,43 +237,27 @@ export default function ProviderForm({
     }
   }, [user, isProviderDataLoading, previewMode, adminMode, isBlockedByTime, providerData]);
 
+  // Data Loading & Initialization Logic
   useEffect(() => {
-    if (user && !isProviderDataLoading && !providerData?.formLocked && !previewMode && !adminMode && !isBlockedByTime) {
-      const autoSaveKey = getAutoSaveKey(user.uid);
-      const savedDataString = localStorage.getItem(autoSaveKey);
-      if (savedDataString) {
-        try {
-          const savedData = JSON.parse(savedDataString);
-          setPersistedData(savedData);
-          setShowRestoreDialog(true);
-        } catch (e) {
-          localStorage.removeItem(autoSaveKey);
+    if (providerData && !hasInitialized) {
+      const sanitizeValue = (val: any) => (val === null || val === undefined ? '' : val);
+      
+      const sanitizedData = { ...initialFormValues };
+      Object.keys(initialFormValues).forEach((key) => {
+        if (key in providerData) {
+          const val = providerData[key];
+          if (Array.isArray(initialFormValues[key as keyof ProviderFormValues])) {
+            sanitizedData[key as keyof ProviderFormValues] = Array.isArray(val) ? val : [];
+          } else if (typeof initialFormValues[key as keyof ProviderFormValues] === 'boolean') {
+            sanitizedData[key as keyof ProviderFormValues] = !!val;
+          } else {
+            (sanitizedData as any)[key] = sanitizeValue(val);
+          }
         }
-      }
-    }
-  }, [user, isProviderDataLoading, providerData, previewMode, adminMode, isBlockedByTime]);
+      });
 
-  const watchedValues = form.watch();
-  useEffect(() => {
-    if (isLocked || !user || previewMode || adminMode || isBlockedByTime) return;
-    const autoSaveKey = getAutoSaveKey(user.uid);
-    const handler = setTimeout(() => {
-      const dataToSave = { ...watchedValues };
-      delete (dataToSave as any).rutFile;
-      delete (dataToSave as any).camaraComercioFile;
-      delete (dataToSave as any).cedulaRepresentanteLegalFile;
-      delete (dataToSave as any).certificacionBancariaFile;
-      delete (dataToSave as any).estadosFinancierosFile;
-      delete (dataToSave as any).declaracionRentaFile;
-      localStorage.setItem(autoSaveKey, JSON.stringify(dataToSave));
-    }, 1000);
-    return () => clearTimeout(handler);
-  }, [watchedValues, isLocked, user, previewMode, adminMode, isBlockedByTime]);
-
-  const stableReset = useCallback(reset, []);
-  useEffect(() => {
-    if (providerData) {
-      const { country, department } = providerData;
+      // Initialize geography lists before resetting form
+      const { country, department } = sanitizedData;
       if (country) {
         const countryData = Country.getAllCountries().find(c => c.name === country);
         if (countryData) {
@@ -283,9 +271,30 @@ export default function ProviderForm({
           }
         }
       }
-      stableReset({ ...initialFormValues, ...providerData });
+
+      reset(sanitizedData);
+      setHasInitialized(true);
     }
-  }, [providerData, stableReset]);
+  }, [providerData, hasInitialized, reset]);
+
+  // Reset initialization when provider changes
+  useEffect(() => {
+    setHasInitialized(false);
+  }, [effectiveProviderId]);
+
+  // Auto-save logic (only for providers)
+  const watchedValues = form.watch();
+  useEffect(() => {
+    if (isLocked || !user || previewMode || adminMode || isBlockedByTime) return;
+    const autoSaveKey = `provider-form-autosave-${user.uid}`;
+    const handler = setTimeout(() => {
+      const dataToSave = { ...watchedValues };
+      // Remove file blobs to avoid storage errors
+      ['rutFile', 'camaraComercioFile', 'cedulaRepresentanteLegalFile', 'certificacionBancariaFile', 'estadosFinancierosFile', 'declaracionRentaFile'].forEach(k => delete (dataToSave as any)[k]);
+      localStorage.setItem(autoSaveKey, JSON.stringify(dataToSave));
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [watchedValues, isLocked, user, previewMode, adminMode, isBlockedByTime]);
 
   const categoryOptions = useMemo(
     () => (categories ? categories.map((c) => ({ value: c.id, label: c.name, type: c.categoryType })) : []),
@@ -356,7 +365,7 @@ export default function ProviderForm({
               notifyAdminOfFormUpdate({ businessName: dataToSave.businessName, email: providerEmail }).catch(console.error);
               notifyProviderFormSubmitted({ providerEmail: providerEmail, providerName: dataToSave.businessName }).catch(console.error);
           }
-          localStorage.removeItem(getAutoSaveKey(effectiveProviderId));
+          localStorage.removeItem(`provider-form-autosave-${effectiveProviderId}`);
       }
 
       toast({ 
@@ -445,7 +454,7 @@ export default function ProviderForm({
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>¿Restaurar datos?</AlertDialogTitle><AlertDialogDescription>Detectamos información no guardada. ¿Deseas restaurarla?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => { if (user) localStorage.removeItem(getAutoSaveKey(user.uid)); setShowRestoreDialog(false); }}>Limpiar</AlertDialogCancel><AlertDialogAction onClick={() => { if (persistedData) form.reset(persistedData); setShowRestoreDialog(false); }}>Restaurar</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => { if (user) localStorage.removeItem(`provider-form-autosave-${user.uid}`); setShowRestoreDialog(false); }}>Limpiar</AlertDialogCancel><AlertDialogAction onClick={() => { if (persistedData) form.reset(persistedData); setShowRestoreDialog(false); }}>Restaurar</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -503,20 +512,6 @@ export default function ProviderForm({
                 : "Tus datos han sido bloqueados para auditoría técnica. Si necesitas realizar cambios, solicita el desbloqueo al administrador."}
             </AlertDescription>
           </Alert>
-        )}
-
-        {registrationStatus === 'correction_requested' && !isLocked && !adminMode && (
-            <Alert variant="destructive" className="border-2 animate-pulse">
-                <AlertTriangle className="h-5 w-5" />
-                <AlertTitle className="font-bold uppercase">Acción Requerida: Ajustes en el Registro</AlertTitle>
-                <AlertDescription className="space-y-2">
-                    <p>El administrador ha solicitado correcciones en su formulario:</p>
-                    <div className="bg-white/50 p-3 rounded border italic text-sm">
-                        "{providerData?.rejectionReason || 'No se especificó un motivo.'}"
-                    </div>
-                    <p className="text-xs font-bold">Por favor, realice los cambios y guarde nuevamente.</p>
-                </AlertDescription>
-            </Alert>
         )}
 
         <Card>
