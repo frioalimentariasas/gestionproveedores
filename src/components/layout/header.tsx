@@ -128,8 +128,12 @@ export default function Header() {
             <div className="flex items-center gap-2 border-l pl-6 ml-2 h-12">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 px-3 hover:bg-primary/5 transition-colors rounded-none h-12">
-                    <Menu className="h-6 w-6 text-primary" />
+                  {/* Menu Button - Custom Hover/Active Resaltado en Azul Primario */}
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center gap-2 px-3 hover:bg-primary hover:text-white data-[state=open]:bg-primary data-[state=open]:text-white transition-colors rounded-none h-12 group"
+                  >
+                    <Menu className="h-6 w-6 text-primary group-hover:text-white group-data-[state=open]:text-white transition-colors" />
                     <span className="font-bold text-xs uppercase tracking-tight hidden md:inline-block">Menú Principal</span>
                   </Button>
                 </SheetTrigger>
@@ -233,7 +237,7 @@ export default function Header() {
                 {/* User Button - Custom Hover Resaltado con azul y texto blanco */}
                 <Button 
                   variant="outline" 
-                  className="max-w-[400px] truncate uppercase border-primary/20 hover:bg-primary hover:text-white hover:border-primary transition-colors duration-200"
+                  className="max-w-[400px] truncate uppercase border-primary/20 hover:bg-primary hover:text-white hover:border-primary data-[state=open]:bg-primary data-[state=open]:text-white transition-colors duration-200"
                 >
                   <span className="truncate">{displayName}</span>
                   <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0" />
