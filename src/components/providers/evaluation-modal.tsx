@@ -104,22 +104,23 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   );
   const { data: selectedCategoryData, isLoading: isLoadingCategory } = useDoc<Category>(selectedCategoryDocRef);
 
+  // Define dynamic schema based on the criteria of the selected category
   const evaluationSchema = useMemo(() => {
     const scoreFields = criteriaForForm.reduce((acc, crit) => {
-      acc[crit.id] = z.number().min(1).max(5);
+      acc[crit.id] = z.number({ required_error: 'Obligatorio' }).min(1, 'Califique este criterio.').max(5);
       return acc;
     }, {} as Record<string, z.ZodNumber>);
 
     const justificationFields = criteriaForForm.reduce((acc, crit) => {
-      acc[crit.id] = z.string().min(5, 'Debe justificar brevemente la puntuación.');
+      acc[crit.id] = z.string().min(5, 'Debe justificar brevemente la puntuación.').max(1000);
       return acc;
     }, {} as Record<string, z.ZodString>);
 
     return z.object({
       scores: z.object(scoreFields),
       scoreJustifications: z.object(justificationFields),
-      comments: z.string().optional(),
-      fracttalOrderIds: z.string().optional(),
+      comments: z.string().optional().default(''),
+      fracttalOrderIds: z.string().optional().default(''),
       evidenceFile: fileSchemaOptional,
     });
   }, [criteriaForForm]);
@@ -148,19 +149,20 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       
       setCriteriaForForm(configuredCriteria);
 
-      const defaultScores = configuredCriteria.reduce((acc, crit) => {
-        acc[crit.id] = 3;
+      // Initialize with undefined/0 so they don't have a default value of 3
+      const emptyScores = configuredCriteria.reduce((acc, crit) => {
+        acc[crit.id] = 0; 
         return acc;
       }, {} as Record<string, number>);
 
-      const defaultJustifications = configuredCriteria.reduce((acc, crit) => {
+      const emptyJustifications = configuredCriteria.reduce((acc, crit) => {
         acc[crit.id] = '';
         return acc;
       }, {} as Record<string, string>);
 
       form.reset({ 
-        scores: defaultScores, 
-        scoreJustifications: defaultJustifications,
+        scores: emptyScores, 
+        scoreJustifications: emptyJustifications,
         comments: '', 
         fracttalOrderIds: '' 
       });
@@ -279,7 +281,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
 
   const isFormSubmitting = isSubmitting || isUploading;
   const evaluationTitle = selectedCategoryData ? EVALUATION_TYPES[selectedCategoryData.categoryType as keyof typeof EVALUATION_TYPES] : "Evaluación";
-  const needsAction = requiresActionPlan(totalScore);
   const status = getPerformanceStatus(totalScore);
 
   return (
@@ -321,7 +322,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
               </div>
             </ScrollArea>
             <DialogFooter className="shrink-0 pt-4 border-t mt-4">
-              <Button type="button" variant="secondary" onClick={handleClose}>Cancelar</Button>
+              <Button type="button" variant="secondary" onClick={handleClose}>Cancelar Evaluación</Button>
             </DialogFooter>
           </div>
         ) : isLoadingCategory ? (
@@ -358,50 +359,67 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                         )}
 
                         <div className="space-y-6">
-                        {criteriaForForm.map((criterion) => (
-                            <div key={criterion.id} className="bg-white p-5 rounded-xl border border-primary/5 shadow-sm space-y-4">
-                                <FormField control={form.control} name={`scores.${criterion.id}`} render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                    <div className="flex justify-between items-start">
-                                        <FormLabel className="text-sm font-bold flex-1 leading-tight">{criterion.label}</FormLabel>
-                                        <Badge variant="outline" className="ml-2 font-mono shrink-0">{(criterion.weight * 100).toFixed(0)}%</Badge>
-                                    </div>
-                                    <div className="flex items-center gap-6">
-                                        <FormControl>
-                                            <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={(value) => field.onChange(value[0])} className="flex-1" />
-                                        </FormControl>
-                                        <div className={cn(
-                                            "w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-lg bg-background shadow-inner shrink-0",
-                                            field.value < 3.5 ? "border-destructive text-destructive" : "border-primary text-primary"
-                                        )}>
-                                            {field.value}
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between text-[9px] text-muted-foreground px-1 uppercase font-bold">
-                                        <span className="text-destructive">Hallazgo Crítico (1)</span>
-                                        <span className="text-primary">Excelente (5)</span>
-                                    </div>
-                                </FormItem>
-                                )} />
+                        {criteriaForForm.map((criterion) => {
+                            const score = form.watch(`scores.${criterion.id}`);
+                            const hasBeenSet = score > 0;
 
-                                <FormField control={form.control} name={`scoreJustifications.${criterion.id}`} render={({ field }) => (
-                                <FormItem className="space-y-1 pt-2 border-t border-dashed">
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <NotebookPen className="h-3.5 w-3.5" />
-                                        <Label className="text-[10px] font-black uppercase tracking-tight">Justificación Técnica / Evidencia:</Label>
-                                    </div>
-                                    <FormControl>
-                                        <Textarea 
-                                            placeholder="Indique por qué asignó esta nota (Ej: Cumplimiento total de cronogramas, 0 retrasos)..." 
-                                            {...field} 
-                                            className="text-xs min-h-[60px] bg-muted/20 focus-visible:ring-primary" 
-                                        />
-                                    </FormControl>
-                                    <FormMessage className="text-[10px]" />
-                                </FormItem>
-                                )} />
-                            </div>
-                        ))}
+                            return (
+                                <div key={criterion.id} className={cn(
+                                    "bg-white p-5 rounded-xl border shadow-sm space-y-4 transition-colors",
+                                    hasBeenSet ? "border-primary/10" : "border-destructive/20 bg-destructive/5"
+                                )}>
+                                    <FormField control={form.control} name={`scores.${criterion.id}`} render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <div className="flex justify-between items-start">
+                                            <FormLabel className="text-sm font-bold flex-1 leading-tight">{criterion.label}</FormLabel>
+                                            <Badge variant="outline" className="ml-2 font-mono shrink-0">{(criterion.weight * 100).toFixed(0)}%</Badge>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <FormControl>
+                                                <Slider 
+                                                    min={1} 
+                                                    max={5} 
+                                                    step={1} 
+                                                    value={[field.value || 0]} 
+                                                    onValueChange={(value) => field.onChange(value[0])} 
+                                                    className="flex-1" 
+                                                />
+                                            </FormControl>
+                                            <div className={cn(
+                                                "w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-lg bg-background shadow-inner shrink-0",
+                                                !hasBeenSet ? "border-muted text-muted-foreground" : 
+                                                field.value < 3.5 ? "border-destructive text-destructive" : "border-primary text-primary"
+                                            )}>
+                                                {hasBeenSet ? field.value : '?'}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between text-[9px] text-muted-foreground px-1 uppercase font-bold">
+                                            <span className="text-destructive">Hallazgo Crítico (1)</span>
+                                            <span className="text-primary">Excelente (5)</span>
+                                        </div>
+                                        {!hasBeenSet && <p className="text-[10px] text-destructive font-bold animate-pulse">Por favor asigne un puntaje.</p>}
+                                    </FormItem>
+                                    )} />
+
+                                    <FormField control={form.control} name={`scoreJustifications.${criterion.id}`} render={({ field }) => (
+                                    <FormItem className="space-y-1 pt-2 border-t border-dashed">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <NotebookPen className="h-3.5 w-3.5" />
+                                            <Label className="text-[10px] font-black uppercase tracking-tight">Justificación Técnica / Evidencia:</Label>
+                                        </div>
+                                        <FormControl>
+                                            <Textarea 
+                                                placeholder="Indique por qué asignó esta nota (Ej: Cumplimiento total de cronogramas, 0 retrasos)..." 
+                                                {...field} 
+                                                className="text-xs min-h-[60px] bg-muted/20 focus-visible:ring-primary" 
+                                            />
+                                        </FormControl>
+                                        <FormMessage className="text-[10px]" />
+                                    </FormItem>
+                                    )} />
+                                </div>
+                            );
+                        })}
                         </div>
 
                         <Card className="bg-white">
@@ -504,11 +522,11 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                     </div>
 
                     <DialogFooter className="gap-2 sm:gap-0">
-                      <Button type="button" variant="outline" onClick={handleClose} className="font-bold">Cancelar Auditoría</Button>
+                      <Button type="button" variant="outline" onClick={handleClose} className="font-bold">Cancelar Evaluación</Button>
                       <Button type="submit" disabled={isFormSubmitting} className="min-w-[200px] shadow-md font-bold">
                         {isFormSubmitting ? (
                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {isUploading ? 'Subiendo...' : 'Guardando...'}</>
-                        ) : 'Emitir Dictamen Final'}
+                        ) : 'Guardar Evaluación'}
                       </Button>
                     </DialogFooter>
                 </div>
