@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -28,6 +27,7 @@ import {
   MessageSquareQuote,
   CheckCircle2,
   AlertTriangle,
+  Search,
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -220,8 +220,8 @@ export default function ProviderEvaluationsPage() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setSelectedEvaluation(evaluation)}>
-                            <Eye className="h-4 w-4 mr-2" /> Detalle scores
+                        <Button variant="default" size="sm" onClick={() => setSelectedEvaluation(evaluation)} className="font-bold">
+                            <Search className="h-4 w-4 mr-2" /> Detalle scores
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -267,19 +267,16 @@ export default function ProviderEvaluationsPage() {
                     </div>
 
                     {evaluation.improvementCommitment ? (
-                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
-                            <h4 className="font-bold text-xs uppercase text-primary flex items-center gap-2">
-                                <MessageSquareQuote className="h-4 w-4" /> Compromiso de Mejora del Proveedor:
-                            </h4>
-                            <p className="text-sm whitespace-pre-wrap text-foreground">
-                                {evaluation.improvementCommitment}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground text-right italic">
-                                Radicado el {format(evaluation.commitmentSubmittedAt?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px]">
+                                <CheckCircle2 className="h-4 w-4" /> Compromiso ISO Radicado
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic text-right">
+                                Consulte el plan de acción por cada criterio en el botón "Detalle scores".
                             </p>
                         </div>
                     ) : needsAction && (
-                        <div className="flex items-center gap-2 text-destructive font-bold text-xs bg-destructive/5 p-3 rounded-lg animate-pulse">
+                        <div className="flex items-center gap-2 text-destructive font-bold text-xs bg-destructive/5 p-3 rounded-lg animate-pulse border border-destructive/20">
                             <AlertTriangle className="h-4 w-4" />
                             PENDIENTE: EL PROVEEDOR DEBE RADICAR COMPROMISO DE MEJORA
                         </div>

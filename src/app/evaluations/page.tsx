@@ -3,7 +3,7 @@
 import AuthGuard from '@/components/auth/auth-guard';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
-import { Loader2, ClipboardCheck, AlertTriangle, CheckCircle2, MessageSquareText } from 'lucide-react';
+import { Loader2, ClipboardCheck, AlertTriangle, CheckCircle2, MessageSquareText, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -104,7 +104,7 @@ export default function ProviderEvaluationsPage() {
                                 <AlertTriangle className="h-3 w-3" /> Requiere Compromiso ISO
                             </p>
                             <p className="text-[10px] text-muted-foreground leading-tight">
-                                Su puntaje es inferior al 70%. Debe radicar un plan de acción detallado por cada criterio afectado.
+                                Su puntaje requiere un plan de acción detallado por cada criterio afectado.
                             </p>
                         </div>
                     ) : (
@@ -115,23 +115,27 @@ export default function ProviderEvaluationsPage() {
                     )}
 
                     {hasCommitment && (
-                        <div className="p-3 rounded-lg bg-muted border flex flex-col gap-1">
-                            <p className="text-[10px] font-bold flex items-center gap-1 uppercase">
+                        <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 flex flex-col gap-1">
+                            <p className="text-[10px] font-bold flex items-center gap-1 uppercase text-primary">
                                 <MessageSquareText className="h-3 w-3" /> Plan de Mejora Radicado
                             </p>
-                            <p className="text-[10px] text-muted-foreground line-clamp-2 italic">
-                                Plan de acción registrado en el sistema para auditoría.
+                            <p className="text-[9px] text-muted-foreground italic">
+                                Para ver los detalles por criterio, use el botón inferior.
                             </p>
                         </div>
                     )}
                   </CardContent>
                   <CardFooter>
                     <Button 
-                        className="w-full" 
+                        className="w-full font-bold" 
                         variant={needsAction && !hasCommitment ? "destructive" : "outline"}
                         onClick={() => setSelectedEvaluation(ev)}
                     >
-                        {needsAction && !hasCommitment ? "Radicar Planes de Acción" : "Ver Detalle Completo"}
+                        {needsAction && !hasCommitment ? (
+                            <>Radicar Planes de Acción</>
+                        ) : (
+                            <><Search className="mr-2 h-4 w-4" /> Ver Detalle ISO</>
+                        )}
                     </Button>
                   </CardFooter>
                 </Card>
