@@ -341,12 +341,15 @@ export default function ProvidersTable() {
   };
 
   const getStatusBadge = (status?: string) => {
-    // Badges con hover:text-white para cumplir con el requerimiento visual
     switch(status) {
-        case 'approved': return <Badge className="bg-green-100 text-green-800 border-green-200 hover:text-white transition-colors">Aprobado</Badge>;
-        case 'in_review': return <Badge className="bg-blue-100 text-blue-800 border-blue-200 animate-pulse hover:text-white transition-colors">En Revisión</Badge>;
-        case 'correction_requested': return <Badge variant="destructive" className="hover:text-white transition-colors">Requiere Corrección</Badge>;
-        default: return <Badge variant="secondary" className="hover:text-white transition-colors">Pendiente</Badge>;
+        case 'approved': 
+          return <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-600 hover:text-white transition-all cursor-default shadow-none">Aprobado</Badge>;
+        case 'in_review': 
+          return <Badge className="bg-blue-100 text-blue-700 border-blue-200 animate-pulse hover:bg-blue-600 hover:text-white transition-all cursor-default shadow-none">En Revisión</Badge>;
+        case 'correction_requested': 
+          return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-600 hover:text-white transition-all cursor-default shadow-none">Requiere Corrección</Badge>;
+        default: 
+          return <Badge className="bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white transition-all cursor-default shadow-none">Pendiente</Badge>;
     }
   };
 
@@ -429,7 +432,7 @@ export default function ProvidersTable() {
                   ) : (
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/providers/${provider.id}/view`}>
+                        <Link href={`/providers/${provider.id}/view`} className="hover:bg-primary hover:text-white transition-colors">
                           <Eye className="h-4 w-4 mr-2" />
                           Ver
                         </Link>

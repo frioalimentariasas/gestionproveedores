@@ -84,7 +84,7 @@ export default function ComparisonPage() {
     <AuthGuard>
       <div className="container mx-auto p-4 py-12">
         <div className="flex flex-col items-center gap-2 mb-8">
-            <h1 className="text-4xl font-black tracking-tight text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-4xl font-black tracking-tighter text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Comparador de Desempeño
             </h1>
             <p className="text-center text-muted-foreground max-w-lg">
