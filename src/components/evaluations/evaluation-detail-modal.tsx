@@ -15,7 +15,7 @@ import { useFirestore, useDoc, useMemoFirebase, errorEmitter } from '@/firebase'
 import { FirestorePermissionError } from '@/firebase/errors';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useState, useMemo } from 'react';
-import { Loader2, ClipboardCheck, MessageSquareText, Send, AlertTriangle, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Loader2, ClipboardCheck, MessageSquareText, Send, AlertTriangle, TrendingUp, CheckCircle2, Info } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -133,7 +133,7 @@ export function EvaluationDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] h-[90vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
+      <DialogContent className="sm:max-w-[950px] h-[90vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
         <DialogHeader className="p-6 border-b shrink-0 bg-muted/20">
           <div className="flex justify-between items-start gap-4">
             <div className="space-y-1">
@@ -162,8 +162,9 @@ export function EvaluationDetailModal({
         </DialogHeader>
 
         <div className="flex-grow overflow-y-auto p-6 bg-muted/5">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Columna Principal: Calificaciones y Compromisos */}
+                <div className="lg:col-span-8 space-y-8">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between border-b pb-2 border-primary/10">
                             <h4 className="font-bold text-xs uppercase text-muted-foreground flex items-center gap-2">
@@ -247,54 +248,72 @@ export function EvaluationDetailModal({
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                {/* Columna Lateral: Guías y Trazabilidad (Sin Sticky para evitar solapamiento) */}
+                <div className="lg:col-span-4 space-y-6">
                     <Card className="border-t-4 border-t-accent shadow-md">
-                        <CardHeader className="p-4">
+                        <CardHeader className="p-4 bg-accent/5">
                             <CardTitle className="text-sm flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4 text-accent" />
                                 Guía de Decisión ISO 9001
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 pt-0 text-[10px] space-y-3">
+                        <CardContent className="p-4 pt-4 text-[10px] space-y-3">
                             <div className="flex justify-between items-center border-b pb-1 font-bold">
                                 <span>Puntaje (%)</span>
                                 <span>Decisión Calidad</span>
                             </div>
-                            <div className="flex justify-between items-center text-green-700 font-medium">
+                            <div className="flex justify-between items-center text-green-700 font-medium p-1 rounded hover:bg-green-50">
                                 <span>&ge; 85% (4.25)</span>
                                 <span>Sobresaliente</span>
                             </div>
-                            <div className="flex justify-between items-center text-blue-700 font-medium">
+                            <div className="flex justify-between items-center text-blue-700 font-medium p-1 rounded hover:bg-blue-50">
                                 <span>70 - 84% (3.5)</span>
                                 <span>Satisfactorio</span>
                             </div>
-                            <div className="flex justify-between items-center text-yellow-700 font-medium">
+                            <div className="flex justify-between items-center text-yellow-700 font-bold p-1 rounded bg-yellow-50 border border-yellow-100">
                                 <span>60 - 69% (3.0)</span>
                                 <span>En Observación *</span>
                             </div>
-                            <div className="flex justify-between items-center text-red-700 font-medium">
+                            <div className="flex justify-between items-center text-red-700 font-black p-1 rounded bg-red-50 border border-red-100">
                                 <span>&lt; 60%</span>
                                 <span>Crítico *</span>
                             </div>
-                            <div className="mt-4 p-2 bg-muted/50 rounded border text-muted-foreground italic leading-tight">
-                                * Nota: Según ISO 9001 (8.4), todo puntaje &lt; 70% requiere un plan de mejora obligatorio para asegurar la continuidad del suministro.
+                            
+                            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-primary/10 text-muted-foreground italic leading-relaxed">
+                                <div className="flex gap-2 mb-1">
+                                    <Info className="h-3 w-3 text-primary shrink-0" />
+                                    <span className="font-bold text-primary not-italic">Nota Técnica:</span>
+                                </div>
+                                <p>
+                                    Según <strong>ISO 9001 (8.4)</strong>, los puntajes inferiores al <strong>70%</strong> ("En Observación" y "Crítico") requieren un plan de mejora obligatorio para asegurar la continuidad del suministro.
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
 
                     {isAlreadySubmitted && (
-                        <div className="p-5 rounded-xl bg-primary/5 border border-primary/20 space-y-3 shadow-sm">
+                        <div className="p-5 rounded-xl bg-primary/5 border-2 border-primary/20 space-y-3 shadow-sm animate-in fade-in zoom-in-95">
                             <div className="flex items-center gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-primary" />
                                 <p className="text-xs font-black text-primary uppercase">Trazabilidad de Calidad</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                El plan de acción ha sido registrado satisfactoriamente. Fecha de radicación oficial:
+                                El plan de acción ha sido registrado satisfactoriamente en el sistema de auditoría. Fecha de radicación oficial:
                             </p>
-                            <p className="text-[10px] font-mono font-bold text-center bg-white px-3 py-1 rounded-full border">
+                            <p className="text-[10px] font-mono font-bold text-center bg-white px-3 py-2 rounded-full border border-primary/20 shadow-inner">
                                 {format(evaluation.commitmentSubmittedAt?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
                             </p>
                         </div>
+                    )}
+
+                    {!isAlreadySubmitted && needsAction && isProviderView && (
+                        <Alert variant="destructive" className="border-2 border-dashed bg-destructive/5">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle className="text-xs font-bold uppercase">Acción Requerida</AlertTitle>
+                            <AlertDescription className="text-[10px]">
+                                El departamento de calidad de Frioalimentaria SAS requiere que radique el tratamiento para cada hallazgo detectado antes de continuar.
+                            </AlertDescription>
+                        </Alert>
                     )}
                 </div>
             </div>
