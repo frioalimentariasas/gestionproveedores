@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -342,11 +341,12 @@ export default function ProvidersTable() {
   };
 
   const getStatusBadge = (status?: string) => {
+    // Badges con hover:text-white para cumplir con el requerimiento visual
     switch(status) {
-        case 'approved': return <Badge className="bg-green-100 text-green-800 border-green-200">Aprobado</Badge>;
-        case 'in_review': return <Badge className="bg-blue-100 text-blue-800 border-blue-200 animate-pulse">En Revisión</Badge>;
-        case 'correction_requested': return <Badge variant="destructive">Requiere Corrección</Badge>;
-        default: return <Badge variant="secondary">Pendiente</Badge>;
+        case 'approved': return <Badge className="bg-green-100 text-green-800 border-green-200 hover:text-white transition-colors">Aprobado</Badge>;
+        case 'in_review': return <Badge className="bg-blue-100 text-blue-800 border-blue-200 animate-pulse hover:text-white transition-colors">En Revisión</Badge>;
+        case 'correction_requested': return <Badge variant="destructive" className="hover:text-white transition-colors">Requiere Corrección</Badge>;
+        default: return <Badge variant="secondary" className="hover:text-white transition-colors">Pendiente</Badge>;
     }
   };
 

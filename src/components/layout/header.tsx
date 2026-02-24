@@ -208,8 +208,13 @@ export default function Header() {
                 </SheetContent>
               </Sheet>
 
-              {/* Home Icon Button */}
-              <Button variant="ghost" size="icon" asChild className="hover:bg-primary/5 text-primary h-12 w-12 shrink-0">
+              {/* Home Icon Button - Custom Hover Resaltado */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                asChild 
+                className="hover:bg-primary hover:text-white transition-colors text-primary h-12 w-12 shrink-0"
+              >
                 <Link href="/">
                   <Home className="h-6 w-6" />
                   <span className="sr-only">Inicio</span>
@@ -225,7 +230,11 @@ export default function Header() {
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="max-w-[400px] truncate uppercase border-primary/20 hover:bg-primary/5">
+                {/* User Button - Custom Hover Resaltado con azul y texto blanco */}
+                <Button 
+                  variant="outline" 
+                  className="max-w-[400px] truncate uppercase border-primary/20 hover:bg-primary hover:text-white hover:border-primary transition-colors duration-200"
+                >
                   <span className="truncate">{displayName}</span>
                   <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0" />
                 </Button>
