@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +30,7 @@ import { useFirestore, useUser, errorEmitter, useCollection, useMemoFirebase, us
 import { FirestorePermissionError } from '@/firebase/errors';
 import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Info, ShieldAlert, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Loader2, Info, ShieldAlert, AlertTriangle, CheckCircle2, TrendingUp, NotebookPen } from 'lucide-react';
 import { getCriteriaForType, CategoryType, EVALUATION_TYPES, requiresActionPlan, getPerformanceStatus } from '@/lib/evaluations';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -37,6 +38,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { notifyProviderEvaluationFailed, notifyProviderEvaluationSuccess } from '@/actions/email';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Label } from '../ui/label';
 
 interface Provider {
   id: string;
@@ -108,8 +110,14 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       return acc;
     }, {} as Record<string, z.ZodNumber>);
 
+    const justificationFields = criteriaForForm.reduce((acc, crit) => {
+      acc[crit.id] = z.string().min(5, 'Debe justificar brevemente la puntuación.');
+      return acc;
+    }, {} as Record<string, z.ZodString>);
+
     return z.object({
       scores: z.object(scoreFields),
+      scoreJustifications: z.object(justificationFields),
       comments: z.string().optional(),
       fracttalOrderIds: z.string().optional(),
       evidenceFile: fileSchemaOptional,
@@ -139,7 +147,17 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
         return acc;
       }, {} as Record<string, number>);
 
-      form.reset({ scores: defaultScores, comments: '', fracttalOrderIds: '' });
+      const defaultJustifications = configuredCriteria.reduce((acc, crit) => {
+        acc[crit.id] = '';
+        return acc;
+      }, {} as Record<string, string>);
+
+      form.reset({ 
+        scores: defaultScores, 
+        scoreJustifications: defaultJustifications,
+        comments: '', 
+        fracttalOrderIds: '' 
+      });
     }
   }, [selectedCategoryData, provider, form]);
 
@@ -211,6 +229,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       evaluationType: selectedCategoryData.categoryType,
       categoryId: selectedCategoryData.id,
       scores: values.scores,
+      scoreJustifications: values.scoreJustifications,
       totalScore: totalScore,
       isActionPlanRequired: needsAction,
       comments: values.comments || '',
@@ -260,7 +279,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="sm:max-w-[800px] h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary" 
+        className="sm:max-w-[850px] h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary" 
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {!provider ? (
@@ -303,126 +322,158 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
             <div className="flex items-center justify-center flex-1"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="p-6 pb-2 shrink-0">
+            <div className="p-6 pb-2 shrink-0 border-b">
               <DialogHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <DialogTitle className="text-xl">{evaluationTitle}</DialogTitle>
+                  <DialogTitle className="text-xl uppercase font-black tracking-tight">{evaluationTitle}</DialogTitle>
                   <Badge variant={provider.criticalityLevel === 'Crítico' ? 'destructive' : 'secondary'} className="uppercase text-[10px]">
                       Impacto: {provider.criticalityLevel}
                   </Badge>
                 </div>
-                <DialogDescription>
-                  Califica el desempeño según el cumplimiento de requisitos del periodo evaluado.
+                <DialogDescription className="font-bold text-primary">
+                  Justificación Técnica Obligatoria: Cada puntaje debe estar respaldado por una evidencia u observación.
                 </DialogDescription>
               </DialogHeader>
             </div>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-                <ScrollArea className="flex-grow px-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-                    <div className="lg:col-span-2 space-y-6">
+                <ScrollArea className="flex-grow px-6 bg-muted/5">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 py-6">
+                    <div className="lg:col-span-8 space-y-6">
                         {provider.criticalityLevel === 'Crítico' && (
                             <Alert className="bg-orange-50 border-orange-200">
                                 <ShieldAlert className="h-4 w-4 text-orange-600" />
-                                <AlertTitle className="text-orange-800 text-xs font-bold uppercase">Refuerzo Técnico Aplicado</AlertTitle>
+                                <AlertTitle className="text-orange-800 text-xs font-bold uppercase">Refuerzo Técnico ISO 9001</AlertTitle>
                                 <AlertDescription className="text-[10px] text-orange-700">
-                                    Bajo ISO 9001, los proveedores críticos tienen una ponderación mayor en Calidad y Competencia Técnica.
+                                    Proveedores críticos tienen una ponderación mayor. Requiere mayor rigor en la justificación.
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                         {criteriaForForm.map((criterion) => (
-                            <FormField key={criterion.id} control={form.control} name={`scores.${criterion.id}`} render={({ field }) => (
-                            <FormItem className="bg-muted/30 p-4 rounded-lg border shadow-sm">
-                                <div className="flex justify-between items-center mb-2">
-                                    <FormLabel className="text-sm font-bold flex-1">{criterion.label}</FormLabel>
-                                    <Badge variant="outline" className="ml-2 font-mono">{(criterion.weight * 100).toFixed(0)}%</Badge>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                <FormControl>
-                                    <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={(value) => field.onChange(value[0])} className="flex-1" />
-                                </FormControl>
-                                <div className="w-12 h-12 rounded-full border-2 border-primary flex items-center justify-center font-black text-lg bg-background shadow-inner shrink-0">
-                                    {field.value}
-                                </div>
-                                </div>
-                                <div className="flex justify-between text-[10px] text-muted-foreground px-1 uppercase tracking-tighter">
-                                    <span>No Cumple</span>
-                                    <span>Excelente</span>
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                            )} />
+                            <div key={criterion.id} className="bg-white p-5 rounded-xl border border-primary/5 shadow-sm space-y-4">
+                                <FormField control={form.control} name={`scores.${criterion.id}`} render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                    <div className="flex justify-between items-start">
+                                        <FormLabel className="text-sm font-bold flex-1 leading-tight">{criterion.label}</FormLabel>
+                                        <Badge variant="outline" className="ml-2 font-mono shrink-0">{(criterion.weight * 100).toFixed(0)}%</Badge>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                        <FormControl>
+                                            <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={(value) => field.onChange(value[0])} className="flex-1" />
+                                        </FormControl>
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-lg bg-background shadow-inner shrink-0",
+                                            field.value < 3.5 ? "border-destructive text-destructive" : "border-primary text-primary"
+                                        )}>
+                                            {field.value}
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between text-[9px] text-muted-foreground px-1 uppercase font-bold">
+                                        <span className="text-destructive">Hallazgo Crítico (1)</span>
+                                        <span className="text-primary">Excelente (5)</span>
+                                    </div>
+                                </FormItem>
+                                )} />
+
+                                <FormField control={form.control} name={`scoreJustifications.${criterion.id}`} render={({ field }) => (
+                                <FormItem className="space-y-1 pt-2 border-t border-dashed">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <NotebookPen className="h-3.5 w-3.5" />
+                                        <Label className="text-[10px] font-black uppercase tracking-tight">Justificación Técnica / Evidencia:</Label>
+                                    </div>
+                                    <FormControl>
+                                        <Textarea 
+                                            placeholder="Indique por qué asignó esta nota (Ej: Cumplimiento total de cronogramas, 0 retrasos)..." 
+                                            {...field} 
+                                            className="text-xs min-h-[60px] bg-muted/20 focus-visible:ring-primary" 
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-[10px]" />
+                                </FormItem>
+                                )} />
+                            </div>
                         ))}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="fracttalOrderIds" render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="text-xs">Evidencia Órdenes de Trabajo / Compra</FormLabel>
-                            <FormControl><Textarea placeholder="IDs separados por coma..." {...field} className="text-xs min-h-[80px]" /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="comments" render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="text-xs">Observaciones Generales</FormLabel>
-                            <FormControl><Textarea placeholder="Detalles del desempeño..." {...field} className="text-xs min-h-[80px]" /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )} />
-                        </div>
-
-                        <FormField control={form.control} name="evidenceFile" render={() => (
-                        <FormItem>
-                            <FormLabel className="text-xs">Anexo de Soporte (Opcional - PDF)</FormLabel>
-                            <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} className="text-xs" /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )} />
+                        <Card className="bg-white">
+                            <CardHeader className="py-4 border-b">
+                                <CardTitle className="text-sm font-bold uppercase text-primary">Información Logística Final</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-5 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="fracttalOrderIds" render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel className="text-[11px] font-bold uppercase">Órdenes de Trabajo / Compra (Soporte)</FormLabel>
+                                        <FormControl><Input placeholder="IDs separados por coma..." {...field} className="text-xs" /></FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="evidenceFile" render={() => (
+                                        <FormItem>
+                                            <FormLabel className="text-[11px] font-bold uppercase">Anexo PDF de Auditoría</FormLabel>
+                                            <FormControl><Input type="file" accept="application/pdf" {...form.register('evidenceFile')} className="text-xs" /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+                                <FormField control={form.control} name="comments" render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel className="text-[11px] font-bold uppercase">Observaciones Generales de la Auditoría</FormLabel>
+                                    <FormControl><Textarea placeholder="Conclusiones finales del evaluador..." {...field} className="text-xs min-h-[80px]" /></FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="space-y-4">
-                        <Card className="border-t-4 border-t-accent shadow-md">
-                            <CardHeader className="p-4 pb-2">
+                    <div className="lg:col-span-4 space-y-6">
+                        <Card className="border-t-4 border-t-accent shadow-md sticky top-0">
+                            <CardHeader className="p-4 bg-accent/5">
                                 <CardTitle className="text-sm flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-accent" />
                                     Guía de Decisión Técnica
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0 text-[10px] space-y-2">
+                            <CardContent className="p-4 pt-4 text-[10px] space-y-3">
                                 <div className="flex justify-between items-center border-b pb-1 font-bold">
                                     <span>Puntaje (%)</span>
-                                    <span>Decisión</span>
+                                    <span>Decisión Auditoría</span>
                                 </div>
-                                <div className="flex justify-between items-center text-green-700 font-medium">
+                                <div className="flex justify-between items-center text-green-700 font-bold p-1 rounded">
                                     <span>&ge; 85% (4.25)</span>
                                     <span className="flex items-center gap-1">Sobresaliente <CheckCircle2 className="h-2 w-2" /></span>
                                 </div>
-                                <div className="flex justify-between items-center text-blue-700 font-medium">
+                                <div className="flex justify-between items-center text-blue-700 font-medium p-1 rounded">
                                     <span>70 - 84% (3.5)</span>
                                     <span>Satisfactorio</span>
                                 </div>
-                                <div className="flex justify-between items-center text-yellow-700 font-medium">
+                                <div className="flex justify-between items-center text-yellow-700 font-bold p-1 rounded bg-yellow-50 border border-yellow-100">
                                     <span>60 - 69% (3.0)</span>
-                                    <span>En Observación</span>
+                                    <span>En Observación *</span>
                                 </div>
-                                <div className="flex justify-between items-center text-red-700 font-medium">
+                                <div className="flex justify-between items-center text-red-700 font-black p-1 rounded bg-red-50 border border-red-100">
                                     <span>&lt; 60%</span>
-                                    <span>Crítico</span>
+                                    <span>Crítico *</span>
                                 </div>
-                                <p className="text-[9px] text-muted-foreground mt-4 italic leading-tight">
-                                    * ISO 9001 exige acción correctiva para todo puntaje inferior al 70%.
-                                </p>
+                                
+                                <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-primary/10 text-muted-foreground italic leading-tight">
+                                    <p>
+                                        * Los estados con asterisco exigen la radicación obligatoria de un <strong>Plan de Mejora ISO 9001</strong> para asegurar la continuidad comercial.
+                                    </p>
+                                </div>
                             </CardContent>
                         </Card>
 
-                        <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                            <h4 className="text-[10px] font-bold uppercase text-accent mb-2">Resumen de Impacto</h4>
+                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
+                            <h4 className="text-[10px] font-bold uppercase text-primary flex items-center gap-2">
+                                <Info className="h-3 w-3" /> Transparencia Normativa
+                            </h4>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                Los proveedores excelentes recibirán un correo de felicitación automático. Aquellos en observación o críticos serán notificados para radicar compromisos.
+                                Sus justificaciones serán visibles para el proveedor. Esto fomenta la retroalimentación constructiva y la mejora continua del suministro.
                             </p>
                         </div>
                     </div>
@@ -432,7 +483,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                 <div className="p-6 pt-2 shrink-0 border-t bg-background space-y-4 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center justify-between p-4 rounded-xl bg-primary text-primary-foreground shadow-lg">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Calificación Final</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Calificación Final ISO</span>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-3xl font-black">{totalScore.toFixed(2)}</span>
                                 <Badge variant="outline" className={cn("text-xs border-white text-white font-bold", status.color)}>
@@ -446,22 +497,12 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                         </div>
                     </div>
 
-                    {needsAction && totalScore > 0 && (
-                        <Alert variant="destructive" className="py-2 border-dashed animate-pulse">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle className="text-xs font-bold">ACCIÓN CORRECTIVA REQUERIDA</AlertTitle>
-                            <AlertDescription className="text-[10px]">
-                                ISO 9001: Desempeño insuficiente para los estándares de calidad.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
                     <DialogFooter className="gap-2 sm:gap-0">
-                      <Button type="button" variant="outline" onClick={handleClose}>Cancelar</Button>
-                      <Button type="submit" disabled={isFormSubmitting} className="min-w-[150px]">
+                      <Button type="button" variant="outline" onClick={handleClose} className="font-bold">Cancelar Auditoría</Button>
+                      <Button type="submit" disabled={isFormSubmitting} className="min-w-[200px] shadow-md font-bold">
                         {isFormSubmitting ? (
                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {isUploading ? 'Subiendo...' : 'Guardando...'}</>
-                        ) : 'Cerrar Evaluación'}
+                        ) : 'Emitir Dictamen Final'}
                       </Button>
                     </DialogFooter>
                 </div>

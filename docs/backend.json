@@ -303,6 +303,10 @@
           "type": "object",
           "description": "Object containing scores for each criterion."
         },
+        "scoreJustifications": {
+          "type": "object",
+          "description": "Evaluator justifications for each score based on evidence."
+        },
         "totalScore": {
           "type": "number",
           "description": "The final weighted score."
