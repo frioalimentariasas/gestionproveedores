@@ -465,7 +465,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                             <CardContent className="p-4 pt-4 text-[10px] space-y-3">
                                 <div className="flex justify-between items-center border-b pb-1 font-bold">
                                     <span>Puntaje (%)</span>
-                                    <span>Decisión Auditoría</span>
+                                    <span>Calificación Desempeño</span>
                                 </div>
                                 <div className="flex justify-between items-center text-green-700 font-bold p-1 rounded">
                                     <span>&ge; 85% (4.25)</span>
@@ -480,7 +480,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                                     <span>En Observación *</span>
                                 </div>
                                 <div className="flex justify-between items-center text-red-700 font-black p-1 rounded bg-red-50 border border-red-100">
-                                    <span>&lt; 60%</span>
+                                    <span>{'<'} 60%</span>
                                     <span>Crítico *</span>
                                 </div>
                                 
