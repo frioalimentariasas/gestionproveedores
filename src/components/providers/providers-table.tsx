@@ -343,9 +343,9 @@ export default function ProvidersTable() {
 
   const getStatusBadge = (status?: string) => {
     switch(status) {
-        case 'approved': return <Badge className="bg-green-100 text-green-800 border-green-200">Aprobado ISO</Badge>;
+        case 'approved': return <Badge className="bg-green-100 text-green-800 border-green-200">Aprobado</Badge>;
         case 'in_review': return <Badge className="bg-blue-100 text-blue-800 border-blue-200 animate-pulse">En Revisión</Badge>;
-        case 'correction_requested': return <Badge variant="destructive">Corregir</Badge>;
+        case 'correction_requested': return <Badge variant="destructive">Requiere Corrección</Badge>;
         default: return <Badge variant="secondary">Pendiente</Badge>;
     }
   };
