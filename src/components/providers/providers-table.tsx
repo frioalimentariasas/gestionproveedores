@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -28,6 +29,7 @@ import {
   Settings2,
   ChevronRight,
   Info,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   Table,
@@ -63,6 +65,8 @@ import {
   notifyProviderPasswordReset,
   notifyProviderAccountStatus,
   notifyProviderPendingForm,
+  notifyProviderFormApproved,
+  notifyProviderCorrectionRequested,
 } from '@/actions/email';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { EvaluationModal } from './evaluation-modal';
@@ -78,6 +82,8 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 
 interface Provider {
   id: string;
@@ -90,6 +96,8 @@ interface Provider {
   providerType?: string;
   originSelectionEventId?: string;
   criticalityLevel?: 'Crítico' | 'No Crítico';
+  registrationStatus?: 'pending' | 'in_review' | 'approved' | 'correction_requested';
+  rejectionReason?: string;
 }
 
 export default function ProvidersTable() {
@@ -106,7 +114,7 @@ export default function ProvidersTable() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   
   const [dialogState, setDialogState] = useState<{
-    type: 'password' | 'status' | null;
+    type: 'password' | 'status' | 'review' | null;
     provider: Provider | null;
     newPassword?: string;
   }>({ type: null, provider: null });
@@ -118,6 +126,8 @@ export default function ProvidersTable() {
     isOpen: boolean;
     provider: Provider | null;
   }>({ isOpen: false, provider: null });
+
+  const [reviewNote, setReviewNote] = useState('');
 
 
   const providersQuery = useMemoFirebase(
@@ -162,6 +172,59 @@ export default function ProvidersTable() {
       .finally(() => {
         setActionLoading(provider.id, false);
       });
+  };
+
+  const handleApprove = async () => {
+    if (!firestore || !dialogState.provider) return;
+    const p = dialogState.provider;
+    const providerRef = doc(firestore, 'providers', p.id);
+    const updateData = { registrationStatus: 'approved', formLocked: true };
+
+    setActionLoading(p.id, true);
+    try {
+        await updateDoc(providerRef, updateData);
+        notifyProviderFormApproved({
+            providerEmail: p.email,
+            providerName: p.businessName
+        }).catch(console.error);
+        toast({ title: 'Registro Aprobado', description: `Se ha notificado a ${p.businessName}.` });
+        setDialogState({ type: null, provider: null });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error al aprobar', description: 'No se pudo actualizar el estado.' });
+    } finally {
+        setActionLoading(p.id, false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!firestore || !dialogState.provider || !reviewNote.trim()) {
+        toast({ variant: 'destructive', title: 'Falta Justificación', description: 'Debe indicar qué debe corregir el proveedor.' });
+        return;
+    }
+    const p = dialogState.provider;
+    const providerRef = doc(firestore, 'providers', p.id);
+    const updateData = { 
+        registrationStatus: 'correction_requested', 
+        formLocked: false, 
+        rejectionReason: reviewNote 
+    };
+
+    setActionLoading(p.id, true);
+    try {
+        await updateDoc(providerRef, updateData);
+        notifyProviderCorrectionRequested({
+            providerEmail: p.email,
+            providerName: p.businessName,
+            reason: reviewNote
+        }).catch(console.error);
+        toast({ title: 'Solicitud de Corrección Enviada', description: `El formulario de ${p.businessName} ha sido desbloqueado.` });
+        setReviewNote('');
+        setDialogState({ type: null, provider: null });
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error al rechazar', description: 'No se pudo actualizar el estado.' });
+    } finally {
+        setActionLoading(p.id, false);
+    }
   };
 
   const handleSendReminder = async (provider: Provider) => {
@@ -278,6 +341,15 @@ export default function ProvidersTable() {
     }
   };
 
+  const getStatusBadge = (status?: string) => {
+    switch(status) {
+        case 'approved': return <Badge className="bg-green-100 text-green-800 border-green-200">Aprobado ISO</Badge>;
+        case 'in_review': return <Badge className="bg-blue-100 text-blue-800 border-blue-200 animate-pulse">En Revisión</Badge>;
+        case 'correction_requested': return <Badge variant="destructive">Corregir</Badge>;
+        default: return <Badge variant="secondary">Pendiente</Badge>;
+    }
+  };
+
   const getCriticalityBadge = (level?: string) => {
     switch (level) {
       case 'Crítico':
@@ -318,15 +390,15 @@ export default function ProvidersTable() {
 
   return (
     <>
-      <div className="rounded-lg border overflow-hidden">
+      <div className="rounded-lg border overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/50">
               <TableHead>Razón Social</TableHead>
               <TableHead>NIT / Documento</TableHead>
+              <TableHead className="text-center">Estado Registro</TableHead>
               <TableHead className="text-center">Criticidad</TableHead>
-              <TableHead className="text-center">Formulario</TableHead>
-              <TableHead className="text-center">Estado Cuenta</TableHead>
+              <TableHead className="text-center">Acceso</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -341,19 +413,14 @@ export default function ProvidersTable() {
                 </TableCell>
                 <TableCell>{provider.documentNumber}</TableCell>
                 <TableCell className="text-center">
+                  {getStatusBadge(provider.registrationStatus)}
+                </TableCell>
+                <TableCell className="text-center">
                   {getCriticalityBadge(provider.criticalityLevel)}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge 
-                    variant={provider.formLocked ? 'outline' : 'destructive'}
-                    className={cn(!provider.formLocked && "animate-pulse")}
-                  >
-                    {provider.formLocked ? 'Completado' : 'Pendiente'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-center">
                   <Badge variant={provider.disabled ? 'destructive' : 'default'}>
-                    {provider.disabled ? 'Desactivada' : 'Activada'}
+                    {provider.disabled ? 'Desactivada' : 'Activo'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -395,6 +462,24 @@ export default function ProvidersTable() {
           
           <ScrollArea className="h-[calc(100vh-120px)] p-6">
             <div className="space-y-8">
+              {/* Seccion 0: Auditoría de Registro */}
+              <section className="space-y-3">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <CheckCircle2 className="h-3 w-3" /> Auditoría de Registro
+                </h4>
+                <div className="grid gap-2">
+                  <Button 
+                    variant="secondary" 
+                    className="justify-start font-bold" 
+                    onClick={() => { setDialogState({ type: 'review', provider: selectedProvider }); setIsSheetOpen(false); }}
+                  >
+                    <Eye className="mr-2 h-4 w-4" /> Revisar y Aprobar Registro
+                  </Button>
+                </div>
+              </section>
+
+              <Separator />
+
               {/* Seccion 1: Trazabilidad y Consulta */}
               <section className="space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -473,7 +558,65 @@ export default function ProvidersTable() {
         </SheetContent>
       </Sheet>
       
-      {/* --- Resto de Modales (Sin Cambios en lógica, solo disparadores) --- */}
+      {/* --- Review Dialog --- */}
+      <Dialog 
+        open={dialogState.type === 'review'} 
+        onOpenChange={(open) => !open && setDialogState({ type: null, provider: null })}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <ShieldAlert className="h-5 w-5 text-primary" />
+                    Revisión de Registro ISO 9001
+                </DialogTitle>
+                <DialogDescription>
+                    Audita la información de <strong>{dialogState.provider?.businessName}</strong> antes de dar el aval oficial.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+                <Alert className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-xs">
+                        Asegúrese de que todos los documentos adjuntos (RUT, Cámara, Cert. Bancaria) coincidan con los datos digitados.
+                    </AlertDescription>
+                </Alert>
+
+                <div className="space-y-2">
+                    <Label htmlFor="note" className="text-sm font-bold">Observaciones / Motivos de Rechazo</Label>
+                    <Textarea 
+                        id="note"
+                        placeholder="Escriba aquí si requiere que el proveedor corrija algún dato específico..."
+                        value={reviewNote}
+                        onChange={(e) => setReviewNote(e.target.value)}
+                        className="min-h-[100px]"
+                    />
+                    <p className="text-[10px] text-muted-foreground italic">Esta nota solo se envía si elige 'Solicitar Correcciones'.</p>
+                </div>
+            </div>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                    variant="destructive" 
+                    className="flex-1"
+                    onClick={handleReject}
+                    disabled={!reviewNote.trim() || actionState[dialogState.provider?.id || '']}
+                >
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    Solicitar Correcciones
+                </Button>
+                <Button 
+                    variant="default" 
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={handleApprove}
+                    disabled={actionState[dialogState.provider?.id || '']}
+                >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Aprobar Registro
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- Other Modals --- */}
       <EvaluationModal
         isOpen={!!evaluationTarget}
         onClose={() => setEvaluationTarget(null)}

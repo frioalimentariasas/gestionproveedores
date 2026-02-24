@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -56,6 +57,20 @@ const DEFAULT_TEMPLATES: Template[] = [
     subject: 'Tu formulario de proveedor ha sido habilitado para edición',
     htmlContent: '<h1>Hola, {{providerName}}</h1><p>Tu formulario ha sido habilitado para edición.</p>',
     variables: ['providerName'],
+  },
+  {
+    id: 'form_approved_provider',
+    name: 'Notificación de Registro Aprobado',
+    subject: '¡Registro Aprobado! Su cuenta está activa en Frioalimentaria SAS',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Su registro ha sido aprobado satisfactoriamente por nuestro equipo de calidad.</p>',
+    variables: ['providerName'],
+  },
+  {
+    id: 'correction_requested_provider',
+    name: 'Solicitud de Correcciones en Registro',
+    subject: 'Acción Requerida: Corrección en su Formulario de Registro',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Tras revisar su información, requerimos las siguientes correcciones:</p><p>{{reason}}</p>',
+    variables: ['providerName', 'reason'],
   },
   {
     id: 'evaluation_failed_provider',

@@ -1,3 +1,4 @@
+
 'use server';
 
 import admin from '@/lib/firebase-admin';
@@ -283,6 +284,67 @@ export async function notifyProviderFormUnlocked({
     <p>Ahora puedes realizar los cambios necesarios. Una vez guardes, el formulario se volverá a bloquear.</p>
     <br>
     <p>Gracias,</p>
+    <p>El equipo de Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
+export async function notifyProviderCorrectionRequested({
+  providerEmail,
+  providerName,
+  reason,
+}: {
+  providerEmail: string;
+  providerName: string;
+  reason: string;
+}) {
+  const variables = { providerName, reason };
+  const dynamic = await getDynamicTemplate('correction_requested_provider', variables);
+
+  const subject = dynamic?.subject || 'Acción Requerida: Corrección en su Formulario de Registro';
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Hola, ${providerName}</h1>
+    <p>Tras revisar su información, hemos detectado que algunos campos requieren su atención para cumplir con los estándares ISO 9001.</p>
+    <p><strong>Observaciones del Auditor:</strong></p>
+    <p style="background-color: #f8f8f8; border-left: 4px solid #primary; padding: 15px; font-style: italic;">
+      ${reason}
+    </p>
+    <p>Su formulario ha sido <strong>desbloqueado</strong>. Por favor, realice los ajustes solicitados y guarde nuevamente el formulario.</p>
+    <br>
+    <p>Cordialmente,</p>
+    <p>Departamento de Auditoría - Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
+export async function notifyProviderFormApproved({
+  providerEmail,
+  providerName,
+}: {
+  providerEmail: string;
+  providerName: string;
+}) {
+  const variables = { providerName };
+  const dynamic = await getDynamicTemplate('form_approved_provider', variables);
+
+  const subject = dynamic?.subject || '¡Registro Aprobado! Su cuenta está activa en Frioalimentaria SAS';
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Felicitaciones, ${providerName}</h1>
+    <p>Le informamos que su proceso de registro ha sido <strong>aprobado satisfactoriamente</strong> por nuestro equipo de calidad.</p>
+    <p>Sus datos han sido integrados en nuestra base de proveedores activos bajo la norma ISO 9001.</p>
+    <p>Ya puede hacer uso pleno del portal para consultar sus futuras evaluaciones de desempeño.</p>
+    <br>
+    <p>Bienvenido,</p>
     <p>El equipo de Frioalimentaria SAS</p>
   `;
 

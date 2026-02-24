@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,7 +43,7 @@ import {
 } from '@/firebase';
 import { doc, setDoc, collection, query, Timestamp } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle } from 'lucide-react';
+import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -57,7 +58,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { notifyAdminOfFormUpdate, notifyAdminOfReactivationRequest, notifyProviderPendingForm, notifyProviderFormSubmitted } from '@/actions/email';
+import { notifyAdminOfFormUpdate, notifyAdminOfReactivationRequest, notifyProviderFormSubmitted } from '@/actions/email';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '../ui/label';
 import { cn } from '@/lib/utils';
@@ -315,7 +316,13 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       }
 
       await Promise.all(fileUploadPromises);
-      const dataToSave = { ...values, ...updatedFileUrls, id: user.uid, formLocked: true };
+      const dataToSave = { 
+        ...values, 
+        ...updatedFileUrls, 
+        id: user.uid, 
+        formLocked: true, 
+        registrationStatus: 'in_review' 
+      };
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
@@ -358,13 +365,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   };
 
   const hasErrors = Object.keys(errors).length > 0;
-
-  // Debugging: Log errors to console when attempt to submit
-  useEffect(() => {
-    if (hasErrors) {
-      console.log('Form validation errors:', errors);
-    }
-  }, [hasErrors, errors]);
 
   if (isProviderDataLoading && !previewMode) {
     return (
@@ -410,6 +410,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
     );
   }
 
+  const registrationStatus = providerData?.registrationStatus || 'pending';
+
   return (
     <Form {...form}>
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
@@ -435,7 +437,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       </AlertDialog>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {!previewMode && !isLocked && (
+        {!previewMode && !isLocked && registrationStatus !== 'approved' && (
             <div className={cn(
                 "sticky top-24 z-40 p-4 rounded-lg border shadow-lg flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4",
                 daysLeft <= 2 ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
@@ -448,11 +450,34 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         )}
 
         {isLocked && !previewMode && (
-          <Alert className="border-primary bg-primary/5">
-            <ShieldAlert className="h-4 w-4 text-primary" />
-            <AlertTitle className="font-bold">Formulario en Revisión</AlertTitle>
-            <AlertDescription>Tus datos han sido bloqueados para auditoría. Si necesitas realizar cambios, solicita el desbloqueo al administrador.</AlertDescription>
+          <Alert className={cn(
+            "border-2",
+            registrationStatus === 'approved' ? "border-green-500 bg-green-50" : "border-primary bg-primary/5"
+          )}>
+            {registrationStatus === 'approved' ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <ShieldAlert className="h-5 w-5 text-primary" />}
+            <AlertTitle className="font-bold uppercase tracking-tight">
+              {registrationStatus === 'approved' ? "Registro Aprobado" : "Formulario en Revisión de Calidad"}
+            </AlertTitle>
+            <AlertDescription className="text-sm">
+              {registrationStatus === 'approved' 
+                ? "Sus datos han sido validados satisfactoriamente bajo la norma ISO 9001. Su perfil está activo para operaciones comerciales." 
+                : "Tus datos han sido bloqueados para auditoría técnica. Si necesitas realizar cambios, solicita el desbloqueo al administrador."}
+            </AlertDescription>
           </Alert>
+        )}
+
+        {registrationStatus === 'correction_requested' && !isLocked && (
+            <Alert variant="destructive" className="border-2 animate-pulse">
+                <AlertTriangle className="h-5 w-5" />
+                <AlertTitle className="font-bold uppercase">Acción Requerida: Ajustes en el Registro</AlertTitle>
+                <AlertDescription className="space-y-2">
+                    <p>El administrador ha solicitado correcciones en su formulario:</p>
+                    <div className="bg-white/50 p-3 rounded border italic text-sm">
+                        "{providerData?.rejectionReason || 'No se especificó un motivo.'}"
+                    </div>
+                    <p className="text-xs font-bold">Por favor, realice los cambios y guarde nuevamente.</p>
+                </AlertDescription>
+            </Alert>
         )}
 
         <Card>
