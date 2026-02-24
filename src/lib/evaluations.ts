@@ -12,39 +12,39 @@ export interface CriterionDefinition {
   weightCritical: number; // Peso reforzado para proveedores Críticos
 }
 
-// Criterios ISO 9001 para Productos
+// Criterios ISO 9001 para Productos - Control de Salidas (8.4.2)
 export const PRODUCTOS_ISO_CRITERIA: CriterionDefinition[] = [
   { 
     id: 'quality', 
-    label: 'Calidad del Producto (Especificaciones técnicas y estado)', 
+    label: 'Calidad del Producto (Cumplimiento de especificaciones y estado)', 
     weightNormal: 0.35, 
     weightCritical: 0.45 
   },
   { 
     id: 'delivery', 
-    label: 'Cumplimiento en Entregas (Tiempos y cantidades)', 
+    label: 'Cumplimiento en Entregas (Oportunidad y cantidades)', 
     weightNormal: 0.30, 
     weightCritical: 0.30 
   },
   { 
     id: 'service', 
-    label: 'Servicio Post-venta y Soporte Técnico', 
+    label: 'Servicio Post-venta y Soporte Técnico (Capacidad de respuesta)', 
     weightNormal: 0.20, 
     weightCritical: 0.15 
   },
   { 
     id: 'price_terms', 
-    label: 'Precio y Condiciones Comerciales', 
+    label: 'Precio y Condiciones Comerciales (Eficiencia económica)', 
     weightNormal: 0.15, 
     weightCritical: 0.10 
   },
 ];
 
-// Criterios ISO 9001 para Servicios
+// Criterios ISO 9001 para Servicios - Control de Prestación (8.4.2)
 export const SERVICIOS_ISO_CRITERIA: CriterionDefinition[] = [
   { 
     id: 'compliance', 
-    label: 'Cumplimiento de Requisitos (ISO 9001 / Legales)', 
+    label: 'Cumplimiento de Requisitos (ISO 9001 / Legales / SST)', 
     weightNormal: 0.35, 
     weightCritical: 0.45 
   },
@@ -56,13 +56,13 @@ export const SERVICIOS_ISO_CRITERIA: CriterionDefinition[] = [
   },
   { 
     id: 'competence', 
-    label: 'Competencia del Personal / Idoneidad técnica', 
+    label: 'Competencia del Personal (Idoneidad técnica y formación)', 
     weightNormal: 0.20, 
     weightCritical: 0.20 
   },
   { 
     id: 'price_terms', 
-    label: 'Precio y Políticas de Pago', 
+    label: 'Precio y Políticas de Pago (Sostenibilidad)', 
     weightNormal: 0.15, 
     weightCritical: 0.10 
   },
@@ -92,14 +92,14 @@ export function getCriteriaForType(type: CategoryType, isCritical: boolean = fal
 
 /**
  * Determina si una evaluación requiere plan de acción según el puntaje total (Escala 1-5).
- * ISO 9001 requiere acciones correctivas para proveedores con desempeño insatisfactorio.
+ * ISO 9001 requiere acciones correctivas para proveedores con desempeño insatisfactorio (< 70%).
  */
 export function requiresActionPlan(totalScore: number): boolean {
   return totalScore < 3.5; // Menos de 70% (3.5 de 5.0)
 }
 
 /**
- * Define el estado de desempeño basado en los umbrales solicitados.
+ * Define el estado de desempeño basado en los umbrales de la Guía de Decisión Técnica.
  */
 export function getPerformanceStatus(score: number = 0) {
   const percentage = score * 20;

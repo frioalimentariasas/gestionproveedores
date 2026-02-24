@@ -54,7 +54,6 @@ export function EvaluationDetailModal({
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // State for granular commitments: Map of criterionId -> commitment text
   const [commitments, setCommitments] = useState<Record<string, string>>(
     evaluation.improvementCommitments || {}
   );
@@ -85,7 +84,6 @@ export function EvaluationDetailModal({
   const handleSubmitCommitment = async () => {
     if (!firestore || !providerData) return;
     
-    // Validate that all low-score criteria have a commitment
     const lowScoreCriteria = criteria.filter(crit => (evaluation.scores[crit.id] || 0) < 3.5);
     const missingCommitments = lowScoreCriteria.some(crit => !commitments[crit.id]?.trim());
 
@@ -93,7 +91,7 @@ export function EvaluationDetailModal({
       toast({
         variant: 'destructive',
         title: 'Información Faltante',
-        description: 'Debe radicar un compromiso de mejora para CADA criterio marcado en rojo.'
+        description: 'Debe radicar un compromiso de mejora para CADA criterio con hallazgos (en rojo).'
       });
       return;
     }
@@ -108,10 +106,8 @@ export function EvaluationDetailModal({
     };
 
     try {
-        // Perform the update
         await updateDoc(evalRef, updateData);
         
-        // Notify admins
         notifyAdminOfCommitmentSubmitted({
             businessName: providerData.businessName,
             providerEmail: providerData.email,
@@ -120,7 +116,7 @@ export function EvaluationDetailModal({
 
         toast({ 
             title: 'Compromiso Radicado', 
-            description: 'Su plan de mejora detallado ha sido registrado exitosamente y los administradores han sido notificados.' 
+            description: 'Su plan de mejora detallado ha sido registrado bajo los estándares ISO 9001.' 
         });
         onClose();
     } catch (serverError) {
@@ -138,7 +134,6 @@ export function EvaluationDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] h-[90vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary">
-        {/* Cabecera Fija */}
         <DialogHeader className="p-6 border-b shrink-0 bg-muted/20">
           <div className="flex justify-between items-start gap-4">
             <div className="space-y-1">
@@ -160,13 +155,12 @@ export function EvaluationDetailModal({
                     <Badge variant="outline" className={cn("text-xs font-black uppercase py-1", status.color)}>
                         {status.label}
                     </Badge>
-                    <p className="text-[10px] text-muted-foreground uppercase font-mono mt-1">Status ISO</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-mono mt-1">Estatus Normativo</p>
                 </div>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Área de Contenido con Scroll Independiente */}
         <div className="flex-grow overflow-y-auto p-6 bg-muted/5">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
@@ -177,7 +171,7 @@ export function EvaluationDetailModal({
                             </h4>
                             {needsAction && (
                                 <Badge variant="outline" className="text-destructive border-destructive bg-destructive/5 animate-pulse text-[9px] uppercase font-bold">
-                                    Hallazgos Críticos Detectados
+                                    Acción Correctiva Requerida (ISO 10.2)
                                 </Badge>
                             )}
                         </div>
@@ -201,7 +195,7 @@ export function EvaluationDetailModal({
                                                     {crit.label}
                                                 </span>
                                                 <p className="text-[9px] text-muted-foreground uppercase tracking-widest">
-                                                    Peso Relativo: {(crit.defaultWeight * 100).toFixed(0)}%
+                                                    Ponderación: {(crit.defaultWeight * 100).toFixed(0)}%
                                                 </p>
                                             </div>
                                             <div className={cn(
@@ -218,7 +212,7 @@ export function EvaluationDetailModal({
                                             <div className="mt-2 space-y-3 border-t pt-4 border-destructive/20">
                                                 <div className="flex items-center gap-2 text-destructive">
                                                     <AlertTriangle className="h-4 w-4" />
-                                                    <Label className="text-[11px] font-black uppercase tracking-tight">Acción Correctiva Requerida:</Label>
+                                                    <Label className="text-[11px] font-black uppercase tracking-tight">Tratamiento del Hallazgo:</Label>
                                                 </div>
                                                 
                                                 {isProviderView && !isAlreadySubmitted ? (
@@ -233,7 +227,7 @@ export function EvaluationDetailModal({
                                                         {commitments[crit.id] ? (
                                                             <p>"{commitments[crit.id]}"</p>
                                                         ) : (
-                                                            <p className="text-muted-foreground">Pendiente de radicación de compromiso por parte del proveedor.</p>
+                                                            <p className="text-muted-foreground">Pendiente de radicación por el proveedor.</p>
                                                         )}
                                                     </div>
                                                 )}
@@ -245,28 +239,26 @@ export function EvaluationDetailModal({
                         </div>
                     </div>
 
-                    {/* Observaciones del Auditor */}
                     <div className="space-y-3">
-                        <h4 className="font-bold text-xs uppercase text-muted-foreground">Observaciones de la Auditoría</h4>
+                        <h4 className="font-bold text-xs uppercase text-muted-foreground">Notas de Auditoría Interna</h4>
                         <div className="p-4 rounded-lg bg-muted/50 border text-sm italic text-muted-foreground">
-                            {evaluation.comments || 'Sin observaciones adicionales registradas por el auditor.'}
+                            {evaluation.comments || 'Sin observaciones adicionales registradas.'}
                         </div>
                     </div>
                 </div>
 
-                {/* Columna derecha: Decision Guide */}
                 <div className="space-y-6">
                     <Card className="border-t-4 border-t-accent shadow-md sticky top-0">
                         <CardHeader className="p-4">
                             <CardTitle className="text-sm flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4 text-accent" />
-                                Guía de Desempeño ISO
+                                Guía de Decisión ISO 9001
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 text-[10px] space-y-3">
                             <div className="flex justify-between items-center border-b pb-1 font-bold">
-                                <span>Umbral</span>
-                                <span>Estado</span>
+                                <span>Puntaje (%)</span>
+                                <span>Decisión Calidad</span>
                             </div>
                             <div className="flex justify-between items-center text-green-700 font-medium">
                                 <span>&ge; 85% (4.25)</span>
@@ -278,14 +270,14 @@ export function EvaluationDetailModal({
                             </div>
                             <div className="flex justify-between items-center text-yellow-700 font-medium">
                                 <span>60 - 69% (3.0)</span>
-                                <span>En Observación</span>
+                                <span>En Observación *</span>
                             </div>
                             <div className="flex justify-between items-center text-red-700 font-medium">
                                 <span>&lt; 60%</span>
-                                <span>Crítico</span>
+                                <span>Crítico *</span>
                             </div>
                             <div className="mt-4 p-2 bg-muted/50 rounded border text-muted-foreground italic leading-tight">
-                                Nota: Todo puntaje menor a 3.5 (70%) genera un hallazgo técnico que requiere plan de acción obligatorio para asegurar la continuidad del servicio.
+                                * Nota: Según ISO 9001 (8.4), todo puntaje < 70% requiere un plan de mejora obligatorio para asegurar la continuidad del suministro.
                             </div>
                         </CardContent>
                     </Card>
@@ -294,10 +286,10 @@ export function EvaluationDetailModal({
                         <div className="p-5 rounded-xl bg-primary/5 border border-primary/20 space-y-3 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-primary" />
-                                <p className="text-xs font-black text-primary uppercase">Trazabilidad ISO</p>
+                                <p className="text-xs font-black text-primary uppercase">Trazabilidad de Calidad</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                El plan de acción ha sido registrado satisfactoriamente. Fecha de radicación:
+                                El plan de acción ha sido registrado satisfactoriamente. Fecha de radicación oficial:
                             </p>
                             <p className="text-[10px] font-mono font-bold text-center bg-white px-3 py-1 rounded-full border">
                                 {format(evaluation.commitmentSubmittedAt?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
@@ -308,7 +300,6 @@ export function EvaluationDetailModal({
             </div>
         </div>
 
-        {/* Pie de Página Fijo */}
         <DialogFooter className="p-6 border-t shrink-0 bg-background shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
           <Button variant="outline" onClick={onClose} className="font-bold">Cerrar Detalle</Button>
           {isProviderView && needsAction && !isAlreadySubmitted && (
