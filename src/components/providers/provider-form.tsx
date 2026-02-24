@@ -879,7 +879,7 @@ export default function ProviderForm({
                 name="hseqCertFile"
                 render={({ field: { value, onChange, ...fieldProps } }) => (
                     <FormItem>
-                    <FormLabel className="font-bold">Certificado de autor evaluación 0312 expedida por la ARL o el Ministerio del trabajo.</FormLabel>
+                    <FormLabel className="font-bold">Certificado de autoevaluación 0312 expedida por la ARL o el Ministerio del trabajo.</FormLabel>
                     <FormControl>
                         <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
                     </FormControl>
@@ -902,7 +902,7 @@ export default function ProviderForm({
                   <FormLabel className="font-medium text-foreground text-justify block">
                     Yo <strong className="text-primary">{watchedPersonType === 'Persona Jurídica' ? (watchedLegalRepresentativeName || '________________') : (watchedBusinessName || '________________')}</strong>, 
                     identificado con cédula No. <strong className="text-primary">{watchedPersonType === 'Persona Jurídica' ? (watchedLegalRepresentativeDocumentNumber || '________________') : (watchedDocumentNumber || '________________')}</strong>, 
-                    obrando como representante legal de la sociedad identificada con NIT <strong className="text-primary">{watchedDocumentNumber || '________________'}</strong>, 
+                    obrando como representante legal de la sociedad <strong className="text-primary">{watchedBusinessName || '________________'}</strong> identificada con NIT <strong className="text-primary">{watchedDocumentNumber || '________________'}</strong>, 
                     de conformidad con certificado de existencia y representación legal vigente, expedido por la cámara de comercio, de manera voluntaria y dando certeza de que todo lo aquí consignado es cierto, realizo la siguiente declaración de origen de fondos a FRIOALIMENTARIA SAS., con el propósito de dar cumplimiento a lo señalado en el Estatuto Orgánico del Sistema Financiero (Decreto 663 de 1993), ley 190 de 1995 (Estatuto Anticorrupción) y demás normas legales concordantes:
                   </FormLabel>
                   <ol className="list-decimal pl-5 space-y-2 mt-2 font-medium text-muted-foreground text-xs">
