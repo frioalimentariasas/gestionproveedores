@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -29,6 +30,7 @@ import {
   ChevronRight,
   Info,
   CheckCircle2,
+  PencilLine,
 } from 'lucide-react';
 import {
   Table,
@@ -108,7 +110,6 @@ export default function ProvidersTable() {
     [key: string]: boolean;
   }>({});
   
-  // States for sub-modals
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   
@@ -450,7 +451,6 @@ export default function ProvidersTable() {
         </Table>
       </div>
 
-      {/* --- Management Sheet (Panel Lateral) --- */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="sm:max-w-md p-0">
           <SheetHeader className="p-6 bg-primary text-primary-foreground">
@@ -465,7 +465,6 @@ export default function ProvidersTable() {
           
           <ScrollArea className="h-[calc(100vh-120px)] p-6">
             <div className="space-y-8">
-              {/* Seccion 0: Auditoría de Registro */}
               <section className="space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <CheckCircle2 className="h-3 w-3" /> Auditoría de Registro
@@ -483,7 +482,6 @@ export default function ProvidersTable() {
 
               <Separator />
 
-              {/* Seccion 1: Trazabilidad y Consulta */}
               <section className="space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Info className="h-3 w-3" /> Trazabilidad y Consulta
@@ -492,6 +490,11 @@ export default function ProvidersTable() {
                   <Button variant="outline" className="justify-start" asChild onClick={() => setIsSheetOpen(false)}>
                     <Link href={`/providers/${selectedProvider?.id}/view`}>
                       <Eye className="mr-2 h-4 w-4" /> Ver Formulario de Registro
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="justify-start text-primary border-primary/30 hover:bg-primary/5" asChild onClick={() => setIsSheetOpen(false)}>
+                    <Link href={`/providers/${selectedProvider?.id}/edit`}>
+                      <PencilLine className="mr-2 h-4 w-4" /> Editar Información (Modo Admin)
                     </Link>
                   </Button>
                   <Button variant="outline" className="justify-start" asChild onClick={() => setIsSheetOpen(false)}>
@@ -511,7 +514,6 @@ export default function ProvidersTable() {
 
               <Separator />
 
-              {/* Seccion 2: Gestión Técnica */}
               <section className="space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Gestión Técnica</h4>
                 <div className="grid gap-2">
@@ -534,7 +536,6 @@ export default function ProvidersTable() {
 
               <Separator />
 
-              {/* Seccion 3: Administración de Cuenta */}
               <section className="space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Control de Acceso</h4>
                 <div className="grid gap-2">
@@ -561,7 +562,6 @@ export default function ProvidersTable() {
         </SheetContent>
       </Sheet>
       
-      {/* --- Review Dialog --- */}
       <Dialog 
         open={dialogState.type === 'review'} 
         onOpenChange={(open) => !open && setDialogState({ type: null, provider: null })}
@@ -619,7 +619,6 @@ export default function ProvidersTable() {
         </DialogContent>
       </Dialog>
 
-      {/* --- Other Modals --- */}
       <EvaluationModal
         isOpen={!!evaluationTarget}
         onClose={() => setEvaluationTarget(null)}

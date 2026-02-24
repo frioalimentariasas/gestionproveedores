@@ -136,7 +136,6 @@ const providerTypeOptions = [
   { id: 'Servicios', label: 'Servicios' },
 ] as const;
 
-// Helper component to display existing files
 const FileDisplay = ({ label, url }: { label: string; url?: string }) => {
   if (!url) return null;
   return (
@@ -154,7 +153,15 @@ const FileDisplay = ({ label, url }: { label: string; url?: string }) => {
   );
 };
 
-export default function ProviderForm({ previewMode = false }: { previewMode?: boolean }) {
+export default function ProviderForm({ 
+  previewMode = false,
+  adminMode = false,
+  providerId: manualProviderId
+}: { 
+  previewMode?: boolean;
+  adminMode?: boolean;
+  providerId?: string;
+}) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -168,13 +175,15 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   const [isSendingJustification, setIsSendingJustification] = useState(false);
   const [justification, setJustification] = useState('');
 
+  const effectiveProviderId = manualProviderId || user?.uid;
+
   const getAutoSaveKey = (userId: string) => `provider-form-autosave-${userId}`;
   const getWelcomeKey = (userId: string) => `provider-welcome-shown-${userId}`;
 
   const providerDocRef = useMemoFirebase(() => {
-    if (!user || !firestore || previewMode) return null;
-    return doc(firestore, 'providers', user.uid);
-  }, [user, firestore, previewMode]);
+    if (!effectiveProviderId || !firestore || previewMode) return null;
+    return doc(firestore, 'providers', effectiveProviderId);
+  }, [effectiveProviderId, firestore, previewMode]);
 
   const { data: providerData, isLoading: isProviderDataLoading } = useDoc<any>(providerDocRef);
 
@@ -193,12 +202,12 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   }, [providerData]);
 
   const isBlockedByTime = useMemo(() => {
-    if (previewMode || providerData?.formLocked) return false;
+    if (previewMode || adminMode || providerData?.formLocked) return false;
     return daysSinceRegistration >= 9;
-  }, [daysSinceRegistration, providerData, previewMode]);
+  }, [daysSinceRegistration, providerData, previewMode, adminMode]);
 
   const daysLeft = Math.max(0, 8 - daysSinceRegistration);
-  const isLocked = previewMode ? false : (providerData?.formLocked ?? false);
+  const isLocked = previewMode || adminMode ? false : (providerData?.formLocked ?? false);
 
   const form = useForm<ProviderFormValues>({
     resolver: zodResolver(providerFormSchema),
@@ -215,17 +224,17 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
 
   useEffect(() => {
-    if (user && !isProviderDataLoading && !previewMode && !isBlockedByTime && !providerData?.formLocked) {
+    if (user && !isProviderDataLoading && !previewMode && !adminMode && !isBlockedByTime && !providerData?.formLocked) {
       const welcomeKey = getWelcomeKey(user.uid);
       if (!localStorage.getItem(welcomeKey)) {
         setShowWelcomeDialog(true);
         localStorage.setItem(welcomeKey, 'true');
       }
     }
-  }, [user, isProviderDataLoading, previewMode, isBlockedByTime, providerData]);
+  }, [user, isProviderDataLoading, previewMode, adminMode, isBlockedByTime, providerData]);
 
   useEffect(() => {
-    if (user && !isProviderDataLoading && !providerData?.formLocked && !previewMode && !isBlockedByTime) {
+    if (user && !isProviderDataLoading && !providerData?.formLocked && !previewMode && !adminMode && !isBlockedByTime) {
       const autoSaveKey = getAutoSaveKey(user.uid);
       const savedDataString = localStorage.getItem(autoSaveKey);
       if (savedDataString) {
@@ -238,11 +247,11 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         }
       }
     }
-  }, [user, isProviderDataLoading, providerData, previewMode, isBlockedByTime]);
+  }, [user, isProviderDataLoading, providerData, previewMode, adminMode, isBlockedByTime]);
 
   const watchedValues = form.watch();
   useEffect(() => {
-    if (isLocked || !user || previewMode || isBlockedByTime) return;
+    if (isLocked || !user || previewMode || adminMode || isBlockedByTime) return;
     const autoSaveKey = getAutoSaveKey(user.uid);
     const handler = setTimeout(() => {
       const dataToSave = { ...watchedValues };
@@ -255,11 +264,11 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       localStorage.setItem(autoSaveKey, JSON.stringify(dataToSave));
     }, 1000);
     return () => clearTimeout(handler);
-  }, [watchedValues, isLocked, user, previewMode, isBlockedByTime]);
+  }, [watchedValues, isLocked, user, previewMode, adminMode, isBlockedByTime]);
 
   const stableReset = useCallback(reset, []);
   useEffect(() => {
-    if (providerData && !previewMode) {
+    if (providerData) {
       const { country, department } = providerData;
       if (country) {
         const countryData = Country.getAllCountries().find(c => c.name === country);
@@ -276,7 +285,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       }
       stableReset({ ...initialFormValues, ...providerData });
     }
-  }, [providerData, stableReset, previewMode]);
+  }, [providerData, stableReset]);
 
   const categoryOptions = useMemo(
     () => (categories ? categories.map((c) => ({ value: c.id, label: c.name, type: c.categoryType })) : []),
@@ -305,8 +314,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
 
   async function onSubmit(values: ProviderFormValues) {
     if (previewMode || isBlockedByTime) return;
-    if (!user || !providerDocRef) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión.' });
+    if (!effectiveProviderId || !providerDocRef) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo identificar al proveedor.' });
       return;
     }
     setIsSubmitting(true);
@@ -321,30 +330,39 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         if (fileList && fileList.length > 0) {
           const file = fileList[0];
           const urlField = `${field}Url` as keyof ProviderFormValues;
-          fileUploadPromises.push(uploadFile(file, user.uid, fileNames[field]).then((url) => { updatedFileUrls[urlField] = url; }));
+          fileUploadPromises.push(uploadFile(file, effectiveProviderId, fileNames[field]).then((url) => { updatedFileUrls[urlField] = url; }));
         }
       }
 
       await Promise.all(fileUploadPromises);
-      const dataToSave = { 
+      const dataToSave: any = { 
         ...values, 
         ...updatedFileUrls, 
-        id: user.uid, 
-        formLocked: true, 
-        registrationStatus: 'in_review' 
+        id: effectiveProviderId,
       };
+
+      if (!adminMode) {
+          dataToSave.formLocked = true;
+          dataToSave.registrationStatus = 'in_review';
+      }
+
       fileFields.forEach((field) => delete (dataToSave as any)[field]);
 
       await setDoc(providerDocRef, dataToSave, { merge: true });
       
-      const providerEmail = providerData?.email;
-      if(providerEmail) {
-          notifyAdminOfFormUpdate({ businessName: dataToSave.businessName, email: providerEmail }).catch(console.error);
-          notifyProviderFormSubmitted({ providerEmail: providerEmail, providerName: dataToSave.businessName }).catch(console.error);
+      if (!adminMode) {
+          const providerEmail = providerData?.email;
+          if(providerEmail) {
+              notifyAdminOfFormUpdate({ businessName: dataToSave.businessName, email: providerEmail }).catch(console.error);
+              notifyProviderFormSubmitted({ providerEmail: providerEmail, providerName: dataToSave.businessName }).catch(console.error);
+          }
+          localStorage.removeItem(getAutoSaveKey(effectiveProviderId));
       }
 
-      localStorage.removeItem(getAutoSaveKey(user.uid));
-      toast({ title: '¡Información guardada!', description: 'Tus datos han sido guardados y bloqueados para revisión.' });
+      toast({ 
+        title: adminMode ? 'Información Actualizada' : '¡Información guardada!', 
+        description: adminMode ? 'Los cambios han sido guardados exitosamente.' : 'Tus datos han sido guardados y bloqueados para revisión.' 
+      });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error al guardar', description: error.message });
     } finally {
@@ -427,7 +445,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>¿Restaurar datos?</AlertDialogTitle><AlertDialogDescription>Detectamos información no guardada. ¿Deseas restaurarla?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => { localStorage.removeItem(getAutoSaveKey(user!.uid)); setShowRestoreDialog(false); }}>Limpiar</AlertDialogCancel><AlertDialogAction onClick={() => { if (persistedData) form.reset(persistedData); setShowRestoreDialog(false); }}>Restaurar</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => { if (user) localStorage.removeItem(getAutoSaveKey(user.uid)); setShowRestoreDialog(false); }}>Limpiar</AlertDialogCancel><AlertDialogAction onClick={() => { if (persistedData) form.reset(persistedData); setShowRestoreDialog(false); }}>Restaurar</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -447,7 +465,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
       </AlertDialog>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {!previewMode && !isLocked && registrationStatus !== 'approved' && (
+        {!previewMode && !isLocked && registrationStatus !== 'approved' && !adminMode && (
             <div className={cn(
                 "sticky top-24 z-40 p-4 rounded-lg border shadow-lg flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4",
                 daysLeft <= 2 ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
@@ -459,7 +477,18 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
             </div>
         )}
 
-        {isLocked && !previewMode && (
+        {adminMode && (
+            <Alert className="border-2 border-primary bg-primary/5">
+                <ShieldAlert className="h-5 w-5 text-primary" />
+                <AlertTitle className="font-black uppercase tracking-tight">Modo Edición Administrativa</AlertTitle>
+                <AlertDescription className="text-sm font-medium">
+                    Estás editando la información de <strong>{providerData?.businessName}</strong>. 
+                    Puedes corregir errores de digitación directamente sin bloquear o desbloquear el formulario del proveedor.
+                </AlertDescription>
+            </Alert>
+        )}
+
+        {isLocked && !previewMode && !adminMode && (
           <Alert className={cn(
             "border-2",
             registrationStatus === 'approved' ? "border-green-500 bg-green-50" : "border-primary bg-primary/5"
@@ -476,7 +505,7 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
           </Alert>
         )}
 
-        {registrationStatus === 'correction_requested' && !isLocked && (
+        {registrationStatus === 'correction_requested' && !isLocked && !adminMode && (
             <Alert variant="destructive" className="border-2 animate-pulse">
                 <AlertTriangle className="h-5 w-5" />
                 <AlertTitle className="font-bold uppercase">Acción Requerida: Ajustes en el Registro</AlertTitle>
@@ -578,88 +607,84 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
               </FormItem>
             )} />
             
-            {watchedTaxRegimeType === 'Común' && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="isLargeTaxpayer" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>¿Es Gran Contribuyente?</FormLabel>
+                  <FormControl>
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                      {yesNoOptions.map((opt) => (
+                        <FormItem key={opt} className="flex items-center space-x-2">
+                          <FormControl><RadioGroupItem value={opt} /></FormControl>
+                          <Label className="font-normal">{opt}</Label>
+                        </FormItem>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                <FormField control={form.control} name="isIncomeSelfRetainer" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>¿Es Gran Contribuyente?</FormLabel>
-                      <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
-                          {yesNoOptions.map((opt) => (
-                            <FormItem key={opt} className="flex items-center space-x-2">
-                              <FormControl><RadioGroupItem value={opt} /></FormControl>
-                              <Label className="font-normal">{opt}</Label>
-                            </FormItem>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
+                        <FormLabel>¿Es Autorretenedor de Renta?</FormLabel>
+                        <FormControl>
+                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                                {yesNoOptions.map((opt) => (
+                                    <FormItem key={opt} className="flex items-center space-x-2">
+                                        <FormControl><RadioGroupItem value={opt} /></FormControl>
+                                        <Label className="font-normal">{opt}</Label>
+                                    </FormItem>
+                                ))}
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
                     </FormItem>
-                  )} />
-                  {watchedIsLargeTaxpayer === 'Sí' && <FormField control={form.control} name="largeTaxpayerResolution" render={({ field }) => (<FormItem><FormLabel>Resolución No.</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-                    <FormField control={form.control} name="isIncomeSelfRetainer" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>¿Es Autorretenedor de Renta?</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
-                                    {yesNoOptions.map((opt) => (
-                                        <FormItem key={opt} className="flex items-center space-x-2">
-                                            <FormControl><RadioGroupItem value={opt} /></FormControl>
-                                            <Label className="font-normal">{opt}</Label>
-                                        </FormItem>
-                                    ))}
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
+                )} />
+                {watchedIsIncomeSelfRetainer === 'Sí' && (
+                    <FormField control={form.control} name="incomeSelfRetainerResolution" render={({ field }) => (
+                        <FormItem><FormLabel>Resolución Autorretenedor Renta</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    {watchedIsIncomeSelfRetainer === 'Sí' && (
-                        <FormField control={form.control} name="incomeSelfRetainerResolution" render={({ field }) => (
-                            <FormItem><FormLabel>Resolución Autorretenedor Renta</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                <FormField control={form.control} name="isIcaSelfRetainer" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>¿Es Autorretenedor de ICA?</FormLabel>
+                        <FormControl>
+                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
+                                {yesNoOptions.map((opt) => (
+                                    <FormItem key={opt} className="flex items-center space-x-2">
+                                        <FormControl><RadioGroupItem value={opt} /></FormControl>
+                                        <Label className="font-normal">{opt}</Label>
+                                    </FormItem>
+                                ))}
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                {watchedIsIcaSelfRetainer === 'Sí' && (
+                    <div className="grid grid-cols-1 gap-4">
+                        <FormField control={form.control} name="icaSelfRetainerMunicipality" render={({ field }) => (
+                            <FormItem><FormLabel>Municipio ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
                         )} />
-                    )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-                    <FormField control={form.control} name="isIcaSelfRetainer" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>¿Es Autorretenedor de ICA?</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4" disabled={isLocked}>
-                                    {yesNoOptions.map((opt) => (
-                                        <FormItem key={opt} className="flex items-center space-x-2">
-                                            <FormControl><RadioGroupItem value={opt} /></FormControl>
-                                            <Label className="font-normal">{opt}</Label>
-                                        </FormItem>
-                                    ))}
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    {watchedIsIcaSelfRetainer === 'Sí' && (
-                        <div className="grid grid-cols-1 gap-4">
-                            <FormField control={form.control} name="icaSelfRetainerMunicipality" render={({ field }) => (
-                                <FormItem><FormLabel>Municipio ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="icaSelfRetainerResolution" render={({ field }) => (
-                                <FormItem><FormLabel>Resolución Autorretenedor ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="icaPercentage" render={({ field }) => (
-                                <FormItem><FormLabel>Porcentaje según ICA (%)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="icaCode" render={({ field }) => (
-                                <FormItem><FormLabel>Código actividad económica ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </div>
-                    )}
-                </div>
-              </>
-            )}
+                        <FormField control={form.control} name="icaSelfRetainerResolution" render={({ field }) => (
+                            <FormItem><FormLabel>Resolución Autorretenedor ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="icaPercentage" render={({ field }) => (
+                            <FormItem><FormLabel>Porcentaje según ICA (%)</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="icaCode" render={({ field }) => (
+                            <FormItem><FormLabel>Código actividad económica ICA</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
                 <FormField control={form.control} name="ciiuCode" render={({ field }) => (
@@ -835,7 +860,8 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         {!isLocked && !previewMode && (
           <div className="flex justify-end pb-12">
             <Button type="submit" size="lg" disabled={isSubmitting}>
-              {isSubmitting ? <><Loader2 className="animate-spin mr-2" /> Guardando y Subiendo...</> : 'Guardar y Bloquear Formulario'}
+              {isSubmitting ? <><Loader2 className="animate-spin mr-2" /> Guardando...</> : 
+               adminMode ? 'Guardar Cambios (Administrador)' : 'Guardar y Bloquear Formulario'}
             </Button>
           </div>
         )}
