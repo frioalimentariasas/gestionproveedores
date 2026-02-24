@@ -36,6 +36,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { notifyProviderEvaluationFailed, notifyProviderEvaluationSuccess } from '@/actions/email';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 interface Provider {
   id: string;
@@ -221,7 +222,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     const evaluationsCollection = collection(firestore, 'providers', provider.id, 'evaluations');
     addDoc(evaluationsCollection, dataToSave)
       .then(() => {
-        // Automatic notification logic
         if (provider.email) {
             if (needsAction) {
                 notifyProviderEvaluationFailed({
@@ -322,7 +322,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                 <ScrollArea className="flex-grow px-6">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Alerta de Criticidad ISO */}
                         {provider.criticalityLevel === 'Crítico' && (
                             <Alert className="bg-orange-50 border-orange-200">
                                 <ShieldAlert className="h-4 w-4 text-orange-600" />
@@ -385,7 +384,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                         )} />
                     </div>
 
-                    {/* Lado derecho: Guía de Decisión */}
                     <div className="space-y-4">
                         <Card className="border-t-4 border-t-accent shadow-md">
                             <CardHeader className="p-4 pb-2">
