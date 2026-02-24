@@ -211,6 +211,12 @@ export default function ProviderForm({
   const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
   const watchedCountry = form.watch('country');
   const watchedDepartment = form.watch('department');
+  
+  // Watch fields for dynamic SARLAFT text
+  const watchedBusinessName = form.watch('businessName');
+  const watchedDocumentNumber = form.watch('documentNumber');
+  const watchedLegalRepresentativeName = form.watch('legalRepresentativeName');
+  const watchedLegalRepresentativeDocumentNumber = form.watch('legalRepresentativeDocumentNumber');
 
   // --- RECTIVE GEOGRAPHY LISTS ---
   useEffect(() => {
@@ -888,8 +894,38 @@ export default function ProviderForm({
 
         <Card>
           <CardHeader><CardTitle>8. SARLAFT Y PROTECCIÓN DE DATOS</CardTitle></CardHeader>
-          <CardContent>
-            <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (<FormItem className="flex row items-start space-x-3 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Acepto la declaración de origen de fondos y la política de tratamiento de datos personales.</FormLabel><FormMessage /></div></FormItem>)} />
+          <CardContent className="space-y-6">
+            <FormField control={form.control} name="sarlaftAccepted" render={({ field }) => (
+              <FormItem className="flex row items-start space-x-3 rounded-md border p-4 bg-muted/5 shadow-sm">
+                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLocked} /></FormControl>
+                <div className="space-y-1 leading-relaxed text-sm">
+                  <FormLabel className="font-medium text-foreground text-justify block">
+                    Yo <strong className="text-primary">{watchedPersonType === 'Persona Jurídica' ? (watchedLegalRepresentativeName || '________________') : (watchedBusinessName || '________________')}</strong>, 
+                    identificado con cédula No. <strong className="text-primary">{watchedPersonType === 'Persona Jurídica' ? (watchedLegalRepresentativeDocumentNumber || '________________') : (watchedDocumentNumber || '________________')}</strong>, 
+                    obrando como representante legal de la sociedad identificada con NIT <strong className="text-primary">{watchedDocumentNumber || '________________'}</strong>, 
+                    de conformidad con certificado de existencia y representación legal vigente, expedido por la cámara de comercio, de manera voluntaria y dando certeza de que todo lo aquí consignado es cierto, realizo la siguiente declaración de origen de fondos a FRIOALIMENTARIA SAS., con el propósito de dar cumplimiento a lo señalado en el Estatuto Orgánico del Sistema Financiero (Decreto 663 de 1993), ley 190 de 1995 (Estatuto Anticorrupción) y demás normas legales concordantes:
+                  </FormLabel>
+                  <ol className="list-decimal pl-5 space-y-2 mt-2 font-medium text-muted-foreground text-xs">
+                    <li>La actividad de la empresa es lícita y se ejerce dentro del marco legal y los recursos que posee no provienen de actividades ilícitas de las contempladas en el Código Penal Colombiano.</li>
+                    <li>Los recursos comprometidos para el desarrollo del objeto social de la compañía provienen de las siguientes fuentes: capital de trabajo producto de compra y ventas de..., prestamos de entidades financieras, etc.).</li>
+                    <li>Los recursos que se deriven del desarrollo de este contrato no se destinarán a la financiación del terrorismo, grupos terroristas o actividades terroristas.</li>
+                  </ol>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )} />
+
+            <div className="p-4 rounded-md border bg-muted/30 text-[10px] text-justify leading-relaxed text-muted-foreground space-y-3">
+                <p>
+                    En virtud de la <strong>Ley 1581 de 2012</strong> y sus normas reglamentarias, el titular de la información personal, declara que la entrega en forma libre y voluntaria y autoriza que la misma entre a formar parte de las bases de datos de la empresa <strong>FRIOALIMENTARIA SAS.</strong>, para el tratamiento de servicio de los datos en actividades del objeto social de FRIOALIMENTARIA SAS acuerdo con la legislación vigente.
+                </p>
+                <p>
+                    Así mismo, manifiesta que los datos personales de los colaboradores de la persona jurídica que representa, lo han autorizado para entregarlos a terceros, en el desarrollo del objeto social propio. FRIOALIMENTARIA SAS. garantiza el cumplimiento de los principios señalados en la ley 1581 de 2.012 y sus decretos reglamentarios, en particular lo relacionado con la seguridad y la confidencialidad con la que se manejan los datos recibidos.
+                </p>
+                <p>
+                    El titular manifiesta que ha sido informado que tiene el derecho a acceder, modificar, rectificar, suprimir, solicitar la copia de su autorización, a formular quejas, reclamos y consultas frente al tratamiento que haga FRIOALIMENTARIA SAS de sus datos personales. Para ejercer esos derechos puede contactarse al correo electrónico: <strong>contabilidad@frioalimentaria.com.co</strong>, al telefono: <strong>(+5) 6424342 ext 109</strong> o mediante documento escrito a la siguiente dirección: <strong>Variante Cartagena Turbaco Zona Franca Parque Central Lote 69</strong>.
+                </p>
+            </div>
           </CardContent>
         </Card>
 
