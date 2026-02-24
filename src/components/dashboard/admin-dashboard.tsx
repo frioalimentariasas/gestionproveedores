@@ -172,11 +172,11 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           Dashboard Administrativo
         </h1>
-        <p className="text-muted-foreground">
-          Un resumen de la actividad de tus proveedores.
+        <p className="text-muted-foreground mt-1">
+          Resumen operativo del Sistema de Gestión de Proveedores.
         </p>
       </div>
 

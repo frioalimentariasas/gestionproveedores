@@ -9,7 +9,7 @@ export default function ProviderFormPage() {
       <div className="container mx-auto max-w-5xl p-4 py-12">
         <div className="flex justify-between items-start mb-8 gap-4">
           <div className="flex-grow text-center mt-2">
-            <h1 className="text-xl font-bold tracking-tight uppercase">
+            <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase">
               REGISTRO O ACTUALIZACION DE PROVEEDORES Y/O
               <br />
               CONTRATISTAS
@@ -34,9 +34,8 @@ export default function ProviderFormPage() {
           </div>
         </div>
         <div className="space-y-4 mb-12">
-          <p className="text-muted-foreground text-lg">
-            Completa o actualiza tu información para mantener tus datos al día.
-            Todos los campos son importantes para nuestra gestión.
+          <p className="text-muted-foreground text-lg text-center">
+            Complete o actualice su información para mantener sus datos al día bajo los estándares ISO 9001.
           </p>
         </div>
         <ProviderForm />

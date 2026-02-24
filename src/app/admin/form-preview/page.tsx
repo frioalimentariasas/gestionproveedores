@@ -29,11 +29,11 @@ export default function AdminFormPreviewPage() {
     <AuthGuard>
       <div className="container mx-auto max-w-5xl p-4 py-12">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Modelo del Formulario de Registro
           </h1>
           <p className="text-muted-foreground mt-2">
-            Vista de auditoría para validar campos, tipos de datos y lógica del formulario.
+            Vista de auditoría para validar campos, tipos de datos y lógica del formulario oficial FA-GFC-F04.
           </p>
         </div>
         <ProviderForm previewMode={true} />

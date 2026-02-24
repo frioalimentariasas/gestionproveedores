@@ -36,11 +36,11 @@ export default function CategoriesPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto p-4">
-        <h1 className="my-8 text-center text-4xl font-bold tracking-tight">
+        <h1 className="my-8 text-center text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           Gestión de Categorías
         </h1>
         <p className="text-center text-muted-foreground mb-8">
-          Crea y administra las categorías para clasificar a los proveedores.
+          Crea y administra las categorías para clasificar a los proveedores de Frioalimentaria.
         </p>
         <CategoriesTable />
       </div>

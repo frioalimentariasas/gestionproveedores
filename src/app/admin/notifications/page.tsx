@@ -1,4 +1,3 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -29,9 +28,9 @@ export default function AdminNotificationsPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto p-4 py-12">
-        <div className="flex items-center gap-4 mb-8 justify-center">
+        <div className="flex flex-col items-center gap-4 mb-8 justify-center">
             <Mail className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-center">
                 Gestión de Notificaciones
             </h1>
         </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -60,7 +59,7 @@ export default function ProviderEvaluationsPage() {
             <div className="bg-primary/10 p-3 rounded-full mb-2">
                 <ClipboardCheck className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-center">
+            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-center">
                 Mis Evaluaciones de Desempeño
             </h1>
             <p className="text-center text-muted-foreground max-w-2xl">

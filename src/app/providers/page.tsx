@@ -45,10 +45,10 @@ export default function ProvidersPage() {
       <div className="container mx-auto p-4">
         <div className="flex flex-col md:flex-row justify-between items-center my-8 gap-4">
           <div className="text-center md:text-left">
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Gestión de Proveedores
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-1">
               Administra la información y el estado de los proveedores registrados.
             </p>
           </div>

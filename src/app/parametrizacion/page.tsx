@@ -1,4 +1,3 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -29,8 +28,8 @@ export default function ParametrizacionPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto p-4 py-12">
-        <h1 className="my-8 text-center text-4xl font-bold tracking-tight">
-          Parametrización de Criterios de Evaluación
+        <h1 className="my-8 text-center text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Parametrización de Criterios ISO
         </h1>
         <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
           Selecciona una categoría y ajusta el peso porcentual de cada criterio para las evaluaciones de desempeño. La suma total debe ser siempre 100%.

@@ -9,8 +9,8 @@ export default function AccountPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto max-w-2xl p-4 py-12">
-        <h1 className="mb-8 text-center text-4xl font-bold tracking-tight">
-          Mi Cuenta
+        <h1 className="mb-8 text-center text-4xl font-black tracking-tighter bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Configuración de mi Cuenta
         </h1>
         <div className="space-y-12">
           <Card>
