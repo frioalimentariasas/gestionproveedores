@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 const ADMIN_EMAILS = [
@@ -197,6 +198,8 @@ export const providerFormSchema = z
     
     // Section 7 - HSEQ
     hseqSgsst: z.string().min(1, 'Este campo es requerido.'),
+    hseqCertFile: fileSchemaOptional,
+    hseqCertFileUrl: z.string().optional(),
     
     // Section 8 - SARLAFT
     sarlaftAccepted: z

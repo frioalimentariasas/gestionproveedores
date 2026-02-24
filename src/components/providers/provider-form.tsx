@@ -123,6 +123,7 @@ const initialFormValues: ProviderFormValues = {
   certificacionBancariaFileUrl: '',
   estadosFinancierosFileUrl: '',
   declaracionRentaFileUrl: '',
+  hseqCertFileUrl: '',
 };
 
 const documentTypes = ['NIT', 'CC', 'CE', 'Pasaporte'];
@@ -212,7 +213,6 @@ export default function ProviderForm({
   const watchedDepartment = form.watch('department');
 
   // --- RECTIVE GEOGRAPHY LISTS ---
-  // Handle states list update based on selected country
   useEffect(() => {
     if (watchedCountry) {
       const countryData = Country.getAllCountries().find(c => c.name === watchedCountry);
@@ -224,7 +224,6 @@ export default function ProviderForm({
     }
   }, [watchedCountry]);
 
-  // Handle cities list update based on selected country and department
   useEffect(() => {
     if (watchedCountry && watchedDepartment) {
       const countryData = Country.getAllCountries().find(c => c.name === watchedCountry);
@@ -237,7 +236,6 @@ export default function ProviderForm({
     }
   }, [watchedCountry, watchedDepartment, states]);
 
-  // Welcome dialog logic
   useEffect(() => {
     if (user && !isProviderDataLoading && !previewMode && !adminMode && !providerData?.formLocked) {
       const welcomeKey = `provider-welcome-shown-${user.uid}`;
@@ -248,7 +246,6 @@ export default function ProviderForm({
     }
   }, [user, isProviderDataLoading, previewMode, adminMode, providerData]);
 
-  // Data Loading & Initialization Logic (One-time sync from DB)
   useEffect(() => {
     if (providerData && !hasInitialized) {
       const sanitizedData = { ...initialFormValues };
@@ -275,7 +272,6 @@ export default function ProviderForm({
     }
   }, [providerData, hasInitialized, reset]);
 
-  // Reset initialization when provider changes
   useEffect(() => {
     setHasInitialized(false);
   }, [effectiveProviderId]);
@@ -331,8 +327,8 @@ export default function ProviderForm({
     try {
       const fileUploadPromises: Promise<void>[] = [];
       const updatedFileUrls: Partial<ProviderFormValues> = {};
-      const fileFields: (keyof ProviderFormValues)[] = ['rutFile', 'camaraComercioFile', 'cedulaRepresentanteLegalFile', 'certificacionBancariaFile', 'estadosFinancierosFile', 'declaracionRentaFile'];
-      const fileNames: { [key: string]: string } = { rutFile: 'rut.pdf', camaraComercioFile: 'camara_comercio.pdf', cedulaRepresentanteLegalFile: 'cedula_representante.pdf', certificacionBancariaFile: 'certificacion_bancaria.pdf', estadosFinancierosFile: 'estados_financieros.pdf', declaracionRentaFile: 'declaracion_renta.pdf' };
+      const fileFields: (keyof ProviderFormValues)[] = ['rutFile', 'camaraComercioFile', 'cedulaRepresentanteLegalFile', 'certificacionBancariaFile', 'estadosFinancierosFile', 'declaracionRentaFile', 'hseqCertFile'];
+      const fileNames: { [key: string]: string } = { rutFile: 'rut.pdf', camaraComercioFile: 'camara_comercio.pdf', cedulaRepresentanteLegalFile: 'cedula_representante.pdf', certificacionBancariaFile: 'certificacion_bancaria.pdf', estadosFinancierosFile: 'estados_financieros.pdf', declaracionRentaFile: 'declaracion_renta.pdf', hseqCertFile: 'hseq_certificado_0312.pdf' };
 
       for (const field of fileFields) {
         const fileList = values[field as keyof typeof values] as FileList | undefined;
@@ -861,8 +857,8 @@ export default function ProviderForm({
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>7. INFORMACION HSEQ</CardTitle></CardHeader>
-          <CardContent>
+          <CardHeader><CardTitle>7. INFORMACIÓN HSEQ</CardTitle></CardHeader>
+          <CardContent className="space-y-6">
             <FormField control={form.control} name="hseqSgsst" render={({ field }) => (
               <FormItem>
                 <FormLabel>¿Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%?</FormLabel>
@@ -870,6 +866,23 @@ export default function ProviderForm({
                 <FormMessage />
               </FormItem>
             )} />
+            
+            <div className="space-y-2 pt-4 border-t">
+                <FormField
+                control={form.control}
+                name="hseqCertFile"
+                render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                    <FormLabel className="font-bold">Certificado de autor evaluación 0312 expedida por la ARL o el Ministerio del trabajo.</FormLabel>
+                    <FormControl>
+                        <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                {providerData?.hseqCertFileUrl && <FileDisplay label="Certificado 0312 Actual" url={providerData.hseqCertFileUrl} />}
+            </div>
           </CardContent>
         </Card>
 

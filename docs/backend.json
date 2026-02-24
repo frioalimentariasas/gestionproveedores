@@ -214,6 +214,11 @@
           "type": "string",
           "description": "Indicates if the company has an SG-SST in accordance with Decree 1072, with an evaluation result of resolution 0312/19, above 60% (Sí/No)."
         },
+        "hseqCertFileUrl": {
+          "type": "string",
+          "description": "URL of the HSEQ 0312 certificate file.",
+          "format": "uri"
+        },
         "nitLoginMigrated": {
           "type": "boolean",
           "description": "If true, the provider's auth account has been migrated to use NIT for login."

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc } from 'firebase/firestore';
@@ -159,8 +160,9 @@ export default function ProviderViewPage() {
       { Section: '', Field: 'Cédula Representante Legal', Value: providerData.cedulaRepresentanteLegalFileUrl },
       { Section: '', Field: 'Certificación Bancaria', Value: providerData.certificacionBancariaFileUrl },
       
-      { Section: '7. INFORMACION HSEQ' },
+      { Section: '7. INFORMACIÓN HSEQ' },
       { Section: '', Field: 'Cuenta con SG-SST > 60%', Value: providerData.hseqSgsst },
+      { Section: '', Field: 'Certificado 0312', Value: providerData.hseqCertFileUrl },
       
       { Section: '8. SARLAFT' },
       { Section: '', Field: 'Aceptó términos', Value: providerData.sarlaftAccepted ? 'Sí' : 'No' },
@@ -391,8 +393,9 @@ export default function ProviderViewPage() {
                 { label: "Cédula Representante Legal", value: providerData.cedulaRepresentanteLegalFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
                 { label: "Certificación Bancaria", value: providerData.certificacionBancariaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
             ] },
-            { title: `${providerData.personType === 'Persona Jurídica' ? '7' : '6'}. INFORMACION HSEQ`, fields: [
+            { title: `${providerData.personType === 'Persona Jurídica' ? '7' : '6'}. INFORMACIÓN HSEQ`, fields: [
                 { label: 'Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%', value: providerData.hseqSgsst },
+                { label: 'Certificado Autoevaluación 0312', value: providerData.hseqCertFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '8' : '7'}. DECLARACION SARLAFT Y AUTORIZACION`, fields: [
                 { label: 'Aceptó la declaración de origen de fondos y la política de tratamiento de datos', value: providerData.sarlaftAccepted },
@@ -733,7 +736,7 @@ export default function ProviderViewPage() {
             <CardHeader>
               <CardTitle>
                 {watchedPersonType === 'Persona Jurídica' ? '7' : '6'}.
-                INFORMACION HSEQ
+                INFORMACIÓN HSEQ
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
@@ -742,6 +745,7 @@ export default function ProviderViewPage() {
                   label="Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%"
                   value={providerData.hseqSgsst}
                 />
+                <FileLinkField label="Certificado autoevaluación 0312" url={providerData.hseqCertFileUrl} />
               </div>
             </CardContent>
           </Card>
