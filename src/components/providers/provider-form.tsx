@@ -214,13 +214,6 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
   const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
   const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
 
-  // Automatic restriction: Legal Entity -> Common Regime
-  useEffect(() => {
-    if (watchedPersonType === 'Persona Jurídica') {
-      form.setValue('taxRegimeType', 'Común');
-    }
-  }, [watchedPersonType, form.setValue]);
-
   useEffect(() => {
     if (user && !isProviderDataLoading && !previewMode && !isBlockedByTime && !providerData?.formLocked) {
       const welcomeKey = getWelcomeKey(user.uid);
@@ -574,21 +567,13 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
                 <Select 
                   onValueChange={field.onChange} 
                   value={field.value} 
-                  disabled={isLocked || watchedPersonType === 'Persona Jurídica'}
+                  disabled={isLocked}
                 >
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {taxRegimeTypes
-                      .filter(type => watchedPersonType === 'Persona Jurídica' ? type === 'Común' : true)
-                      .map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))
-                    }
+                    {taxRegimeTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}
                   </SelectContent>
                 </Select>
-                {watchedPersonType === 'Persona Jurídica' && (
-                  <FormDescription className="text-primary font-medium">
-                    Las personas jurídicas están restringidas al Régimen Común.
-                  </FormDescription>
-                )}
                 <FormMessage />
               </FormItem>
             )} />
