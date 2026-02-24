@@ -248,7 +248,7 @@ export function EvaluationDetailModal({
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="border-t-4 border-t-accent shadow-md sticky top-0">
+                    <Card className="border-t-4 border-t-accent shadow-md">
                         <CardHeader className="p-4">
                             <CardTitle className="text-sm flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4 text-accent" />
