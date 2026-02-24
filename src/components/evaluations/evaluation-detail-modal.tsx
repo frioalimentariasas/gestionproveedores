@@ -277,7 +277,7 @@ export function EvaluationDetailModal({
                                 <span>Crítico *</span>
                             </div>
                             <div className="mt-4 p-2 bg-muted/50 rounded border text-muted-foreground italic leading-tight">
-                                * Nota: Según ISO 9001 (8.4), todo puntaje < 70% requiere un plan de mejora obligatorio para asegurar la continuidad del suministro.
+                                * Nota: Según ISO 9001 (8.4), todo puntaje &lt; 70% requiere un plan de mejora obligatorio para asegurar la continuidad del suministro.
                             </div>
                         </CardContent>
                     </Card>
