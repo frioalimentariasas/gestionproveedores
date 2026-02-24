@@ -65,6 +65,13 @@ const DEFAULT_TEMPLATES: Template[] = [
     variables: ['providerName', 'score', 'evaluationType', 'evaluationsUrl'],
   },
   {
+    id: 'evaluation_success_provider',
+    name: 'Notificación de Felicitación por Buen Desempeño',
+    subject: '¡Felicitaciones! Excelente Desempeño: {{evaluationType}}',
+    htmlContent: '<h1>Hola, {{providerName}}</h1><p>Su evaluación sobresaliente de {{score}} / 5.00 fortalece nuestra alianza estratégica. ¡Siga así!</p>',
+    variables: ['providerName', 'score', 'evaluationType'],
+  },
+  {
     id: 'commitment_submitted_admin',
     name: 'Aviso de Compromiso Radicado (Para Administrador)',
     subject: 'Compromiso de Mejora Radicado: {{businessName}}',

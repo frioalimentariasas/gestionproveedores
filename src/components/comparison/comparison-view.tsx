@@ -23,6 +23,7 @@ import {
   getCriteriaForType,
   type EvaluationType,
   requiresActionPlan,
+  getPerformanceStatus,
 } from '@/lib/evaluations';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { Button } from '../ui/button';
@@ -123,6 +124,7 @@ const EvaluationScoreCard = ({ evaluations, provider }: { evaluations: WithId<Ev
         
         const isCritical = provider.criticalityLevel === 'Crítico';
         const criteria = getCriteriaForType(evaluation.evaluationType, isCritical);
+        const status = getPerformanceStatus(evaluation.totalScore);
         
         const chartData = criteria.map(crit => ({
             name: crit.label,
@@ -134,7 +136,12 @@ const EvaluationScoreCard = ({ evaluations, provider }: { evaluations: WithId<Ev
         return (
           <div key={type} className="border-b last:border-0 pb-4">
             <div className="flex justify-between items-start mb-2">
-                <h4 className="font-bold text-[10px] uppercase text-muted-foreground">{EVALUATION_TYPES[type]}</h4>
+                <div className="flex flex-col">
+                    <h4 className="font-bold text-[10px] uppercase text-muted-foreground">{EVALUATION_TYPES[type]}</h4>
+                    <Badge variant="outline" className={cn("w-fit text-[8px] h-4 py-0 mt-1 uppercase", status.color)}>
+                        {status.label}
+                    </Badge>
+                </div>
                 <Badge variant={isLow ? "destructive" : "default"} className="h-5 text-[10px]">
                     {(evaluation.totalScore * 20).toFixed(0)}%
                 </Badge>

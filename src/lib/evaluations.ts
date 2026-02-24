@@ -97,3 +97,35 @@ export function getCriteriaForType(type: CategoryType, isCritical: boolean = fal
 export function requiresActionPlan(totalScore: number): boolean {
   return totalScore < 3.5; // Menos de 70% (3.5 de 5.0)
 }
+
+/**
+ * Define el estado de desempeño basado en los umbrales solicitados.
+ */
+export function getPerformanceStatus(score: number = 0) {
+  const percentage = score * 20;
+  if (percentage >= 85) {
+    return {
+      label: 'Sobresaliente',
+      color: 'bg-green-100 text-green-800 border-green-200',
+      isSuccess: true,
+    };
+  } else if (percentage >= 70) {
+    return {
+      label: 'Satisfactorio',
+      color: 'bg-blue-100 text-blue-800 border-blue-200',
+      isSuccess: false,
+    };
+  } else if (percentage >= 60) {
+    return {
+      label: 'En Observación',
+      color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      isSuccess: false,
+    };
+  } else {
+    return {
+      label: 'Crítico',
+      color: 'bg-red-100 text-red-800 border-red-200',
+      isSuccess: false,
+    };
+  }
+}

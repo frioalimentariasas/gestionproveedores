@@ -329,6 +329,38 @@ export async function notifyProviderEvaluationFailed({
   });
 }
 
+export async function notifyProviderEvaluationSuccess({
+  providerEmail,
+  providerName,
+  score,
+  evaluationType,
+}: {
+  providerEmail: string;
+  providerName: string;
+  score: number;
+  evaluationType: string;
+}) {
+  const variables = { providerName, score: score.toFixed(2), evaluationType };
+  const dynamic = await getDynamicTemplate('evaluation_success_provider', variables);
+
+  const subject = dynamic?.subject || `¡Felicitaciones! Excelente Desempeño: ${evaluationType}`;
+  const htmlContent = dynamic?.htmlContent || `
+    <h1>Hola, ${providerName}</h1>
+    <p>Nos complace informarle que su reciente evaluación de desempeño ha arrojado un resultado sobresaliente de <strong>${score.toFixed(2)} / 5.00</strong>.</p>
+    <p>En Frioalimentaria SAS valoramos enormemente su compromiso con la calidad y la excelencia técnica bajo la norma ISO 9001.</p>
+    <p>Le invitamos a continuar con este excelente nivel de servicio, lo cual fortalece nuestra relación comercial estratégica.</p>
+    <br>
+    <p>Cordialmente,</p>
+    <p>Departamento de Calidad - Frioalimentaria SAS</p>
+  `;
+
+  return await sendTransactionalEmail({
+    to: [{ email: providerEmail, name: providerName }],
+    subject,
+    htmlContent,
+  });
+}
+
 export async function notifyProviderPasswordReset({
   providerEmail,
   providerName,
