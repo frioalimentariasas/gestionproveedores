@@ -43,7 +43,7 @@ import {
 } from '@/firebase';
 import { doc, setDoc, collection, query, Timestamp } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Eye, Info, Loader2, Search, Clock, Send, ShieldAlert, AlertTriangle, FileText, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import PhoneInput from 'react-phone-input-2';
@@ -136,6 +136,23 @@ const providerTypeOptions = [
   { id: 'Servicios', label: 'Servicios' },
 ] as const;
 
+// Helper component to display existing files
+const FileDisplay = ({ label, url }: { label: string; url?: string }) => {
+  if (!url) return null;
+  return (
+    <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 shadow-sm mt-2">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <FileText className="h-4 w-4 text-primary shrink-0" />
+        <span className="text-xs font-bold truncate text-muted-foreground uppercase">{label}</span>
+      </div>
+      <Button variant="link" size="sm" asChild className="h-auto p-0 text-primary font-bold">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+          <Eye className="h-3.5 w-3.5" /> Ver PDF
+        </a>
+      </Button>
+    </div>
+  );
+};
 
 export default function ProviderForm({ previewMode = false }: { previewMode?: boolean }) {
   const { toast } = useToast();
@@ -661,11 +678,9 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
                 <FormField control={form.control} name="ciiuCode" render={({ field }) => (
-                    <FormItem><FormLabel>Código actividad económica CIIU</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                )} />
+                    <FormItem><FormLabel>Código actividad económica CIIU</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="declarationCity" render={({ field }) => (
-                    <FormItem><FormLabel>Ciudad donde declara impuestos</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>
-                )} />
+                    <FormItem><FormLabel>Ciudad donde declara impuestos</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             </div>
           </CardContent>
         </Card>
@@ -691,124 +706,111 @@ export default function ProviderForm({ previewMode = false }: { previewMode?: bo
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>6. Documentos Adjuntos (PDF)</CardTitle><CardDescription>Cargue los documentos requeridos para su validación.</CardDescription></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="rutFile"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>RUT (Actualizado)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="file"
-                      accept="application/pdf"
-                      disabled={isLocked}
-                      onChange={(e) => onChange(e.target.files)}
-                      {...fieldProps}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="certificacionBancariaFile"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>Certificación Bancaria (No mayor a 30 días)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="file"
-                      accept="application/pdf"
-                      disabled={isLocked}
-                      onChange={(e) => onChange(e.target.files)}
-                      {...fieldProps}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <CardHeader><CardTitle>6. Documentos Adjuntos (PDF)</CardTitle><CardDescription>Cargue los documentos requeridos. Si el formulario está bloqueado, podrá ver los archivos cargados.</CardDescription></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="space-y-2">
+                <FormField
+                control={form.control}
+                name="rutFile"
+                render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                    <FormLabel className="font-bold">RUT (Actualizado)</FormLabel>
+                    <FormControl>
+                        <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                {providerData?.rutFileUrl && <FileDisplay label="RUT Actual" url={providerData.rutFileUrl} />}
+            </div>
+
+            <div className="space-y-2">
+                <FormField
+                control={form.control}
+                name="certificacionBancariaFile"
+                render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                    <FormLabel className="font-bold">Certificación Bancaria</FormLabel>
+                    <FormControl>
+                        <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                {providerData?.certificacionBancariaFileUrl && <FileDisplay label="Certificación Bancaria Actual" url={providerData.certificacionBancariaFileUrl} />}
+            </div>
+
             {watchedPersonType === 'Persona Jurídica' && (
               <>
-                <FormField
-                  control={form.control}
-                  name="camaraComercioFile"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
-                    <FormItem>
-                      <FormLabel>Cámara de Comercio (Vigente)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="application/pdf"
-                          disabled={isLocked}
-                          onChange={(e) => onChange(e.target.files)}
-                          {...fieldProps}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="estadosFinancierosFile"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
-                    <FormItem>
-                      <FormLabel>Estados Financieros</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="application/pdf"
-                          disabled={isLocked}
-                          onChange={(e) => onChange(e.target.files)}
-                          {...fieldProps}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="declaracionRentaFile"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
-                    <FormItem>
-                      <FormLabel>Declaración de Renta</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="application/pdf"
-                          disabled={isLocked}
-                          onChange={(e) => onChange(e.target.files)}
-                          {...fieldProps}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="cedulaRepresentanteLegalFile"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
-                    <FormItem>
-                      <FormLabel>Cédula del Representante Legal</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="application/pdf"
-                          disabled={isLocked}
-                          onChange={(e) => onChange(e.target.files)}
-                          {...fieldProps}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                    <FormField
+                    control={form.control}
+                    name="camaraComercioFile"
+                    render={({ field: { value, onChange, ...fieldProps } }) => (
+                        <FormItem>
+                        <FormLabel className="font-bold">Cámara de Comercio</FormLabel>
+                        <FormControl>
+                            <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    {providerData?.camaraComercioFileUrl && <FileDisplay label="Cámara de Comercio Actual" url={providerData.camaraComercioFileUrl} />}
+                </div>
+
+                <div className="space-y-2">
+                    <FormField
+                    control={form.control}
+                    name="estadosFinancierosFile"
+                    render={({ field: { value, onChange, ...fieldProps } }) => (
+                        <FormItem>
+                        <FormLabel className="font-bold">Estados Financieros</FormLabel>
+                        <FormControl>
+                            <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    {providerData?.estadosFinancierosFileUrl && <FileDisplay label="Estados Financieros Actual" url={providerData.estadosFinancierosFileUrl} />}
+                </div>
+
+                <div className="space-y-2">
+                    <FormField
+                    control={form.control}
+                    name="declaracionRentaFile"
+                    render={({ field: { value, onChange, ...fieldProps } }) => (
+                        <FormItem>
+                        <FormLabel className="font-bold">Declaración de Renta</FormLabel>
+                        <FormControl>
+                            <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    {providerData?.declaracionRentaFileUrl && <FileDisplay label="Declaración de Renta Actual" url={providerData.declaracionRentaFileUrl} />}
+                </div>
+
+                <div className="space-y-2">
+                    <FormField
+                    control={form.control}
+                    name="cedulaRepresentanteLegalFile"
+                    render={({ field: { value, onChange, ...fieldProps } }) => (
+                        <FormItem>
+                        <FormLabel className="font-bold">Cédula Representante Legal</FormLabel>
+                        <FormControl>
+                            <Input type="file" accept="application/pdf" disabled={isLocked} onChange={(e) => onChange(e.target.files)} {...fieldProps} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    {providerData?.cedulaRepresentanteLegalFileUrl && <FileDisplay label="Cédula Representante Actual" url={providerData.cedulaRepresentanteLegalFileUrl} />}
+                </div>
               </>
             )}
           </CardContent>
