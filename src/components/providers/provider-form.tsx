@@ -176,7 +176,6 @@ export default function ProviderForm({
   const [justification, setJustification] = useState('');
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Robustly determine which provider ID to use
   const effectiveProviderId = useMemo(() => {
     if (previewMode) return null;
     if (adminMode && manualProviderId) return manualProviderId;
@@ -196,6 +195,91 @@ export default function ProviderForm({
   );
   const { data: categories } = useCollection<Category>(categoriesQuery);
 
+  const form = useForm<ProviderFormValues>({
+    resolver: zodResolver(providerFormSchema),
+    defaultValues: initialFormValues,
+  });
+  
+  const { reset, formState: { errors } } = form;
+  const watchedProviderType = form.watch('providerType');
+  const watchedPersonType = form.watch('personType');
+  const watchedTaxRegimeType = form.watch('taxRegimeType');
+  const watchedIsLargeTaxpayer = form.watch('isLargeTaxpayer');
+  const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
+  const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
+  const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
+  const watchedCountry = form.watch('country');
+  const watchedDepartment = form.watch('department');
+
+  // --- RECTIVE GEOGRAPHY LISTS ---
+  // Handle states list update based on selected country
+  useEffect(() => {
+    if (watchedCountry) {
+      const countryData = Country.getAllCountries().find(c => c.name === watchedCountry);
+      if (countryData) {
+        setStates(State.getStatesOfCountry(countryData.isoCode) || []);
+      }
+    } else {
+      setStates([]);
+    }
+  }, [watchedCountry]);
+
+  // Handle cities list update based on selected country and department
+  useEffect(() => {
+    if (watchedCountry && watchedDepartment) {
+      const countryData = Country.getAllCountries().find(c => c.name === watchedCountry);
+      const stateData = states.find(s => s.name === watchedDepartment);
+      if (countryData && stateData) {
+        setCities(City.getCitiesOfState(countryData.isoCode, stateData.isoCode) || []);
+      }
+    } else {
+      setCities([]);
+    }
+  }, [watchedCountry, watchedDepartment, states]);
+
+  // Welcome dialog logic
+  useEffect(() => {
+    if (user && !isProviderDataLoading && !previewMode && !adminMode && !providerData?.formLocked) {
+      const welcomeKey = `provider-welcome-shown-${user.uid}`;
+      if (!localStorage.getItem(welcomeKey)) {
+        setShowWelcomeDialog(true);
+        localStorage.setItem(welcomeKey, 'true');
+      }
+    }
+  }, [user, isProviderDataLoading, previewMode, adminMode, providerData]);
+
+  // Data Loading & Initialization Logic (One-time sync from DB)
+  useEffect(() => {
+    if (providerData && !hasInitialized) {
+      const sanitizedData = { ...initialFormValues };
+      
+      Object.keys(initialFormValues).forEach((key) => {
+        const dbValue = providerData[key];
+        const defaultValue = initialFormValues[key as keyof ProviderFormValues];
+
+        if (dbValue !== undefined && dbValue !== null) {
+          if (Array.isArray(defaultValue)) {
+            sanitizedData[key as keyof ProviderFormValues] = Array.isArray(dbValue) ? dbValue : [];
+          } else if (typeof defaultValue === 'boolean') {
+            sanitizedData[key as keyof ProviderFormValues] = !!dbValue;
+          } else {
+            (sanitizedData as any)[key] = String(dbValue);
+          }
+        } else {
+          (sanitizedData as any)[key] = defaultValue;
+        }
+      });
+
+      reset(sanitizedData);
+      setHasInitialized(true);
+    }
+  }, [providerData, hasInitialized, reset]);
+
+  // Reset initialization when provider changes
+  useEffect(() => {
+    setHasInitialized(false);
+  }, [effectiveProviderId]);
+
   const daysSinceRegistration = useMemo(() => {
     if (!providerData?.createdAt) return 0;
     const createdAt = (providerData.createdAt as Timestamp).toDate();
@@ -211,90 +295,6 @@ export default function ProviderForm({
 
   const daysLeft = Math.max(0, 8 - daysSinceRegistration);
   const isLocked = previewMode || adminMode ? false : (providerData?.formLocked ?? false);
-
-  const form = useForm<ProviderFormValues>({
-    resolver: zodResolver(providerFormSchema),
-    defaultValues: initialFormValues,
-  });
-  
-  const { reset, formState: { errors } } = form;
-  const watchedProviderType = form.watch('providerType');
-  const watchedPersonType = form.watch('personType');
-  const watchedTaxRegimeType = form.watch('taxRegimeType');
-  const watchedIsLargeTaxpayer = form.watch('isLargeTaxpayer');
-  const watchedImplementsEnvironmentalMeasures = form.watch('implementsEnvironmentalMeasures');
-  const watchedIsIncomeSelfRetainer = form.watch('isIncomeSelfRetainer');
-  const watchedIsIcaSelfRetainer = form.watch('isIcaSelfRetainer');
-
-  // Welcome dialog logic
-  useEffect(() => {
-    if (user && !isProviderDataLoading && !previewMode && !adminMode && !isBlockedByTime && !providerData?.formLocked) {
-      const welcomeKey = `provider-welcome-shown-${user.uid}`;
-      if (!localStorage.getItem(welcomeKey)) {
-        setShowWelcomeDialog(true);
-        localStorage.setItem(welcomeKey, 'true');
-      }
-    }
-  }, [user, isProviderDataLoading, previewMode, adminMode, isBlockedByTime, providerData]);
-
-  // Data Loading & Initialization Logic
-  useEffect(() => {
-    if (providerData && !hasInitialized) {
-      const sanitizeValue = (val: any) => (val === null || val === undefined ? '' : val);
-      
-      const sanitizedData = { ...initialFormValues };
-      Object.keys(initialFormValues).forEach((key) => {
-        if (key in providerData) {
-          const val = providerData[key];
-          if (Array.isArray(initialFormValues[key as keyof ProviderFormValues])) {
-            sanitizedData[key as keyof ProviderFormValues] = Array.isArray(val) ? val : [];
-          } else if (typeof initialFormValues[key as keyof ProviderFormValues] === 'boolean') {
-            sanitizedData[key as keyof ProviderFormValues] = !!val;
-          } else {
-            (sanitizedData as any)[key] = sanitizeValue(val);
-          }
-        }
-      });
-
-      // Initialize geography lists before resetting form
-      const { country, department } = sanitizedData;
-      if (country) {
-        const countryData = Country.getAllCountries().find(c => c.name === country);
-        if (countryData) {
-          const countryStates = State.getStatesOfCountry(countryData.isoCode);
-          setStates(countryStates || []);
-          if (department) {
-            const stateData = countryStates?.find(s => s.name === department);
-            if (stateData) {
-              setCities(City.getCitiesOfState(countryData.isoCode, stateData.isoCode) || []);
-            }
-          }
-        }
-      }
-
-      reset(sanitizedData);
-      setHasInitialized(true);
-    }
-  }, [providerData, hasInitialized, reset]);
-
-  // Reset initialization when provider changes
-  useEffect(() => {
-    setHasInitialized(false);
-  }, [effectiveProviderId]);
-
-  // Auto-save logic (only for providers)
-  const watchedValues = form.watch();
-  useEffect(() => {
-    if (isLocked || !user || previewMode || adminMode || isBlockedByTime) return;
-    const autoSaveKey = `provider-form-autosave-${user.uid}`;
-    const handler = setTimeout(() => {
-      const dataToSave = { ...watchedValues };
-      // Remove file blobs to avoid storage errors
-      ['rutFile', 'camaraComercioFile', 'cedulaRepresentanteLegalFile', 'certificacionBancariaFile', 'estadosFinancierosFile', 'declaracionRentaFile'].forEach(k => delete (dataToSave as any)[k]);
-      localStorage.setItem(autoSaveKey, JSON.stringify(dataToSave));
-    }, 1000);
-    return () => clearTimeout(handler);
-  }, [watchedValues, isLocked, user, previewMode, adminMode, isBlockedByTime]);
 
   const categoryOptions = useMemo(
     () => (categories ? categories.map((c) => ({ value: c.id, label: c.name, type: c.categoryType })) : []),
@@ -540,9 +540,48 @@ export default function ProviderForm({
                 <FormItem><FormLabel>Categorías de Suministro</FormLabel><div className="space-y-4"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Filtrar categorías..." value={categorySearchTerm} onChange={(e) => setCategorySearchTerm(e.target.value)} className="pl-10" disabled={isLocked} /></div><ScrollArea className="h-60 rounded-md border"><div className="p-4 space-y-4">{searchableCategoryOptions.length > 0 ? (searchableCategoryOptions.map((option) => (<FormItem key={option.value} className="flex row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(option.value)} onCheckedChange={(checked) => { const currentValue = field.value || []; return checked ? field.onChange([...currentValue, option.value]) : field.onChange(currentValue.filter((value) => value !== option.value)); }} disabled={isLocked} /></FormControl><FormLabel className="font-normal cursor-pointer">{option.label}</FormLabel></FormItem>))) : (<p className="text-sm text-muted-foreground text-center">Seleccione un sector arriba.</p>)}</div></ScrollArea></div><FormMessage /></FormItem>
               )} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>País</FormLabel><Select onValueChange={(value) => { field.onChange(value); const country = Country.getAllCountries().find((c) => c.name === value); setStates(country ? State.getStatesOfCountry(country.isoCode) : []); setCities([]); form.setValue('department', ''); form.setValue('city', ''); }} value={field.value} disabled={isLocked}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{Country.getAllCountries().map((country) => (<SelectItem key={country.isoCode} value={country.name}>{country.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="department" render={({ field }) => (<FormItem><FormLabel>Departamento</FormLabel><Select onValueChange={(value) => { field.onChange(value); const countryName = form.getValues('country'); const country = Country.getAllCountries().find((c) => c.name === countryName); const state = country ? State.getStatesOfCountry(country.isoCode)?.find((s) => s.name === value) : undefined; setCities(country && state ? City.getCitiesOfState(country.isoCode, state.isoCode) : []); form.setValue('city', ''); }} value={field.value} disabled={isLocked || !form.getValues('country')}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{states.map((state) => (<SelectItem key={state.isoCode} value={state.name}>{state.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>Ciudad</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !form.getValues('department')}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl><SelectContent>{cities.map((city) => (<SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="country" render={({ field }) => (
+                <FormItem><FormLabel>País</FormLabel>
+                <Select 
+                  onValueChange={(value) => { 
+                    field.onChange(value); 
+                    form.setValue('department', ''); 
+                    form.setValue('city', ''); 
+                  }} 
+                  value={field.value} 
+                  disabled={isLocked}
+                >
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
+                  <SelectContent>{Country.getAllCountries().map((country) => (<SelectItem key={country.isoCode} value={country.name}>{country.name}</SelectItem>))}</SelectContent>
+                </Select><FormMessage /></FormItem>
+              )} />
+              
+              <FormField control={form.control} name="department" render={({ field }) => (
+                <FormItem><FormLabel>Departamento</FormLabel>
+                <Select 
+                  onValueChange={(value) => { 
+                    field.onChange(value); 
+                    form.setValue('city', ''); 
+                  }} 
+                  value={field.value} 
+                  disabled={isLocked || !watchedCountry}
+                >
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
+                  <SelectContent>{states.map((state) => (<SelectItem key={state.isoCode} value={state.name}>{state.name}</SelectItem>))}</SelectContent>
+                </Select><FormMessage /></FormItem>
+              )} />
+              
+              <FormField control={form.control} name="city" render={({ field }) => (
+                <FormItem><FormLabel>Ciudad</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value} 
+                  disabled={isLocked || !watchedDepartment}
+                >
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
+                  <SelectContent>{cities.map((city) => (<SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>))}</SelectContent>
+                </Select><FormMessage /></FormItem>
+              )} />
             </div>
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input {...field} disabled={isLocked} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
