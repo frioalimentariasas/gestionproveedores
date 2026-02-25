@@ -3,27 +3,33 @@
   "placeholderImages": [
     {
       "id": "manual-login",
-      "description": "Pantalla de inicio de sesión",
-      "imageUrl": "https://picsum.photos/seed/manual1/800/400",
+      "description": "Acceso al portal con NIT o Email",
+      "imageUrl": "https://picsum.photos/seed/login_fal/800/400",
       "imageHint": "login screen"
     },
     {
-      "id": "manual-form",
-      "description": "Formulario de registro de proveedor",
-      "imageUrl": "https://picsum.photos/seed/manual2/800/400",
+      "id": "manual-form-sections",
+      "description": "Las 8 secciones del formulario FA-GFC-F04",
+      "imageUrl": "https://picsum.photos/seed/form_sections/800/400",
       "imageHint": "business form"
     },
     {
-      "id": "manual-admin-eval",
-      "description": "Interfaz de evaluación administrativa",
-      "imageUrl": "https://picsum.photos/seed/manual3/800/400",
-      "imageHint": "audit evaluation"
+      "id": "manual-admin-panel",
+      "description": "Panel de gestión y auditoría de proveedores",
+      "imageUrl": "https://picsum.photos/seed/admin_panel/800/400",
+      "imageHint": "dashboard administration"
     },
     {
-      "id": "manual-comparison",
-      "description": "Comparador de desempeño técnico",
-      "imageUrl": "https://picsum.photos/seed/manual4/800/400",
-      "imageHint": "data analysis"
+      "id": "manual-evaluation-modal",
+      "description": "Interfaz de evaluación de desempeño ISO",
+      "imageUrl": "https://picsum.photos/seed/eval_modal/800/400",
+      "imageHint": "audit quality"
+    },
+    {
+      "id": "manual-comparison-tool",
+      "description": "Comparador de desempeño y ranking de cumplimiento",
+      "imageUrl": "https://picsum.photos/seed/comparison/800/400",
+      "imageHint": "data charts"
     }
   ]
 }
