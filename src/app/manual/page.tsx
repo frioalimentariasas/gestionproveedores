@@ -1,4 +1,3 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -38,14 +37,13 @@ import {
   Truck,
   GraduationCap,
   HardHat,
-  Stethoscope,
-  Target
+  Target,
+  FileDown
 } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRole } from '@/hooks/use-role';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
@@ -69,6 +67,7 @@ export default function ManualPage() {
   const { toast } = useToast();
   const [uploadingId, setUploadingingId] = useState<string | null>(null);
   const [globalEditMode, setGlobalEditMode] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   const [localImages] = useState(PlaceHolderImages);
 
@@ -140,6 +139,218 @@ export default function ManualPage() {
         });
     } catch (e) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo restablecer la imagen.' });
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsGeneratingPdf(true);
+    const { default: jsPDF } = await import('jspdf');
+    const { format } = await import('date-fns');
+
+    try {
+        const doc = new jsPDF();
+        const margin = 15;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPos = margin;
+
+        const getLogoBase64 = async () => {
+            const response = await fetch('/logo.png');
+            const blob = await response.blob();
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        };
+        const logoBase64 = await getLogoBase64();
+
+        const drawBackgroundWatermark = () => {
+            const originalColor = doc.getTextColor();
+            doc.setTextColor(245, 245, 245);
+            doc.setFontSize(60);
+            doc.setFont(undefined, 'bold');
+            doc.text('CONTROL INTERNO', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
+            doc.setTextColor(originalColor);
+        };
+
+        const drawHeader = () => {
+            doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
+            doc.setFontSize(8);
+            doc.setDrawColor(0);
+            const boxX = pageWidth - margin - 50;
+            const boxY = 12;
+            const boxWidth = 50;
+            const boxHeight = 15;
+            doc.rect(boxX, boxY, boxWidth, boxHeight);
+            doc.text('Codigo: FA-GFC-M01', boxX + 2, boxY + 4);
+            doc.line(boxX, boxY + 5, boxX + boxWidth, boxY + 5);
+            doc.text('Version: 1', boxX + 2, boxY + 9);
+            doc.line(boxX, boxY + 10, boxX + boxWidth, boxY + 10);
+            doc.text('Vigencia: 12/06/2025', boxX + 2, boxY + 14);
+        };
+
+        const safeAddPage = () => {
+            doc.addPage();
+            yPos = margin + 25;
+            drawHeader();
+            drawBackgroundWatermark();
+        };
+
+        // --- PORTADA ---
+        drawHeader();
+        drawBackgroundWatermark();
+        yPos = pageHeight / 3;
+        doc.setFontSize(24);
+        doc.setFont(undefined, 'bold');
+        doc.text('MANUAL DE OPERACIÓN Y PROCEDIMIENTOS', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
+        doc.setFontSize(18);
+        doc.text('SISTEMA DE GESTIÓN DE PROVEEDORES', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 20;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'normal');
+        doc.text('FRIOALIMENTARIA SAS', pageWidth / 2, yPos, { align: 'center' });
+        doc.text('Norma ISO 9001:2015', pageWidth / 2, yPos + 7, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.text(`Fecha de Emisión: ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth / 2, pageHeight - 30, { align: 'center' });
+
+        // --- SECCIÓN 1: GUÍA PROVEEDOR ---
+        safeAddPage();
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 51, 102);
+        doc.text('1. MANUAL DEL PROVEEDOR', margin, yPos);
+        yPos += 10;
+        doc.setTextColor(0);
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        
+        const providerText = [
+            "Todo proveedor nuevo o invitado debe registrarse utilizando su NIT (sin dígito de verificación).",
+            "Al crear la cuenta, el sistema inicia un contador de 8 días calendario para completar la información oficial.",
+            "El formulario oficial (FA-GFC-F04) consta de 8 secciones alineadas con ISO 9001. Es obligatorio adjuntar los documentos soporte en formato PDF.",
+            "Una vez completado, el formulario se bloquea para revisión por el equipo técnico y de calidad."
+        ];
+        
+        providerText.forEach(line => {
+            const splitLine = doc.splitTextToSize(`• ${line}`, pageWidth - margin * 2);
+            doc.text(splitLine, margin, yPos);
+            yPos += (splitLine.length * 5) + 2;
+        });
+
+        // --- SECCIÓN 2: MANUAL ADMINISTRADOR ---
+        if (isAdmin) {
+            safeAddPage();
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 51, 102);
+            doc.text('2. MANUAL DEL ADMINISTRADOR', margin, yPos);
+            yPos += 10;
+            doc.setTextColor(0);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+
+            const adminSections = [
+                { title: "Dashboard", desc: "Permite visualizar el resumen de proveedores activos, distribución por categoría y trazabilidad de auditorías recientes." },
+                { title: "Procesos de Selección", desc: "Gestión de licitaciones competitivas. Incluye definición de criterios, evaluación de competidores y adjudicación oficial." },
+                { title: "Gestión de Proveedores", desc: "Módulo central para auditar registros, realizar evaluaciones de desempeño y controlar el acceso de los proveedores." },
+                { title: "Comparador de Desempeño", desc: "Herramienta analítica para identificar los mejores proveedores por sector y gestionar protocolos de sustitución." }
+            ];
+
+            adminSections.forEach(sec => {
+                if (yPos > pageHeight - 30) safeAddPage();
+                doc.setFont(undefined, 'bold');
+                doc.text(sec.title, margin, yPos);
+                yPos += 5;
+                doc.setFont(undefined, 'normal');
+                const splitDesc = doc.splitTextToSize(sec.desc, pageWidth - margin * 2);
+                doc.text(splitDesc, margin, yPos);
+                yPos += (splitDesc.length * 5) + 5;
+            });
+        }
+
+        // --- SECCIÓN 3: ANEXO TÉCNICO (TABLAS) ---
+        if (isAdmin) {
+            safeAddPage();
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 102, 51);
+            doc.text('3. ANEXO TÉCNICO: MATRICES ISO 9001', margin, yPos);
+            yPos += 10;
+            doc.setTextColor(0);
+            
+            // Replicar tabla simplificada para el PDF
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.setFillColor(230, 230, 230);
+            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+            doc.text('MATRIZ DE SELECCIÓN - DIMENSIONES', margin + 2, yPos);
+            yPos += 8;
+            
+            const matrixHeaders = ["Dimensión ISO", "Peso Crítico (%)", "Peso No Crítico (%)"];
+            doc.setFontSize(9);
+            doc.text(matrixHeaders[0], margin + 5, yPos);
+            doc.text(matrixHeaders[1], margin + 80, yPos);
+            doc.text(matrixHeaders[2], margin + 130, yPos);
+            yPos += 6;
+            doc.line(margin, yPos - 4, pageWidth - margin, yPos - 4);
+
+            const dimensions = [
+                { name: "Capacidad Legal", crit: "20%", ncrit: "20%" },
+                { name: "Idoneidad / Capacidad Técnica", crit: "40%", ncrit: "35%" },
+                { name: "Respuesta Operativa", crit: "15%", ncrit: "20%" },
+                { name: "Solidez Comercial / Financiera", crit: "10%", ncrit: "15%" },
+                { name: "Gestión de Riesgos", crit: "15%", ncrit: "10%" }
+            ];
+
+            dimensions.forEach(dim => {
+                doc.setFont(undefined, 'normal');
+                doc.text(dim.name, margin + 5, yPos);
+                doc.text(dim.crit, margin + 80, yPos);
+                doc.text(dim.ncrit, margin + 130, yPos);
+                yPos += 6;
+            });
+
+            yPos += 10;
+            doc.setFont(undefined, 'bold');
+            doc.setFillColor(230, 230, 230);
+            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+            doc.text('GUÍA DE DECISIÓN TÉCNICA', margin + 2, yPos);
+            yPos += 8;
+            
+            const guide = [
+                { range: ">= 85%", status: "CONFORME (Aprobado)" },
+                { range: "70% - 84%", status: "EN OBSERVACIÓN (Requiere Plan de Mejora)" },
+                { range: "< 70%", status: "NO CONFORME (Sustitución inmediata)" }
+            ];
+
+            guide.forEach(g => {
+                doc.setFont(undefined, 'normal');
+                doc.text(g.range, margin + 5, yPos);
+                doc.text(g.status, margin + 60, yPos);
+                yPos += 6;
+            });
+        }
+
+        // Numeración de páginas
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(`Manual FA-GFC-M01 | Página ${i} de ${totalPages} | Frioalimentaria SAS`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
+
+        doc.save(`Manual_Operacion_FAL_${format(new Date(), 'yyyyMMdd')}.pdf`);
+        toast({ title: 'Manual Exportado', description: 'El documento se ha generado correctamente.' });
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar el manual en PDF.' });
+    } finally {
+        setIsGeneratingPdf(false);
     }
   };
 
@@ -332,9 +543,9 @@ export default function ManualPage() {
                 <span>&lt; 60% (3.0)</span>
                 <span>No Aprobado</span>
             </div>
-            <p className="text-[9px] text-muted-foreground mt-4 italic leading-tight">
+            <div className="text-[9px] text-muted-foreground mt-4 italic leading-tight">
                 * El sistema multiplica el puntaje (1-5) por 20 para obtener el equivalente porcentual.
-            </p>
+            </div>
         </CardContent>
     </Card>
   );
@@ -361,20 +572,32 @@ export default function ManualPage() {
             Documento FA-GFC-M01: Guía integral para la gestión de proveedores bajo el estándar ISO 9001:2015 en Frioalimentaria SAS.
           </p>
           
-          {isAdmin && (
-              <div className="mt-8 flex items-center gap-4 bg-muted/50 p-4 rounded-2xl border border-primary/10 shadow-inner">
-                  <div className="flex flex-col items-end">
-                      <Label htmlFor="edit-mode" className="font-black uppercase text-[10px] tracking-widest text-primary">Modo Administrador</Label>
-                      <span className="text-[9px] text-muted-foreground font-bold">Permitir carga de recursos reales</span>
-                  </div>
-                  <Switch 
-                    id="edit-mode" 
-                    checked={globalEditMode} 
-                    onCheckedChange={setGlobalEditMode}
-                    className="data-[state=checked]:bg-primary"
-                  />
-              </div>
-          )}
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-8 bg-muted/50 p-6 rounded-2xl border border-primary/10 shadow-inner">
+              {isAdmin && (
+                  <>
+                    <div className="flex items-center gap-4 border-r pr-6">
+                        <div className="flex flex-col items-end">
+                            <Label htmlFor="edit-mode" className="font-black uppercase text-[10px] tracking-widest text-primary">Modo Edición</Label>
+                            <span className="text-[9px] text-muted-foreground font-bold text-right leading-none">Carga de recursos reales</span>
+                        </div>
+                        <Switch 
+                            id="edit-mode" 
+                            checked={globalEditMode} 
+                            onCheckedChange={setGlobalEditMode}
+                            className="data-[state=checked]:bg-primary"
+                        />
+                    </div>
+                    <Button 
+                        onClick={handleExportPdf} 
+                        disabled={isGeneratingPdf}
+                        className="font-bold gap-2 uppercase tracking-tighter shadow-md"
+                    >
+                        {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                        Exportar Manual Completo PDF
+                    </Button>
+                  </>
+              )}
+          </div>
         </div>
 
         <Tabs defaultValue="provider" className="space-y-8">
@@ -383,7 +606,7 @@ export default function ManualPage() {
             isAdmin ? "grid-cols-3" : "grid-cols-1"
           )}>
             <TabsTrigger value="provider" className="text-base font-bold gap-2">
-              <Users className="h-5 w-5" /> Manual del Proveedor
+              <Users className="h-5 w-5" /> Guía para el Proveedor
             </TabsTrigger>
             {isAdmin && (
               <>
@@ -400,8 +623,8 @@ export default function ManualPage() {
           <TabsContent value="provider" className="animate-in fade-in duration-500">
             <Card className="border-t-8 border-t-accent shadow-xl">
               <CardHeader>
-                <CardTitle className="text-3xl font-black uppercase text-accent">Guía para el Proveedor</CardTitle>
-                <CardDescription className="text-lg">Proceso de registro, actualización y cumplimiento de compromisos de mejora.</CardDescription>
+                <CardTitle className="text-3xl font-black uppercase text-accent">Instrucciones para el Proveedor</CardTitle>
+                <CardDescription className="text-lg">Proceso de registro oficial y mantenimiento de la relación comercial.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-12">
                 <Accordion type="single" collapsible className="w-full space-y-4">
@@ -412,11 +635,11 @@ export default function ManualPage() {
                         <div>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
-                                <span className="font-bold block text-primary text-xs uppercase mb-1">Usuario</span>
+                                <span className="font-bold block text-primary text-xs uppercase mb-1">Usuario de Acceso</span>
                                 <span className="text-sm font-medium text-foreground">Su NIT (Ej: 900123456)</span>
                             </div>
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
-                                <span className="font-bold block text-primary text-xs uppercase mb-1">Control</span>
+                                <span className="font-bold block text-primary text-xs uppercase mb-1">Control Normativo</span>
                                 <span className="text-sm font-medium text-foreground">Contador visual de 8 días</span>
                             </div>
                         </div>
@@ -433,10 +656,11 @@ export default function ManualPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
                             <div className="font-bold flex items-center gap-2 mb-2 text-primary uppercase text-xs tracking-tight">
-                                <CheckCircle2 className="h-4 w-4" /> Datos Requeridos
+                                <CheckCircle2 className="h-4 w-4" /> Datos Críticos
                             </div>
                             <ul className="text-xs space-y-1 text-muted-foreground list-disc pl-4 font-medium">
-                              <li>Información Tributaria (Régimen, CIIU).</li>
+                              <li>Información Tributaria Completa.</li>
+                              <li>Contactos Comerciales y de Pagos.</li>
                               <li>Certificación Bancaria (Vigente).</li>
                               <li>Certificado HSEQ 0312 (Evaluación &gt; 60%).</li>
                             </ul>
@@ -446,7 +670,7 @@ export default function ManualPage() {
                                 <Gavel className="h-4 w-4" /> SARLAFT Digital
                             </div>
                             <div className="text-xs text-muted-foreground leading-relaxed font-medium">
-                              Al marcar la aceptación, firma digitalmente su compromiso bajo la Ley 1581 de 2012.
+                              Al marcar la aceptación, firma digitalmente su compromiso de transparencia bajo la Ley 1581 de 2012.
                             </div>
                           </div>
                         </div>
@@ -464,22 +688,22 @@ export default function ManualPage() {
               <TabsContent value="admin" className="animate-in fade-in duration-500">
                 <Card className="border-t-8 border-t-primary shadow-xl">
                   <CardHeader>
-                    <CardTitle className="text-3xl font-black uppercase text-primary">Guía para el Administrador</CardTitle>
-                    <CardDescription className="text-lg">Gestión detallada por módulos del Sistema de Gestión de Proveedores.</CardDescription>
+                    <CardTitle className="text-3xl font-black uppercase text-primary">Manual Operativo del Administrador</CardTitle>
+                    <CardDescription className="text-lg">Gestión de módulos del Sistema de Gestión de Proveedores FAL.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-12">
                     <Accordion type="single" collapsible className="w-full space-y-4">
                       <AccordionItem value="a-dash" className="border rounded-xl px-4 bg-muted/5">
                         <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
-                            <LayoutDashboard className="h-6 w-6 text-primary" /> 1. Dashboard: Control Gerencial
+                            <LayoutDashboard className="h-6 w-6 text-primary" /> 1. Dashboard de Control
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
-                            <p>El tablero principal permite una visualización rápida de la salud de la cadena de suministro:</p>
+                            <p>Visualización en tiempo real de la salud de la cadena de suministros:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
-                                <li><strong>Resumen de Proveedores:</strong> Gráfico circular que muestra la relación entre cuentas activas e inactivas.</li>
-                                <li><strong>Proveedores por Categoría:</strong> Histograma que identifica la concentración de suministros por sector operativo.</li>
-                                <li><strong>Evaluaciones Recientes:</strong> Trazabilidad inmediata de las últimas 5 auditorías realizadas, permitiendo acceso directo al perfil del proveedor.</li>
+                                <li><strong>Resumen de Proveedores:</strong> Estado de activación de las cuentas.</li>
+                                <li><strong>Proveedores por Categoría:</strong> Concentración de proveedores por sector operativo.</li>
+                                <li><strong>Evaluaciones Recientes:</strong> Trazabilidad de las últimas auditorías ISO ejecutadas.</li>
                             </ul>
                           </div>
                           <ManualImageSlot id="manual-dashboard" alt="Módulo de Dashboard Administrativo" />
@@ -488,16 +712,16 @@ export default function ManualPage() {
 
                       <AccordionItem value="a-selection" className="border rounded-xl px-4 bg-muted/5">
                         <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
-                            <ClipboardCheck className="h-6 w-6 text-primary" /> 2. Procesos de Selección ISO 9001
+                            <ClipboardCheck className="h-6 w-6 text-primary" /> 2. Procesos de Selección
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
-                            <p>Módulo para la selección competitiva de nuevos proveedores bajo el marco de calidad:</p>
+                            <p>Módulo para la selección competitiva de proveedores:</p>
                             <ol className="list-decimal pl-6 space-y-3 text-sm font-medium">
-                                <li><strong>Creación:</strong> Definir nombre, sector y nivel de criticidad. El sistema ajustará los pesos sugeridos automáticamente.</li>
-                                <li><strong>Parametrización de Criterios:</strong> Ajuste de los pesos porcentuales (suma 100%). Se evalúan capacidades legales, técnicas, operativas y financieras.</li>
-                                <li><strong>Evaluación de Competidores:</strong> Carga de cotizaciones (PDF) y asignación de puntajes (1-5). Es <strong>obligatorio</strong> registrar la "Bitácora de Verificación" para sustentar cada nota ante auditorías externas.</li>
-                                <li><strong>Cierre y Adjudicación:</strong> El sistema genera un Acta de Selección (PDF) y envía automáticamente una invitación de registro al ganador.</li>
+                                <li><strong>Definición:</strong> Establecer sector y nivel de criticidad inicial.</li>
+                                <li><strong>Criterios ISO:</strong> Parametrizar pesos (deben sumar 100%).</li>
+                                <li><strong>Evaluación:</strong> Cargar cotizaciones y asignar puntajes (1-5) con sustento en bitácora.</li>
+                                <li><strong>Adjudicación:</strong> Cierre del proceso y envío de invitación automática al ganador.</li>
                             </ol>
                           </div>
                           <ManualImageSlot id="manual-selection-detail" alt="Matriz de Selección y Adjudicación" />
@@ -510,15 +734,15 @@ export default function ManualPage() {
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
-                            <p>Centro de control para la auditoría y mantenimiento de la base de datos oficial:</p>
+                            <p>Centro de control de la base de datos oficial:</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-4 bg-white border rounded-lg shadow-sm">
                                     <h5 className="font-bold text-primary text-xs uppercase mb-2">Auditoría de Registro</h5>
-                                    <div className="text-[10px] leading-tight">Usa el botón "Gestionar" para revisar documentos. Puedes aprobar el registro o solicitar correcciones desbloqueando el formulario automáticamente.</div>
+                                    <div className="text-[10px] leading-tight font-medium">Revisión de documentos PDF y aprobación formal del perfil para el estatus 'Aprobado'.</div>
                                 </div>
                                 <div className="p-4 bg-white border rounded-lg shadow-sm">
-                                    <h5 className="font-bold text-primary text-xs uppercase mb-2">Evaluación de Desempeño</h5>
-                                    <div className="text-[10px] leading-tight">Realiza auditorías periódicas usando las matrices oficiales. El sistema notifica al proveedor si el puntaje es &lt; 85% para que radique compromisos.</div>
+                                    <h5 className="font-bold text-primary text-xs uppercase mb-2">Evaluación Técnica</h5>
+                                    <div className="text-[10px] leading-tight font-medium">Ejecución de auditorías periódicas basadas en los criterios del Anexo Técnico.</div>
                                 </div>
                             </div>
                           </div>
@@ -528,15 +752,14 @@ export default function ManualPage() {
 
                       <AccordionItem value="a-categories" className="border rounded-xl px-4 bg-muted/5">
                         <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
-                            <Tags className="h-6 w-6 text-primary" /> 4. Categorías Técnicas
+                            <Tags className="h-6 w-6 text-primary" /> 4. Gestión de Categorías
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Organización de la base de suministros por especialidad operativa:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
-                                <li><strong>ID Secuencial:</strong> El sistema asigna un código único de 4 dígitos para trazabilidad en ERP.</li>
-                                <li><strong>Importación Masiva:</strong> Permite cargar cientos de categorías mediante archivos Excel pre-formateados.</li>
-                                <li><strong>Asociación:</strong> Las categorías son la base para el comparador de desempeño sectorial.</li>
+                                <li><strong>IDs Secuenciales:</strong> Asignación de códigos de 4 dígitos para trazabilidad en ERP.</li>
+                                <li><strong>Importación:</strong> Carga masiva de sectores mediante archivos Excel.</li>
                             </ul>
                           </div>
                           <ManualImageSlot id="manual-categories-table" alt="Gestión de Categorías e Importación" />
@@ -549,11 +772,11 @@ export default function ManualPage() {
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
-                            <p>Herramienta analítica para mitigar riesgos en la cadena de suministro:</p>
-                            <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4 shadow-inner">
+                            <p>Herramienta para el análisis de riesgo y sustitución:</p>
+                            <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4">
                                 <TrendingUp className="h-6 w-6 text-primary shrink-0" />
                                 <div className="text-sm italic font-medium">
-                                    Permite visualizar qué proveedor tiene el mejor cumplimiento ISO 9001 en una categoría específica. Si un proveedor cae en "No Conforme", habilita la opción de "Iniciar Sustitución" abriendo un nuevo proceso de selección competitivo.
+                                    Permite comparar el cumplimiento de todos los proveedores en una misma categoría. Si un proveedor cae en 'No Conforme', habilita la apertura de una nueva selección para sustitución técnica.
                                 </div>
                             </div>
                           </div>
@@ -567,10 +790,10 @@ export default function ManualPage() {
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
-                            <p>Parametrización dinámica de la rigurosidad de las evaluaciones:</p>
+                            <p>Parametrización dinámica de la rigurosidad de auditoría:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
-                                <li><strong>Ajuste Fino:</strong> Permite cambiar los pesos por defecto de los criterios de evaluación.</li>
-                                <li><strong>Refuerzo Crítico:</strong> Los proveedores marcados como "Críticos" reciben automáticamente una ponderación más estricta en factores de riesgo.</li>
+                                <li><strong>Ajuste Fino:</strong> Cambiar los pesos por defecto para cada sector.</li>
+                                <li><strong>Refuerzo Crítico:</strong> Los proveedores marcados como 'Críticos' reciben automáticamente una ponderación más estricta.</li>
                             </ul>
                           </div>
                           <ManualImageSlot id="manual-criteria-weights" alt="Parametrización de la Matriz de Calidad" />
@@ -583,13 +806,13 @@ export default function ManualPage() {
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
                           <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
-                            <p>Control de la comunicación institucional automatizada:</p>
+                            <p>Control de comunicaciones transaccionales:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
-                                <li><strong>Personalización:</strong> Edición de asunto y cuerpo en formato HTML.</li>
-                                <li><strong>Variables Dinámicas:</strong> Uso de marcadores como <code>{"{{providerName}}"}</code> o <code>{"{{score}}"}</code> para insertar datos reales del sistema en el correo.</li>
+                                <li><strong>Personalización:</strong> Edición de cuerpo HTML y asunto.</li>
+                                <li><strong>Variables Dinámicas:</strong> Uso de marcadores como <code>{"{{providerName}}"}</code> para automatizar los mensajes.</li>
                             </ul>
                           </div>
-                          <ManualImageSlot id="manual-email-templates" alt="Gestión de Comunicaciones Transaccionales" />
+                          <ManualImageSlot id="manual-email-templates" alt="Gestión de Plantillas de Correo" />
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -601,15 +824,14 @@ export default function ManualPage() {
                 <Card className="border-t-8 border-t-emerald-600 shadow-xl">
                   <CardHeader>
                     <CardTitle className="text-3xl font-black uppercase text-emerald-700">Anexo Técnico: Matrices ISO 9001</CardTitle>
-                    <CardDescription className="text-lg">Configuración oficial de pesos, indicadores y guías de decisión técnica de Frioalimentaria SAS.</CardDescription>
+                    <CardDescription className="text-lg">Configuración oficial de pesos, indicadores y guías de decisión técnica.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-16">
                     
-                    {/* SECTION 1: SELECTION MATRIX (DETAILED) */}
                     <div className="space-y-8">
                       <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase border-b-2 border-emerald-100 pb-2">
                         <Scale className="h-7 w-7 text-emerald-600" />
-                        <span>1. Matriz de Selección (Evaluación Inicial)</span>
+                        <span>1. Matrices de Selección (Evaluación Inicial)</span>
                       </div>
 
                       <div className="space-y-12">
@@ -637,7 +859,7 @@ export default function ManualPage() {
                                         </TableRow>
                                         <TableRow className="bg-blue-50/20">
                                             <TableCell className="font-bold text-xs"><Wrench className="h-3.5 w-3.5 inline mr-2 text-primary" /> Capacidad Técnica</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Experiencia comprobada, fichas técnicas de productos, certificaciones INVIMA/ONAC y visita técnica obligatoria para críticos.</TableCell>
+                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Experiencia comprobada, fichas técnicas de productos, certificaciones INVIMA/ONAC y visita técnica obligatoria.</TableCell>
                                             <TableCell className="text-center font-black text-red-700">40%</TableCell>
                                             <TableCell className="text-center font-bold">35%</TableCell>
                                         </TableRow>
@@ -691,7 +913,7 @@ export default function ManualPage() {
                                         </TableRow>
                                         <TableRow className="bg-blue-50/20">
                                             <TableCell className="font-bold text-xs"><GraduationCap className="h-3.5 w-3.5 inline mr-2 text-primary" /> Idoneidad Técnica</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Personal certificado en áreas críticas (alturas, eléctrico), equipos calibrados y portafolio técnico especializado.</TableCell>
+                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Personal certificado (alturas, eléctrico), equipos calibrados y portafolio técnico especializado.</TableCell>
                                             <TableCell className="text-center font-black text-red-700">40%</TableCell>
                                             <TableCell className="text-center font-bold">35%</TableCell>
                                         </TableRow>
@@ -723,11 +945,10 @@ export default function ManualPage() {
                       </div>
                     </div>
 
-                    {/* SECTION 2: PERFORMANCE EVALUATION (AUDIT) */}
                     <div className="space-y-8">
                       <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase border-b-2 border-emerald-100 pb-2">
                         <ClipboardCheck className="h-7 w-7 text-emerald-600" />
-                        <span>2. Matriz de Evaluación de Desempeño (Auditoría)</span>
+                        <span>2. Matrices de Evaluación de Desempeño (Auditoría)</span>
                       </div>
                       
                       <div className="grid grid-cols-1 gap-12">
@@ -820,7 +1041,7 @@ export default function ManualPage() {
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Trazabilidad</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Entrega de informes técnicos fotográficos detallados y bitácoras de mantenimiento.</TableCell>
+                                            <TableCell className="text-[10px] text-muted-foreground italic">Entrega de informes técnicos detallados y bitácoras de mantenimiento.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">15%</TableCell>
                                             <TableCell className="text-center text-xs">15%</TableCell>
                                         </TableRow>
@@ -837,7 +1058,6 @@ export default function ManualPage() {
                       </div>
                     </div>
 
-                    {/* SECTION 3: DECISION GUIDE */}
                     <div className="space-y-6 pt-8">
                       <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase border-b-2 border-emerald-100 pb-2">
                         <Target className="h-7 w-7 text-emerald-600" />
@@ -850,7 +1070,7 @@ export default function ManualPage() {
                             <Badge className="bg-green-100 text-green-800 w-fit font-bold font-mono">&gt; 85% (4.25)</Badge>
                           </CardHeader>
                           <CardContent className="text-xs leading-relaxed text-muted-foreground font-medium">
-                            El proveedor mantiene su estatus activo. Se valida el cumplimiento de estándares FA-GFC-F04. No requiere planes de mejora inmediatos.
+                            El proveedor mantiene su estatus activo. Se valida el cumplimiento de estándares normativos. No requiere planes de mejora inmediatos.
                           </CardContent>
                         </Card>
                         <Card className="border-l-8 border-l-blue-500 shadow-lg">
@@ -859,7 +1079,7 @@ export default function ManualPage() {
                             <Badge className="bg-blue-100 text-blue-800 w-fit font-bold font-mono">70% - 84% (3.5)</Badge>
                           </CardHeader>
                           <CardContent className="text-xs leading-relaxed text-muted-foreground font-medium">
-                            <strong>Requiere Plan de Acción ISO.</strong> El proveedor debe radicar compromisos obligatorios en el sistema para subsanar los hallazgos en la siguiente auditoría.
+                            <strong>Requiere Plan de Acción ISO.</strong> El proveedor debe radicar compromisos obligatorios para subsanar los hallazgos.
                           </CardContent>
                         </Card>
                         <Card className="border-l-8 border-l-red-500 shadow-lg">
@@ -868,7 +1088,7 @@ export default function ManualPage() {
                             <Badge className="bg-red-100 text-red-800 w-fit font-bold font-mono">&lt; 70%</Badge>
                           </CardHeader>
                           <CardContent className="text-xs leading-relaxed text-muted-foreground font-medium">
-                            <strong>Apertura de No Conformidad Grave.</strong> El sistema alerta al administrador para iniciar el Protocolo de Sustitución abriendo un nuevo Proceso de Selección.
+                            <strong>No Conformidad Grave.</strong> El sistema alerta al administrador para iniciar el Protocolo de Sustitución técnica.
                           </CardContent>
                         </Card>
                       </div>
