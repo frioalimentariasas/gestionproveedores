@@ -1,9 +1,8 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
@@ -34,7 +33,9 @@ export default function ManualPage() {
   const { data: remoteConfig } = useDoc<any>(configDocRef);
 
   const getImageUrl = (id: string) => {
-    return remoteConfig?.imageUrls?.[id] || localImages.find(i => i.id === id)?.imageUrl || '';
+    const remoteUrl = remoteConfig?.imageUrls?.[id];
+    const localUrl = localImages.find(i => i.id === id)?.imageUrl;
+    return remoteUrl || localUrl || null;
   };
 
   const handleImageUpload = async (id: string, file: File) => {
@@ -102,14 +103,21 @@ export default function ManualPage() {
 
     return (
       <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20">
-        <Image 
-          src={url} 
-          alt={alt} 
-          width={800} 
-          height={400} 
-          data-ai-hint="business software interface" 
-          className="w-full h-auto object-cover min-h-[200px]" 
-        />
+        {url ? (
+          <Image 
+            src={url} 
+            alt={alt} 
+            width={800} 
+            height={400} 
+            data-ai-hint="business software interface" 
+            className="w-full h-auto object-cover min-h-[200px]" 
+          />
+        ) : (
+          <div className="w-full h-[400px] flex flex-col items-center justify-center bg-muted/50 gap-4">
+            <ImageIcon className="h-12 w-12 text-muted-foreground/20" />
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Cargando recurso visual...</p>
+          </div>
+        )}
         
         {isAdmin && (
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
