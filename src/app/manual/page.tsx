@@ -1,3 +1,4 @@
+
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -25,7 +26,14 @@ import {
   Lock, 
   Unlock,
   Maximize2,
-  Settings2
+  Settings2,
+  LayoutDashboard,
+  Tags,
+  BarChart3,
+  Mail,
+  FileSearch,
+  TrendingUp,
+  History
 } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -67,8 +75,7 @@ export default function ManualPage() {
   const getImageUrl = (id: string) => {
     const remoteUrl = remoteConfig?.imageUrls?.[id];
     const localUrl = localImages.find(i => i.id === id)?.imageUrl;
-    const finalUrl = remoteUrl || localUrl || null;
-    return finalUrl === "" ? null : finalUrl;
+    return remoteUrl || localUrl || null;
   };
 
   const handleImageUpload = async (id: string, file: File) => {
@@ -101,7 +108,7 @@ export default function ManualPage() {
 
       toast({
         title: 'Recurso Actualizado',
-        description: `El ${isPdf ? 'PDF' : 'pantallazo'} ha sido incorporado al manual.`,
+        description: `El archivo ha sido incorporado al manual.`,
       });
     } catch (error: any) {
       toast({
@@ -133,14 +140,11 @@ export default function ManualPage() {
   const ManualImageSlot = ({ id, alt }: { id: string; alt: string }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isEditingInSlot, setIsEditingInSlot] = useState(false);
-    const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
     const url = getImageUrl(id);
     const isUploading = uploadingId === id;
     const hasRemote = !!remoteConfig?.imageUrls?.[id];
     
     const isPdf = url?.toLowerCase().includes('.pdf');
-
-    // Editing is only possible if Global Mode is ON
     const canShowEditControls = isAdmin && globalEditMode;
 
     return (
@@ -162,55 +166,51 @@ export default function ManualPage() {
                     alt={alt} 
                     width={800} 
                     height={400} 
-                    data-ai-hint="business software interface" 
                     className="w-full h-auto object-cover min-h-[200px]" 
                   />
               </div>
             )}
 
-            {/* Fullscreen Button - Visible on Hover for EVERYONE */}
-            {!isEditingInSlot && (
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      size="lg" 
-                      variant="secondary" 
-                      className="rounded-full shadow-2xl h-14 w-14 bg-white/95 hover:bg-white text-primary border-2 border-primary/20 scale-90 hover:scale-100 transition-transform"
-                    >
-                      <Maximize2 className="h-6 w-6" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className={cn(
-                    "max-w-[95vw] p-0 overflow-hidden bg-black/90 border-none flex flex-col items-center justify-center",
-                    isPdf ? "h-[95vh]" : "max-h-[95vh]"
-                  )}>
-                    <DialogHeader className="sr-only">
-                      <DialogTitle>Vista ampliada de: {alt}</DialogTitle>
-                    </DialogHeader>
-                    <div className="relative w-full h-full flex items-center justify-center p-4">
-                      {isPdf ? (
-                        <iframe 
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    size="lg" 
+                    variant="secondary" 
+                    className="rounded-full shadow-2xl h-14 w-14 bg-white/95 hover:bg-white text-primary border-2 border-primary/20 scale-90 hover:scale-100 transition-transform"
+                  >
+                    <Maximize2 className="h-6 w-6" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className={cn(
+                  "max-w-[95vw] p-0 overflow-hidden bg-black/90 border-none flex flex-col items-center justify-center",
+                  isPdf ? "h-[95vh]" : "max-h-[95vh]"
+                )}>
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>Vista ampliada: {alt}</DialogTitle>
+                  </DialogHeader>
+                  <div className="relative w-full h-full flex items-center justify-center p-4">
+                    {isPdf ? (
+                      <iframe 
+                        src={url} 
+                        className="w-full h-full border-none rounded-lg"
+                        title={alt}
+                      />
+                    ) : (
+                      <div className="relative w-full h-full max-h-[85vh] aspect-video">
+                        <Image 
                           src={url} 
-                          className="w-full h-full border-none rounded-lg"
-                          title={alt}
+                          alt={alt} 
+                          fill
+                          className="object-contain"
+                          priority
                         />
-                      ) : (
-                        <div className="relative w-full h-full max-h-[85vh] aspect-video">
-                          <Image 
-                            src={url} 
-                            alt={alt} 
-                            fill
-                            className="object-contain"
-                            priority
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            )}
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         ) : (
           <div className="w-full h-[300px] flex flex-col items-center justify-center bg-muted/50 gap-4">
@@ -219,7 +219,6 @@ export default function ManualPage() {
           </div>
         )}
         
-        {/* ADMINISTRATIVE OVERLAY - Only shows if Global Edit Mode is ON */}
         {canShowEditControls && (
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 p-6 z-30 animate-in fade-in duration-200">
             <input 
@@ -290,10 +289,6 @@ export default function ManualPage() {
                             <CheckCircle2 className="h-4 w-4 mr-2" /> Finalizar y Fijar
                         </Button>
                     )}
-
-                    <p className="text-[9px] text-muted-foreground text-center uppercase font-bold">
-                        JPG, PNG o PDF (Máx 5MB)
-                    </p>
                 </div>
             )}
           </div>
@@ -324,7 +319,6 @@ export default function ManualPage() {
             Documento FA-GFC-M01: Guía integral para la gestión de proveedores bajo el estándar ISO 9001:2015 en Frioalimentaria SAS.
           </p>
           
-          {/* GLOBAL EDIT TOGGLE - Only for Admins */}
           {isAdmin && (
               <div className="mt-8 flex items-center gap-4 bg-muted/50 p-4 rounded-2xl border border-primary/10 shadow-inner">
                   <div className="flex flex-col items-end">
@@ -337,11 +331,6 @@ export default function ManualPage() {
                     onCheckedChange={setGlobalEditMode}
                     className="data-[state=checked]:bg-primary"
                   />
-                  {globalEditMode && (
-                      <div className="flex items-center gap-2 text-[10px] font-black uppercase text-accent animate-pulse px-3 border-l ml-2">
-                          <Settings className="h-3 w-3" /> Edición Activa
-                      </div>
-                  )}
               </div>
           )}
         </div>
@@ -385,24 +374,12 @@ export default function ManualPage() {
                                 <span className="text-sm font-medium text-foreground">Su NIT (Ej: 900123456)</span>
                             </div>
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
-                                <span className="font-bold block text-primary text-xs uppercase mb-1">Contraseña</span>
-                                <span className="text-sm font-medium text-foreground">La asignada en el registro</span>
-                            </div>
-                            <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
                                 <span className="font-bold block text-primary text-xs uppercase mb-1">Control</span>
                                 <span className="text-sm font-medium text-foreground">Contador visual de 8 días</span>
                             </div>
                         </div>
                       </div>
-                      
                       <ManualImageSlot id="manual-login" alt="Interfaz de Acceso al Portal" />
-
-                      <Alert className="bg-orange-50 border-orange-200">
-                        <AlertTriangle className="h-5 w-5 text-orange-600" />
-                        <AlertDescription className="text-orange-800 font-medium">
-                          <strong>Bloqueo Automático:</strong> Si el formulario no es guardado y bloqueado en el plazo de 8 días, la cuenta se inhabilitará automáticamente por seguridad normativa.
-                        </AlertDescription>
-                      </Alert>
                     </AccordionContent>
                   </AccordionItem>
 
@@ -418,7 +395,6 @@ export default function ManualPage() {
                             </div>
                             <ul className="text-xs space-y-1 text-muted-foreground list-disc pl-4 font-medium">
                               <li>Información Tributaria (Régimen, CIIU).</li>
-                              <li>Contactos Comerciales y de Pagos.</li>
                               <li>Certificación Bancaria (Vigente).</li>
                               <li>Certificado HSEQ 0312 (Evaluación &gt; 60%).</li>
                             </ul>
@@ -428,34 +404,12 @@ export default function ManualPage() {
                                 <Gavel className="h-4 w-4" /> SARLAFT Digital
                             </div>
                             <div className="text-xs text-muted-foreground leading-relaxed font-medium">
-                              El sistema genera una declaración legal dinámica con sus datos reales. Al marcar la aceptación, firma digitalmente su compromiso bajo la Ley 1581 de 2012.
+                              Al marcar la aceptación, firma digitalmente su compromiso bajo la Ley 1581 de 2012.
                             </div>
                           </div>
                         </div>
                       </div>
-                      
                       <ManualImageSlot id="manual-form-sections" alt="Estructura del Formulario de Registro" />
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="p3" className="border rounded-xl px-4 bg-muted/5">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Radicación de Compromisos ISO 9001</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4">
-                      <div className="space-y-4 leading-relaxed text-muted-foreground">
-                        <div>Si el resultado de una auditoría es inferior al <strong>85% (4.25)</strong>, deberá radicar un plan de mejora:</div>
-                        <ol className="list-decimal pl-6 space-y-3 text-sm font-medium text-muted-foreground">
-                          <li>Ingrese al menú <strong>"Mis Evaluaciones ISO"</strong>.</li>
-                          <li>Identifique los criterios marcados en <span className="text-destructive font-black">ROJO</span>.</li>
-                          <li>Haga clic en <strong>"Radicar Planes de Acción"</strong>.</li>
-                          <li>Redacte un compromiso específico para cada hallazgo y envíe el formulario para revisión del administrador.</li>
-                        </ol>
-                      </div>
-                      <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4 shadow-inner">
-                        <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
-                        <div className="text-sm italic text-muted-foreground font-medium">
-                          La radicación de compromisos es obligatoria para garantizar la continuidad comercial bajo los estándares de calidad de Frioalimentaria SAS.
-                        </div>
-                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -469,58 +423,131 @@ export default function ManualPage() {
                 <Card className="border-t-8 border-t-primary shadow-xl">
                   <CardHeader>
                     <CardTitle className="text-3xl font-black uppercase text-primary">Guía para el Administrador</CardTitle>
-                    <CardDescription className="text-lg">Gestión de auditoría de registros, evaluación técnica y comparador de desempeño.</CardDescription>
+                    <CardDescription className="text-lg">Gestión detallada por módulos del Sistema de Gestión de Proveedores.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-12">
                     <Accordion type="single" collapsible className="w-full space-y-4">
-                      <AccordionItem value="a1" className="border rounded-xl px-4 bg-muted/5">
-                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Auditoría de Registro y Activación</AccordionTrigger>
+                      <AccordionItem value="a-dash" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <LayoutDashboard className="h-6 w-6 text-primary" /> 1. Dashboard: Control Gerencial
+                        </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 leading-relaxed text-muted-foreground">
-                            <div>Cuando un proveedor completa su registro, el estado cambia a <Badge className="bg-blue-100 text-blue-700 ml-1">En Revisión</Badge>. Procedimiento oficial:</div>
-                            <ol className="list-decimal pl-6 space-y-3 text-sm font-medium">
-                              <li>Ingresar a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
-                              <li><strong>Verificar Documentación:</strong> Valide que los PDFs cargados coincidan con la información digital.</li>
-                              <li><strong>Asignar Criticidad:</strong> Determine si es <Badge variant="destructive" className="mx-1">Crítico</Badge> o <Badge variant="outline" className="mx-1 border-green-600 text-green-600">No Crítico</Badge> para ajustar la matriz de pesos.</li>
-                              <li><strong>Asignar Categorías:</strong> Clasifíquelo correctamente para el comparador de ranking sectorial.</li>
-                              <li><strong>Aprobar Registro:</strong> El sistema enviará automáticamente el correo de bienvenida y activación.</li>
-                            </ol>
-                          </div>
-                          
-                          <ManualImageSlot id="manual-admin-panel" alt="Panel de Gestión Administrativa" />
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="a2" className="border rounded-xl px-4 bg-muted/5">
-                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Ejecución de Evaluaciones de Desempeño</AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 leading-relaxed text-muted-foreground">
-                            <div>Al realizar una auditoría, el sistema carga automáticamente la matriz oficial (Productos o Servicios) según el sector del proveedor.</div>
-                            <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-start gap-3 shadow-sm">
-                              <ShieldAlert className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
-                              <div className="text-xs text-orange-800 font-bold leading-relaxed uppercase">
-                                <strong>Trazabilidad Obligatoria:</strong> Antes de calificar, el sistema muestra el compromiso radicado por el proveedor en la evaluación anterior. Verifique su cumplimiento antes de asignar la nueva nota.
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <ManualImageSlot id="manual-evaluation-modal" alt="Proceso de Auditoría Técnica" />
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="a3" className="border rounded-xl px-4 bg-muted/5">
-                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Comparador de Desempeño y Sustitución</AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 leading-relaxed text-muted-foreground">
-                            <div>Herramienta de análisis para el control de la cadena de suministro por categorías técnicas:</div>
-                            <ul className="list-disc pl-6 space-y-3 text-sm font-medium">
-                              <li><Badge className="bg-green-100 text-green-800 mr-2">Conforme (&gt; 85%)</Badge> Proveedor confiable bajo norma.</li>
-                              <li><Badge className="bg-blue-100 text-blue-800 mr-2">En Observación (70-84%)</Badge> Requiere seguimiento estricto a compromisos.</li>
-                              <li><Badge className="bg-red-100 text-red-800 mr-2">No Conforme (&lt; 70%)</Badge> <span className="text-destructive font-black">Riesgo Grave.</span> El sistema habilita la <strong>Sustitución de Proveedor</strong> como acción correctiva.</li>
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>El tablero principal permite una visualización rápida de la salud de la cadena de suministro:</p>
+                            <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
+                                <li><strong>Resumen de Proveedores:</strong> Gráfico circular que muestra la relación entre cuentas activas e inactivas.</li>
+                                <li><strong>Proveedores por Categoría:</strong> Histograma que identifica la concentración de suministros por sector operativo.</li>
+                                <li><strong>Evaluaciones Recientes:</strong> Trazabilidad inmediata de las últimas 5 auditorías realizadas, permitiendo acceso directo al perfil del proveedor.</li>
                             </ul>
                           </div>
-                          
-                          <ManualImageSlot id="manual-comparison-tool" alt="Comparador de Desempeño y Ranking" />
+                          <ManualImageSlot id="manual-dashboard" alt="Módulo de Dashboard Administrativo" />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="a-selection" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <ClipboardCheck className="h-6 w-6 text-primary" /> 2. Procesos de Selección ISO 9001
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>Módulo para la selección competitiva de nuevos proveedores bajo el marco de calidad:</p>
+                            <ol className="list-decimal pl-6 space-y-3 text-sm font-medium">
+                                <li><strong>Creación:</strong> Definir nombre, sector y nivel de criticidad. El sistema ajustará los pesos sugeridos automáticamente.</li>
+                                <li><strong>Parametrización de Criterios:</strong> Ajuste de los pesos porcentuales (suma 100%). Se evalúan capacidades legales, técnicas, operativas y financieras.</li>
+                                <li><strong>Evaluación de Competidores:</strong> Carga de cotizaciones (PDF) y asignación de puntajes (1-5). Es <strong>obligatorio</strong> registrar la "Bitácora de Verificación" para sustentar cada nota ante auditorías externas.</li>
+                                <li><strong>Cierre y Adjudicación:</strong> El sistema genera un Acta de Selección (PDF) y envía automáticamente una invitación de registro al ganador.</li>
+                            </ol>
+                          </div>
+                          <ManualImageSlot id="manual-selection-detail" alt="Matriz de Selección y Adjudicación" />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="a-providers" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <Users className="h-6 w-6 text-primary" /> 3. Gestión de Proveedores
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>Centro de control para la auditoría y mantenimiento de la base de datos oficial:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="p-4 bg-white border rounded-lg shadow-sm">
+                                    <h5 className="font-bold text-primary text-xs uppercase mb-2">Auditoría de Registro</h5>
+                                    <p className="text-xs">Usa el botón "Gestionar" para revisar documentos. Puedes aprobar el registro o solicitar correcciones desbloqueando el formulario automáticamente.</p>
+                                </div>
+                                <div className="p-4 bg-white border rounded-lg shadow-sm">
+                                    <h5 className="font-bold text-primary text-xs uppercase mb-2">Evaluación de Desempeño</h5>
+                                    <p className="text-xs">Realiza auditorías periódicas usando las matrices oficiales. El sistema notifica al proveedor si el puntaje es &lt; 85% para que radique compromisos.</p>
+                                </div>
+                            </div>
+                          </div>
+                          <ManualImageSlot id="manual-provider-list" alt="Panel de Gestión de Proveedores" />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="a-categories" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <Tags className="h-6 w-6 text-primary" /> 4. Categorías Técnicas
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>Organización de la base de suministros por especialidad operativa:</p>
+                            <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
+                                <li><strong>ID Secuencial:</strong> El sistema asigna un código único de 4 dígitos para trazabilidad en ERP.</li>
+                                <li><strong>Importación Masiva:</strong> Permite cargar cientos de categorías mediante archivos Excel pre-formateados.</li>
+                                <li><strong>Asociación:</strong> Las categorías son la base para el comparador de desempeño sectorial.</li>
+                            </ul>
+                          </div>
+                          <ManualImageSlot id="manual-categories-table" alt="Gestión de Categorías e Importación" />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="a-compare" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <BarChart3 className="h-6 w-6 text-primary" /> 5. Comparador de Desempeño
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>Herramienta analítica para mitigar riesgos en la cadena de suministro:</p>
+                            <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4 shadow-inner">
+                                <TrendingUp className="h-6 w-6 text-primary shrink-0" />
+                                <div className="text-sm italic font-medium">
+                                    Permite visualizar qué proveedor tiene el mejor cumplimiento ISO 9001 en una categoría específica. Si un proveedor cae en "No Conforme", habilita la opción de "Iniciar Sustitución" abriendo un nuevo proceso de selección competitivo.
+                                </div>
+                            </div>
+                          </div>
+                          <ManualImageSlot id="manual-comparison-tool" alt="Ranking de Desempeño Sectorial" />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="a-weights" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <Settings className="h-6 w-6 text-primary" /> 6. Configuración de Pesos ISO
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>Parametrización dinámica de la rigurosidad de las evaluaciones:</p>
+                            <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
+                                <li><strong>Ajuste Fino:</strong> Permite cambiar los pesos por defecto de los criterios de evaluación.</li>
+                                <li><strong>Refuerzo Crítico:</strong> Los proveedores marcados como "Críticos" reciben automáticamente una ponderación más estricta en factores de riesgo.</li>
+                            </ul>
+                          </div>
+                          <ManualImageSlot id="manual-criteria-weights" alt="Parametrización de la Matriz de Calidad" />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="a-emails" className="border rounded-xl px-4 bg-muted/5">
+                        <AccordionTrigger className="text-xl font-bold hover:no-underline text-left flex gap-3">
+                            <Mail className="h-6 w-6 text-primary" /> 7. Plantillas de Notificación
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>Control de la comunicación institucional automatizada:</p>
+                            <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
+                                <li><strong>Personalización:</strong> Edición de asunto y cuerpo en formato HTML.</li>
+                                <li><strong>Variables Dinámicas:</strong> Uso de marcadores como <code>{"{{providerName}}"}</code> o <code>{"{{score}}"}</code> para insertar datos reales del sistema en el correo.</li>
+                            </ul>
+                          </div>
+                          <ManualImageSlot id="manual-email-templates" alt="Gestión de Comunicaciones Transaccionales" />
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -531,8 +558,8 @@ export default function ManualPage() {
               <TabsContent value="technical" className="animate-in fade-in duration-500">
                 <Card className="border-t-8 border-t-emerald-600 shadow-xl">
                   <CardHeader>
-                    <CardTitle className="text-3xl font-black uppercase text-emerald-700">Anexo Técnico: Matrices ISO 9001:2015</CardTitle>
-                    <CardDescription className="text-lg">Configuración oficial de pesos, indicadores y escala de calificación de Frioalimentaria.</CardDescription>
+                    <CardTitle className="text-3xl font-black uppercase text-emerald-700">Anexo Técnico: Matrices ISO 9001</CardTitle>
+                    <CardDescription className="text-lg">Configuración oficial de pesos e indicadores de Frioalimentaria.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-12">
                     <div className="space-y-4">
@@ -566,90 +593,6 @@ export default function ManualPage() {
                               <TableCell className="text-center font-black bg-red-50/30 text-red-700">30%</TableCell>
                               <TableCell className="text-center font-bold">20%</TableCell>
                             </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Gestión Documental y Legal</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Fichas técnicas, certificados de calidad por lote y facturación sin errores.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">10%</TableCell>
-                              <TableCell className="text-center font-bold">15%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Soporte y Garantía</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Agilidad en el proceso de devolución o cambio.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">20%</TableCell>
-                              <TableCell className="text-center font-bold">15%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Capacidad de Emergencia</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Disponibilidad de stock para pedidos urgentes de repuestos críticos.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">20%</TableCell>
-                              <TableCell className="text-center font-black text-emerald-700">30%</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 pt-8">
-                      <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
-                        <Wrench className="h-6 w-6 text-emerald-600" />
-                        <span>2. Matriz de Desempeño: SERVICIOS</span>
-                      </div>
-                      <div className="border rounded-xl overflow-hidden shadow-md">
-                        <Table>
-                          <TableHeader className="bg-muted">
-                            <TableRow>
-                              <TableHead className="w-1/2 font-black uppercase">Criterio / Indicador Técnico</TableHead>
-                              <TableHead className="text-center font-black uppercase bg-red-50 text-red-700">Peso Crítico</TableHead>
-                              <TableHead className="text-center font-black uppercase">Peso No Crítico</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Eficacia de la Prestación</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Equipo operativo sin fallas recurrentes (30 días). Ausencia de re-trabajos.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30 text-red-700">40%</TableCell>
-                              <TableCell className="text-center font-bold">30%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Competencia del Personal</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Idoneidad certificada (alturas, eléctrico, mecánico) y herramientas calibradas.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">20%</TableCell>
-                              <TableCell className="text-center font-bold">15%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Cumplimiento SST y Normativo</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Seguridad social, EPP, permisos de trabajo seguro y normas ambientales.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">15%</TableCell>
-                              <TableCell className="text-center font-black text-emerald-700">25%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Trazabilidad e Información</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Entrega de informes técnicos detallados y bitácoras de mantenimiento.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">15%</TableCell>
-                              <TableCell className="text-center font-bold">15%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Disponibilidad y Respuesta</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Tiempo transcurrido desde el llamado hasta la presencia del técnico.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">10%</TableCell>
-                              <TableCell className="text-center font-bold">15%</TableCell>
-                            </TableRow>
                           </TableBody>
                         </Table>
                       </div>
@@ -658,45 +601,38 @@ export default function ManualPage() {
                     <div className="space-y-4 pt-8">
                       <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                         <FileText className="h-6 w-6 text-emerald-600" />
-                        <span>3. Escala de Calificación Desempeño (1.00 - 5.00)</span>
+                        <span>2. Escala de Calificación Desempeño</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="border-l-8 border-l-green-500 shadow-lg">
                           <CardHeader className="py-4">
                             <CardTitle className="text-lg uppercase font-black">Conforme (Aprobado)</CardTitle>
-                            <div className="flex gap-2 items-center">
-                                <Badge className="bg-green-100 text-green-800 w-fit font-bold">{"> 85% (4.25)"}</Badge>
-                            </div>
+                            <Badge className="bg-green-100 text-green-800 w-fit font-bold">&gt; 85% (4.25)</Badge>
                           </CardHeader>
                           <CardContent className="text-sm leading-relaxed text-muted-foreground font-medium">
-                            El proveedor mantiene su estatus de <strong>Aprobado</strong>. El sistema envía automáticamente un correo de felicitación.
+                            El proveedor mantiene su estatus. El sistema envía automáticamente felicitación.
                           </CardContent>
                         </Card>
                         <Card className="border-l-8 border-l-blue-500 shadow-lg">
                           <CardHeader className="py-4">
                             <CardTitle className="text-lg uppercase font-black">En Observación</CardTitle>
-                            <div className="flex gap-2 items-center">
-                                <Badge className="bg-blue-100 text-blue-800 w-fit font-bold">{"70% - 84% (3.5 - 4.2)"}</Badge>
-                            </div>
+                            <Badge className="bg-blue-100 text-blue-800 w-fit font-bold">70% - 84% (3.5)</Badge>
                           </CardHeader>
                           <CardContent className="text-sm leading-relaxed text-muted-foreground font-medium">
-                            Requiere <strong>Plan de Mejora</strong>. El proveedor debe radicar compromisos obligatorios por cada hallazgo detectado.
+                            Requiere Plan de Mejora. El proveedor debe radicar compromisos obligatorios.
                           </CardContent>
                         </Card>
                         <Card className="border-l-8 border-l-red-500 shadow-lg">
                           <CardHeader className="py-4">
                             <CardTitle className="text-lg uppercase font-black">No Conforme</CardTitle>
-                            <div className="flex gap-2 items-center">
-                                <Badge className="bg-red-100 text-red-800 w-fit font-bold">{"< 70% (3.5)"}</Badge>
-                            </div>
+                            <Badge className="bg-red-100 text-red-800 w-fit font-bold">&lt; 70%</Badge>
                           </CardHeader>
                           <CardContent className="text-sm leading-relaxed text-muted-foreground font-medium">
-                            Apertura de <strong>No Conformidad Grave</strong>. El administrador evalúa la sustitución inmediata mediante un nuevo proceso de selección competitivo.
+                            Apertura de No Conformidad Grave. El administrador evalúa la sustitución inmediata.
                           </CardContent>
                         </Card>
                       </div>
                     </div>
-
                   </CardContent>
                 </Card>
               </TabsContent>

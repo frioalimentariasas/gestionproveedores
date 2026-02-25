@@ -11,25 +11,61 @@
       "id": "manual-form-sections",
       "description": "Estructura del formulario FA-GFC-F04 y sus 8 secciones",
       "imageUrl": "https://picsum.photos/seed/fal_form_ui/800/400",
-      "imageHint": "business dashboard"
+      "imageHint": "business form"
     },
     {
-      "id": "manual-admin-panel",
-      "description": "Panel de control administrativo para gestión de proveedores",
-      "imageUrl": "https://picsum.photos/seed/fal_admin_ui/800/400",
-      "imageHint": "software interface"
+      "id": "manual-dashboard",
+      "description": "Tablero de control con métricas de proveedores y evaluaciones",
+      "imageUrl": "https://picsum.photos/seed/fal_dash/800/400",
+      "imageHint": "analytics dashboard"
+    },
+    {
+      "id": "manual-selection-list",
+      "description": "Listado de procesos de selección vigentes y cerrados",
+      "imageUrl": "https://picsum.photos/seed/fal_sel_list/800/400",
+      "imageHint": "data list"
+    },
+    {
+      "id": "manual-selection-detail",
+      "description": "Matriz de comparación de ofertas y adjudicación",
+      "imageUrl": "https://picsum.photos/seed/fal_sel_detail/800/400",
+      "imageHint": "comparison table"
+    },
+    {
+      "id": "manual-provider-list",
+      "description": "Módulo central de Gestión de Proveedores",
+      "imageUrl": "https://picsum.photos/seed/fal_prov_list/800/400",
+      "imageHint": "user management"
     },
     {
       "id": "manual-evaluation-modal",
       "description": "Interfaz técnica de evaluación de desempeño ISO 9001",
       "imageUrl": "https://picsum.photos/seed/fal_eval_ui/800/400",
-      "imageHint": "data analysis"
+      "imageHint": "data entry"
+    },
+    {
+      "id": "manual-categories-table",
+      "description": "Gestión de categorías y sectores operativos",
+      "imageUrl": "https://picsum.photos/seed/fal_cat/800/400",
+      "imageHint": "category settings"
     },
     {
       "id": "manual-comparison-tool",
-      "description": "Herramienta de comparación y ranking de proveedores",
+      "description": "Herramienta de ranking y comparación sectorial",
       "imageUrl": "https://picsum.photos/seed/fal_compare_ui/800/400",
-      "imageHint": "performance charts"
+      "imageHint": "ranking chart"
+    },
+    {
+      "id": "manual-criteria-weights",
+      "description": "Parametrización de pesos para la matriz ISO",
+      "imageUrl": "https://picsum.photos/seed/fal_weights/800/400",
+      "imageHint": "system configuration"
+    },
+    {
+      "id": "manual-email-templates",
+      "description": "Editor de plantillas de notificación por correo",
+      "imageUrl": "https://picsum.photos/seed/fal_emails/800/400",
+      "imageHint": "email editor"
     }
   ]
 }
