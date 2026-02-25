@@ -8,7 +8,7 @@ import {
 } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import React, { useMemo, useState } from 'react';
-import { Loader2, AlertTriangle, CheckCircle2, TrendingUp, Info, Mail, Send, Eye, ClipboardCheck } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2, TrendingUp, Info, Mail, Send, Eye, ClipboardCheck, ShieldAlert } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -164,7 +164,7 @@ const EvaluationScoreCard = ({ evaluations, provider }: { evaluations: WithId<Ev
                 />
                 <Bar dataKey="Puntaje" radius={[0, 4, 4, 0]} barSize={10}>
                     {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.Puntaje < 3.5 ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} />
+                        <Cell key={`cell-${index}`} fill={entry.Puntaje < 4.25 ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} />
                     ))}
                 </Bar>
               </BarChart>
@@ -195,6 +195,11 @@ const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) =>
   const isAtRisk = useMemo(() => {
       if (!latestEvaluation) return false;
       return requiresActionPlan(latestEvaluation.totalScore);
+  }, [latestEvaluation]);
+
+  const isCriticalFailure = useMemo(() => {
+      if (!latestEvaluation) return false;
+      return latestEvaluation.totalScore < 3.5; // Menos de 70%
   }, [latestEvaluation]);
 
   const hasCommitment = useMemo(() => {
@@ -246,7 +251,15 @@ const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) =>
         <CardFooter className="pt-2 flex flex-col gap-2">
             {isAtRisk ? (
                 <div className="space-y-2 w-full">
-                    {hasCommitment ? (
+                    {isCriticalFailure ? (
+                        <Alert variant="destructive" className="py-2 px-3 border-solid bg-destructive text-white border-none">
+                            <ShieldAlert className="h-4 w-4 !text-white" />
+                            <AlertTitle className="text-[10px] font-black uppercase">No Conforme (Grave)</AlertTitle>
+                            <AlertDescription className="text-[9px] font-bold">
+                                REQUIERE SUSTITUCIÓN INMEDIATA O ANALISIS GERENCIAL.
+                            </AlertDescription>
+                        </Alert>
+                    ) : hasCommitment ? (
                         <div className="w-full flex items-center justify-center gap-2 text-primary text-[10px] font-bold bg-primary/10 py-2 rounded border border-primary/20">
                             <ClipboardCheck className="h-3 w-3" /> COMPROMISO RADICADO
                         </div>
@@ -297,9 +310,9 @@ const ProviderComparisonCard = ({ provider }: { provider: WithId<Provider> }) =>
                 </div>
             )}
             
-            <Button asChild variant={isAtRisk && !hasCommitment ? "destructive" : "default"} className="w-full text-xs font-bold uppercase tracking-tighter mt-2">
+            <Button asChild variant={isAtRisk ? "destructive" : "default"} className="w-full text-xs font-bold uppercase tracking-tighter mt-2">
             <Link href={`/selection/new?name=${encodeURIComponent(provider.businessName)}&nit=${provider.documentNumber}&email=${provider.email}`}>
-                {isAtRisk && !hasCommitment ? "Sustituir Proveedor (Acción Correctiva)" : "Nuevo Proceso de Selección"}
+                {isCriticalFailure ? "Iniciar Sustitución (Acción Correctiva)" : isAtRisk && !hasCommitment ? "Re-evaluar / Sustituir" : "Nuevo Proceso de Selección"}
             </Link>
             </Button>
         </CardFooter>
@@ -359,10 +372,10 @@ export function ComparisonView({ categoryId }: ComparisonViewProps) {
     <div className="space-y-8">
         <div className="bg-primary/5 p-4 rounded-lg border flex items-center gap-4">
             <div className="bg-white p-2 rounded shadow-sm">
-                <Info className="h-5 w-5 text-primary" />
+                <ShieldAlert className="h-5 w-5 text-primary" />
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Control ISO 9001:</strong> Esta vista permite el re-evaluación periódica. Si un proveedor tiene hallazgos, el administrador debe notificarlo para que este radique su compromiso de mejora. De no haber mejora, se procede a la sustitución.
+                <strong className="text-foreground">Control ISO 9001:</strong> Analice si los compromisos de mejora de auditorías previas se han cumplido. Si un proveedor reincide en hallazgos críticos o no alcanza el 70% de cumplimiento, proceda con la <strong>Sustitución del Proveedor</strong> para mitigar riesgos en la cadena de suministro.
             </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

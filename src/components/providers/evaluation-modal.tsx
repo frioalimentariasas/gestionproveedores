@@ -27,9 +27,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, errorEmitter, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, query, orderBy, limit } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Info, ShieldAlert, AlertTriangle, CheckCircle2, TrendingUp, NotebookPen } from 'lucide-react';
+import { Loader2, Info, ShieldAlert, AlertTriangle, CheckCircle2, TrendingUp, NotebookPen, History, FileClock } from 'lucide-react';
 import { getCriteriaForType, CategoryType, EVALUATION_TYPES, requiresActionPlan, getPerformanceStatus } from '@/lib/evaluations';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -38,6 +38,8 @@ import { notifyProviderEvaluationFailed, notifyProviderEvaluationSuccess } from 
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface Provider {
   id: string;
@@ -86,6 +88,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   const [criteriaForForm, setCriteriaForForm] = useState<any[]>([]);
   const [totalScore, setTotalScore] = useState(0);
 
+  // Fetch all categories
   const categoriesCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'categories') : null),
     [firestore]
@@ -96,6 +99,18 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
     if (!provider?.categoryIds || !allCategories) return [];
     return allCategories.filter(cat => provider.categoryIds!.includes(cat.id));
   }, [provider, allCategories]);
+
+  // Fetch previous evaluation for context
+  const previousEvalQuery = useMemoFirebase(
+    () => (firestore && provider && selectedCategoryId ? query(
+      collection(firestore, 'providers', provider.id, 'evaluations'),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    ) : null),
+    [firestore, provider, selectedCategoryId]
+  );
+  const { data: lastEvaluations } = useCollection<any>(previousEvalQuery);
+  const lastEval = lastEvaluations?.[0];
 
   const selectedCategoryDocRef = useMemoFirebase(
     () => (firestore && selectedCategoryId ? doc(firestore, 'categories', selectedCategoryId) : null),
@@ -283,7 +298,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="sm:max-w-[850px] h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary" 
+        className="sm:max-w-[900px] h-[95vh] flex flex-col p-0 overflow-hidden border-t-8 border-t-primary" 
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {!provider ? (
@@ -345,14 +360,29 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                 <ScrollArea className="flex-grow px-6 bg-muted/5">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 py-6">
                     <div className="lg:col-span-8 space-y-6">
-                        {provider.criticalityLevel === 'Crítico' && (
-                            <Alert className="bg-orange-50 border-orange-200">
-                                <ShieldAlert className="h-4 w-4 text-orange-600" />
-                                <AlertTitle className="text-orange-800 text-xs font-bold uppercase">Refuerzo Técnico ISO 9001</AlertTitle>
-                                <AlertDescription className="text-[10px] text-orange-700">
-                                    Proveedores críticos tienen una ponderación mayor. Requiere mayor rigor en la justificación.
-                                </AlertDescription>
-                            </Alert>
+                        {/* ALERT FOR PREVIOUS COMMITMENTS */}
+                        {lastEval && (
+                            <Card className="border-l-4 border-l-orange-500 bg-orange-50/30">
+                                <CardHeader className="py-3">
+                                    <CardTitle className="text-xs font-black uppercase text-orange-800 flex items-center gap-2">
+                                        <History className="h-4 w-4" /> Validación de Compromisos Anteriores
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pb-3 text-xs space-y-2">
+                                    <p className="text-muted-foreground italic">
+                                        Última Auditoría: <strong>{format(lastEval.createdAt.toDate(), 'dd/MM/yyyy', { locale: es })}</strong> - Puntaje: <strong>{lastEval.totalScore.toFixed(2)}</strong>
+                                    </p>
+                                    <div className="p-3 bg-white rounded border border-orange-200">
+                                        <p className="font-bold text-[10px] uppercase text-orange-700 mb-1">Plan de Mejora Radicado Anteriormente:</p>
+                                        <p className="text-foreground leading-relaxed">
+                                            {lastEval.improvementCommitment || "No se radicaron compromisos específicos en el sistema."}
+                                        </p>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground font-medium">
+                                        * Valide si los hallazgos anteriores fueron subsanados antes de asignar la nueva nota.
+                                    </p>
+                                </CardContent>
+                            </Card>
                         )}
 
                         <div className="space-y-6">
@@ -452,7 +482,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                     </div>
 
                     <div className="lg:col-span-4 space-y-6">
-                        <Card className="border-t-4 border-t-accent shadow-md">
+                        <Card className="border-t-4 border-t-accent shadow-md sticky top-0">
                             <CardHeader className="p-4 bg-accent/5">
                                 <CardTitle className="text-sm flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-accent" />
@@ -479,7 +509,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                                 
                                 <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-primary/10 text-muted-foreground italic leading-tight">
                                     <p>
-                                        * Los estados con asterisco exigen la radicación obligatoria de un <strong>Plan de Mejora ISO 9001</strong> para asegurar la continuidad comercial.
+                                        * Los estados con asterisco exigen la radicación obligatoria de un <strong>Plan de Mejora ISO 9001</strong>.
                                     </p>
                                 </div>
                             </CardContent>
@@ -490,7 +520,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                                 <Info className="h-3 w-3" /> Transparencia Normativa
                             </h4>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                Sus justificaciones serán visibles para el proveedor. Esto fomenta la retroalimentación constructiva y la mejora continua del suministro.
+                                Ante hallazgos reiterados en compromisos anteriores, el administrador debe considerar la apertura de un nuevo proceso de selección para garantizar la continuidad operativa.
                             </p>
                         </div>
                     </div>
