@@ -5,15 +5,152 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, BarChart3, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Mail, CheckSquare } from 'lucide-react';
+import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useRole } from '@/hooks/use-role';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ManualPage() {
-  const images = PlaceHolderImages;
+  const { isAdmin } = useRole();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [uploadingId, setUploadingingId] = useState<string | null>(null);
+  
+  // Use state for images to allow dynamic updates
+  const [localImages, setLocalImages] = useState(PlaceHolderImages);
+
+  const configDocRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, 'settings', 'manual_images') : null),
+    [firestore]
+  );
+  const { data: remoteConfig } = useDoc<any>(configDocRef);
+
+  const getImageUrl = (id: string) => {
+    return remoteConfig?.imageUrls?.[id] || localImages.find(i => i.id === id)?.imageUrl || '';
+  };
+
+  const handleImageUpload = async (id: string, file: File) => {
+    if (!firestore || !isAdmin) return;
+    
+    setUploadingingId(id);
+    try {
+      const fileName = `manual_screenshot_${id}_${Date.now()}.pdf`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', 'system_admin');
+      formData.append('fileName', `manual_screenshots/${fileName}`);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Error al subir la imagen.');
+      const { url } = await response.json();
+
+      // Update Firestore config
+      if (!remoteConfig) {
+        await setDoc(configDocRef!, { imageUrls: { [id]: url } });
+      } else {
+        await updateDoc(configDocRef!, { [`imageUrls.${id}`]: url });
+      }
+
+      toast({
+        title: 'Imagen Actualizada',
+        description: 'El pantallazo real ha sido incorporado al manual.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error de Carga',
+        description: error.message,
+      });
+    } finally {
+      setUploadingingId(null);
+    }
+  };
+
+  const handleResetImage = async (id: string) => {
+    if (!firestore || !isAdmin || !remoteConfig?.imageUrls?.[id]) return;
+    
+    try {
+        const newUrls = { ...remoteConfig.imageUrls };
+        delete newUrls[id];
+        await updateDoc(configDocRef!, { imageUrls: newUrls });
+        toast({
+            title: 'Imagen Restablecida',
+            description: 'Se ha vuelto a la imagen por defecto.',
+        });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo restablecer la imagen.' });
+    }
+  };
+
+  const ManualImageSlot = ({ id, alt }: { id: string; alt: string }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const url = getImageUrl(id);
+    const isUploading = uploadingId === id;
+    const hasRemote = !!remoteConfig?.imageUrls?.[id];
+
+    return (
+      <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20">
+        <Image 
+          src={url} 
+          alt={alt} 
+          width={800} 
+          height={400} 
+          data-ai-hint="business software interface" 
+          className="w-full h-auto object-cover min-h-[200px]" 
+        />
+        
+        {isAdmin && (
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
+            <input 
+              type="file" 
+              className="hidden" 
+              ref={fileInputRef} 
+              accept="image/*,application/pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(id, file);
+              }}
+            />
+            <Button 
+              size="sm" 
+              className="font-bold gap-2" 
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Cargar Pantallazo Real
+            </Button>
+            {hasRemote && (
+                <Button 
+                    size="sm" 
+                    variant="destructive" 
+                    className="font-bold gap-2" 
+                    onClick={() => handleResetImage(id)}
+                >
+                    <RefreshCw className="h-4 w-4" />
+                    Usar por Defecto
+                </Button>
+            )}
+            <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black">
+                Personaliza esta sección con una captura real de la plataforma
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <AuthGuard>
@@ -28,6 +165,11 @@ export default function ManualPage() {
           <p className="text-muted-foreground max-w-2xl text-lg">
             Documento FA-GFC-M01: Guía integral para la gestión de proveedores bajo el estándar ISO 9001:2015 en Frioalimentaria SAS.
           </p>
+          {isAdmin && (
+              <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase bg-accent/10 text-accent px-4 py-2 rounded-full border border-accent/20 animate-pulse">
+                  <ImageIcon className="h-3 w-3" /> Modo Edición de Manual Activado: Puedes subir tus propios pantallazos
+              </div>
+          )}
         </div>
 
         <Tabs defaultValue="provider" className="space-y-8">
@@ -63,9 +205,9 @@ export default function ManualPage() {
                           <li><strong>Plazo:</strong> Verá un contador en la parte superior del formulario indicando el tiempo restante.</li>
                         </ul>
                       </div>
-                      <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-login')?.imageUrl || ''} alt="Acceso al Portal" width={800} height={400} data-ai-hint="login interface" className="w-full" />
-                      </div>
+                      
+                      <ManualImageSlot id="manual-login" alt="Acceso al Portal" />
+
                       <Alert className="bg-orange-50 border-orange-200">
                         <AlertTriangle className="h-5 w-5 text-orange-600" />
                         <AlertDescription className="text-orange-800 font-medium">
@@ -82,7 +224,7 @@ export default function ManualPage() {
                         <p>El formulario se compone de 8 secciones críticas. Es obligatorio adjuntar los documentos en formato <strong>PDF (máx. 5MB)</strong>.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white">
-                            <h4 className="font-bold flex items-center gap-2 mb-2"><CheckSquare className="h-4 w-4 text-primary" /> Datos Requeridos</h4>
+                            <h4 className="font-bold flex items-center gap-2 mb-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Datos Requeridos</h4>
                             <ul className="text-xs space-y-1 text-muted-foreground">
                               <li>Información Tributaria (Régimen, CIIU).</li>
                               <li>Contactos Comerciales y de Pagos.</li>
@@ -98,9 +240,8 @@ export default function ManualPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-form-sections')?.imageUrl || ''} alt="Secciones del Formulario" width={800} height={400} data-ai-hint="business dashboard" className="w-full" />
-                      </div>
+                      
+                      <ManualImageSlot id="manual-form-sections" alt="Secciones del Formulario" />
                     </AccordionContent>
                   </AccordionItem>
 
@@ -150,9 +291,8 @@ export default function ManualPage() {
                           <li><strong>Aval de Calidad:</strong> Aprobar para activar la cuenta o solicitar correcciones indicando los motivos técnicos.</li>
                         </ol>
                       </div>
-                      <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-admin-panel')?.imageUrl || ''} alt="Panel Administrativo" width={800} height={400} data-ai-hint="software interface" className="w-full" />
-                      </div>
+                      
+                      <ManualImageSlot id="manual-admin-panel" alt="Panel Administrativo" />
                     </AccordionContent>
                   </AccordionItem>
 
@@ -168,9 +308,8 @@ export default function ManualPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-evaluation-modal')?.imageUrl || ''} alt="Proceso de Evaluación" width={800} height={400} data-ai-hint="data analysis" className="w-full" />
-                      </div>
+                      
+                      <ManualImageSlot id="manual-evaluation-modal" alt="Proceso de Evaluación" />
                     </AccordionContent>
                   </AccordionItem>
 
@@ -185,9 +324,8 @@ export default function ManualPage() {
                           <li><strong>Rojo (&lt; 70%):</strong> Riesgo operativo. El sistema habilita el botón <strong>"Iniciar Sustitución"</strong> para abrir un nuevo proceso de selección competitivo.</li>
                         </ul>
                       </div>
-                      <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-comparison-tool')?.imageUrl || ''} alt="Comparador de Desempeño" width={800} height={400} data-ai-hint="performance charts" className="w-full" />
-                      </div>
+                      
+                      <ManualImageSlot id="manual-comparison-tool" alt="Comparador de Desempeño" />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>

@@ -550,6 +550,21 @@
         "subject",
         "htmlContent"
       ]
+    },
+    "ManualSettings": {
+      "title": "Manual Settings",
+      "type": "object",
+      "description": "Stores dynamic configuration for the manual, such as actual application screenshots.",
+      "properties": {
+        "imageUrls": {
+          "type": "object",
+          "description": "A map of image placeholder IDs to their actual uploaded URLs.",
+          "additionalProperties": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
     }
   },
   "auth": {
@@ -658,6 +673,16 @@
               "description": "The unique ID for the template."
             }
           ]
+        }
+      },
+      {
+        "path": "settings/manual_images",
+        "definition": {
+          "entityName": "ManualSettings",
+          "schema": {
+            "$ref": "#/backend/entities/ManualSettings"
+          },
+          "description": "Stores mappings for manual screenshots. Managed by admins."
         }
       }
     ],

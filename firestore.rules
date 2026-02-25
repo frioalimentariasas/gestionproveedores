@@ -81,5 +81,10 @@ service cloud.firestore {
     match /notification_templates/{templateId} {
       allow read, write: if isAdmin();
     }
+
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }
