@@ -3,33 +3,33 @@
   "placeholderImages": [
     {
       "id": "manual-login",
-      "description": "Acceso al portal con NIT o Email",
-      "imageUrl": "https://picsum.photos/seed/login_fal/800/400",
-      "imageHint": "login screen"
+      "description": "Pantalla de acceso principal para NIT y Administradores",
+      "imageUrl": "https://picsum.photos/seed/fal_login_ui/800/400",
+      "imageHint": "login interface"
     },
     {
       "id": "manual-form-sections",
-      "description": "Las 8 secciones del formulario FA-GFC-F04",
-      "imageUrl": "https://picsum.photos/seed/form_sections/800/400",
-      "imageHint": "business form"
+      "description": "Estructura del formulario FA-GFC-F04 y sus 8 secciones",
+      "imageUrl": "https://picsum.photos/seed/fal_form_ui/800/400",
+      "imageHint": "business dashboard"
     },
     {
       "id": "manual-admin-panel",
-      "description": "Panel de gestión y auditoría de proveedores",
-      "imageUrl": "https://picsum.photos/seed/admin_panel/800/400",
-      "imageHint": "dashboard administration"
+      "description": "Panel de control administrativo para gestión de proveedores",
+      "imageUrl": "https://picsum.photos/seed/fal_admin_ui/800/400",
+      "imageHint": "software interface"
     },
     {
       "id": "manual-evaluation-modal",
-      "description": "Interfaz de evaluación de desempeño ISO",
-      "imageUrl": "https://picsum.photos/seed/eval_modal/800/400",
-      "imageHint": "audit quality"
+      "description": "Interfaz técnica de evaluación de desempeño ISO 9001",
+      "imageUrl": "https://picsum.photos/seed/fal_eval_ui/800/400",
+      "imageHint": "data analysis"
     },
     {
       "id": "manual-comparison-tool",
-      "description": "Comparador de desempeño y ranking de cumplimiento",
-      "imageUrl": "https://picsum.photos/seed/comparison/800/400",
-      "imageHint": "data charts"
+      "description": "Herramienta de comparación y ranking de proveedores",
+      "imageUrl": "https://picsum.photos/seed/fal_compare_ui/800/400",
+      "imageHint": "performance charts"
     }
   ]
 }
