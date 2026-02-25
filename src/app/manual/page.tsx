@@ -4,7 +4,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw } from 'lucide-react';
+import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw, FileType } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,6 @@ export default function ManualPage() {
   const { toast } = useToast();
   const [uploadingId, setUploadingingId] = useState<string | null>(null);
   
-  // Use state for images to allow dynamic updates
   const [localImages] = useState(PlaceHolderImages);
 
   const configDocRef = useMemoFirebase(
@@ -36,7 +35,6 @@ export default function ManualPage() {
     const remoteUrl = remoteConfig?.imageUrls?.[id];
     const localUrl = localImages.find(i => i.id === id)?.imageUrl;
     const finalUrl = remoteUrl || localUrl || null;
-    // Evitar pasar cadena vacía a next/image
     return finalUrl === "" ? null : finalUrl;
   };
 
@@ -45,7 +43,10 @@ export default function ManualPage() {
     
     setUploadingingId(id);
     try {
-      const fileName = `manual_screenshot_${id}_${Date.now()}.pdf`;
+      const isPdf = file.type === 'application/pdf';
+      const extension = isPdf ? 'pdf' : 'png';
+      const fileName = `manual_screenshot_${id}_${Date.now()}.${extension}`;
+      
       const formData = new FormData();
       formData.append('file', file);
       formData.append('userId', 'system_admin');
@@ -56,10 +57,9 @@ export default function ManualPage() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Error al subir la imagen.');
+      if (!response.ok) throw new Error('Error al subir el archivo.');
       const { url } = await response.json();
 
-      // Update Firestore config
       if (!remoteConfig) {
         await setDoc(configDocRef!, { imageUrls: { [id]: url } });
       } else {
@@ -67,8 +67,8 @@ export default function ManualPage() {
       }
 
       toast({
-        title: 'Imagen Actualizada',
-        description: 'El pantallazo real ha sido incorporado al manual.',
+        title: 'Recurso Actualizado',
+        description: `El ${isPdf ? 'PDF' : 'pantallazo'} ha sido incorporado al manual.`,
       });
     } catch (error: any) {
       toast({
@@ -102,18 +102,31 @@ export default function ManualPage() {
     const url = getImageUrl(id);
     const isUploading = uploadingId === id;
     const hasRemote = !!remoteConfig?.imageUrls?.[id];
+    
+    // Check if the URL is a PDF to decide how to render
+    const isPdf = url?.toLowerCase().includes('.pdf');
 
     return (
-      <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20 my-6">
+      <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20 my-6 min-h-[300px] flex flex-col items-center justify-center">
         {url ? (
-          <Image 
-            src={url} 
-            alt={alt} 
-            width={800} 
-            height={400} 
-            data-ai-hint="business software interface" 
-            className="w-full h-auto object-cover min-h-[200px]" 
-          />
+          isPdf ? (
+            <div className="w-full h-[500px] bg-white">
+                <iframe 
+                    src={`${url}#toolbar=0`} 
+                    className="w-full h-full border-none"
+                    title={alt}
+                />
+            </div>
+          ) : (
+            <Image 
+              src={url} 
+              alt={alt} 
+              width={800} 
+              height={400} 
+              data-ai-hint="business software interface" 
+              className="w-full h-auto object-cover min-h-[200px]" 
+            />
+          )
         ) : (
           <div className="w-full h-[400px] flex flex-col items-center justify-center bg-muted/50 gap-4">
             <ImageIcon className="h-12 w-12 text-muted-foreground/20" />
@@ -122,7 +135,7 @@ export default function ManualPage() {
         )}
         
         {isAdmin && (
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4 z-10">
             <input 
               type="file" 
               className="hidden" 
@@ -133,28 +146,30 @@ export default function ManualPage() {
                 if (file) handleImageUpload(id, file);
               }}
             />
-            <Button 
-              size="sm" 
-              className="font-bold gap-2" 
-              disabled={isUploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Cargar Pantallazo Real
-            </Button>
-            {hasRemote && (
+            <div className="flex gap-2 flex-wrap justify-center">
                 <Button 
-                    size="sm" 
-                    variant="destructive" 
-                    className="font-bold gap-2" 
-                    onClick={() => handleResetImage(id)}
+                size="sm" 
+                className="font-bold gap-2" 
+                disabled={isUploading}
+                onClick={() => fileInputRef.current?.click()}
                 >
-                    <RefreshCw className="h-4 w-4" />
-                    Usar por Defecto
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Cargar Imagen o PDF
                 </Button>
-            )}
-            <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black">
-                Personaliza esta sección con una captura real de la plataforma
+                {hasRemote && (
+                    <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        className="font-bold gap-2" 
+                        onClick={() => handleResetImage(id)}
+                    >
+                        <RefreshCw className="h-4 w-4" />
+                        Restablecer
+                    </Button>
+                )}
+            </div>
+            <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black max-w-[200px]">
+                Puedes subir un pantallazo (PNG/JPG) o un documento PDF de referencia
             </p>
           </div>
         )}
@@ -177,7 +192,7 @@ export default function ManualPage() {
           </p>
           {isAdmin && (
               <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase bg-accent/10 text-accent px-4 py-2 rounded-full border border-accent/20 animate-pulse">
-                  <ImageIcon className="h-3 w-3" /> Modo Edición de Manual Activado: Puedes subir tus propios pantallazos
+                  <ImageIcon className="h-3 w-3" /> Modo Edición: Puedes subir imágenes o PDFs reales
               </div>
           )}
         </div>
@@ -195,7 +210,6 @@ export default function ManualPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* SECTION: PROVIDER MANUAL */}
           <TabsContent value="provider" className="animate-in fade-in duration-500">
             <Card className="border-t-8 border-t-accent shadow-xl">
               <CardHeader>
@@ -208,7 +222,7 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Registro Inicial y Control de Plazo (8 Días)</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <div className="space-y-4 text-base leading-relaxed">
-                        <p>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</p>
+                        <div>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 bg-white rounded border border-primary/10">
                                 <span className="font-bold block text-primary text-xs uppercase mb-1">Usuario</span>
@@ -240,7 +254,7 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Diligenciamiento del Formulario FA-GFC-F04</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <div className="space-y-4 text-base leading-relaxed">
-                        <p>El formulario se compone de 8 secciones críticas alineadas con ISO 9001. Es obligatorio adjuntar los documentos en formato <strong>PDF (máx. 5MB)</strong>.</p>
+                        <div>El formulario se compone de 8 secciones críticas alineadas con ISO 9001. Es obligatorio adjuntar los documentos en formato <strong>PDF (máx. 5MB)</strong>.</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white">
                             <div className="font-bold flex items-center gap-2 mb-2"><CheckCircle2 className="h-4 w-4 text-primary" /> <span>Datos Requeridos</span></div>
@@ -268,7 +282,7 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Radicación de Compromisos ISO 9001</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <div className="space-y-4 text-base leading-relaxed">
-                        <p>Si su puntaje en una evaluación es inferior al <strong>85% (4.25)</strong>, el sistema marcará hallazgos obligatorios. Siga estos pasos:</p>
+                        <div>Si su puntaje en una evaluación es inferior al <strong>85% (4.25)</strong>, el sistema marcará hallazgos obligatorios. Siga estos pasos:</div>
                         <ol className="list-decimal pl-6 space-y-2 text-sm">
                           <li>Ingrese al menú <strong>"Mis Evaluaciones ISO"</strong>.</li>
                           <li>Abra el detalle de la auditoría marcada como "En Observación" o "No Conforme".</li>
@@ -289,7 +303,6 @@ export default function ManualPage() {
             </Card>
           </TabsContent>
 
-          {/* SECTION: ADMIN MANUAL */}
           <TabsContent value="admin" className="animate-in fade-in duration-500">
             <Card className="border-t-8 border-t-primary shadow-xl">
               <CardHeader>
@@ -302,7 +315,7 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Auditoría de Registro y Aprobación</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <div className="space-y-4 text-base leading-relaxed">
-                        <p>Cuando un proveedor bloquea su formulario, el estado cambia a <Badge className="bg-blue-100 text-blue-700">En Revisión</Badge>. Procedimiento oficial:</p>
+                        <div>Cuando un proveedor bloquea su formulario, el estado cambia a <Badge className="bg-blue-100 text-blue-700">En Revisión</Badge>. Procedimiento oficial:</div>
                         <ol className="list-decimal pl-6 space-y-3 text-sm">
                           <li>Ingrese a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
                           <li><strong>Verificar Documentación:</strong> Valide que los PDFs coincidan con los datos digitados.</li>
@@ -320,7 +333,7 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Ejecución de Evaluaciones de Desempeño</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <div className="space-y-4 text-base leading-relaxed">
-                        <p>Al realizar una auditoría, el sistema carga la matriz de pesos (Productos o Servicios) basada en la criticidad asignada al proveedor.</p>
+                        <div>Al realizar una auditoría, el sistema carga la matriz de pesos (Productos o Servicios) basada en la criticidad asignada al proveedor.</div>
                         <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-start gap-3">
                           <ShieldAlert className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                           <div className="text-xs text-orange-800">
@@ -337,7 +350,7 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Comparador de Desempeño y Sustitución</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <div className="space-y-4 text-base leading-relaxed">
-                        <p>Herramienta analítica para el control de la cadena de suministro por categorías:</p>
+                        <div>Herramienta analítica para el control de la cadena de suministro por categorías:</div>
                         <ul className="list-disc pl-6 space-y-2 text-sm">
                           <li><Badge className="bg-green-100 text-green-800">Conforme (&gt; 85%)</Badge>: Proveedor confiable.</li>
                           <li><Badge className="bg-blue-100 text-blue-800">En Observación (70-84%)</Badge>: Seguimiento estricto a compromisos de mejora.</li>
@@ -353,7 +366,6 @@ export default function ManualPage() {
             </Card>
           </TabsContent>
 
-          {/* SECTION: TECHNICAL ANNEX */}
           <TabsContent value="technical" className="animate-in fade-in duration-500">
             <Card className="border-t-8 border-t-emerald-600 shadow-xl">
               <CardHeader>
@@ -361,8 +373,6 @@ export default function ManualPage() {
                 <CardDescription className="text-lg">Configuración de pesos, indicadores y escala de calificación oficial de Frioalimentaria.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-12">
-                
-                {/* PRODUCT MATRIX */}
                 <div className="space-y-4">
                   <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                     <CheckCircle2 className="h-6 w-6 text-emerald-600" />
@@ -423,7 +433,6 @@ export default function ManualPage() {
                   </div>
                 </div>
 
-                {/* SERVICES MATRIX */}
                 <div className="space-y-4 pt-8">
                   <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                     <Wrench className="h-6 w-6 text-emerald-600" />
@@ -484,11 +493,10 @@ export default function ManualPage() {
                   </div>
                 </div>
 
-                {/* DECISION SCALE */}
                 <div className="space-y-4 pt-8">
                   <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                     <FileText className="h-6 w-6 text-emerald-600" />
-                    <span>3. Escala de Decisión Normativa (1.00 - 5.00)</span>
+                    <span>3. Escala de Calificación Desempeño (1.00 - 5.00)</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="border-l-8 border-l-green-500 shadow-md">
