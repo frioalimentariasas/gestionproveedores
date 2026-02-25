@@ -168,7 +168,7 @@ export default function ManualPage() {
               </div>
             )}
 
-            {/* Fullscreen Button - Visible on Hover for EVERYONE, but hidden if edit controls are actively showing */}
+            {/* Fullscreen Button - Visible on Hover for EVERYONE */}
             {!isEditingInSlot && (
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                 <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
@@ -182,9 +182,12 @@ export default function ManualPage() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className={cn(
-                    "max-w-[95vw] p-0 overflow-hidden bg-black/90 border-none flex items-center justify-center",
+                    "max-w-[95vw] p-0 overflow-hidden bg-black/90 border-none flex flex-col items-center justify-center",
                     isPdf ? "h-[95vh]" : "max-h-[95vh]"
                   )}>
+                    <DialogHeader className="sr-only">
+                      <DialogTitle>Vista ampliada de: {alt}</DialogTitle>
+                    </DialogHeader>
                     <div className="relative w-full h-full flex items-center justify-center p-4">
                       {isPdf ? (
                         <iframe 
@@ -326,7 +329,7 @@ export default function ManualPage() {
               <div className="mt-8 flex items-center gap-4 bg-muted/50 p-4 rounded-2xl border border-primary/10 shadow-inner">
                   <div className="flex flex-col items-end">
                       <Label htmlFor="edit-mode" className="font-black uppercase text-[10px] tracking-widest text-primary">Modo Administrador</Label>
-                      <span className="text-[9px] text-muted-foreground font-bold">Permitir carga de pantallazos reales</span>
+                      <span className="text-[9px] text-muted-foreground font-bold">Permitir carga de recursos reales</span>
                   </div>
                   <Switch 
                     id="edit-mode" 
@@ -374,7 +377,7 @@ export default function ManualPage() {
                   <AccordionItem value="p1" className="border rounded-xl px-4 bg-muted/5">
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Registro Inicial y Control de Plazo (8 Días)</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
-                      <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                      <div className="space-y-4 leading-relaxed text-muted-foreground">
                         <div>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
@@ -406,7 +409,7 @@ export default function ManualPage() {
                   <AccordionItem value="p2" className="border rounded-xl px-4 bg-muted/5">
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Diligenciamiento del Formulario FA-GFC-F04</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
-                      <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                      <div className="space-y-4 leading-relaxed text-muted-foreground">
                         <div>El formulario oficial consta de 8 secciones alineadas con ISO 9001. Es obligatorio adjuntar los documentos soporte únicamente en formato <strong>PDF (máx. 5MB)</strong>.</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
@@ -438,9 +441,9 @@ export default function ManualPage() {
                   <AccordionItem value="p3" className="border rounded-xl px-4 bg-muted/5">
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Radicación de Compromisos ISO 9001</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
-                      <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                      <div className="space-y-4 leading-relaxed text-muted-foreground">
                         <div>Si el resultado de una auditoría es inferior al <strong>85% (4.25)</strong>, deberá radicar un plan de mejora:</div>
-                        <ol className="list-decimal pl-6 space-y-3 text-sm font-medium">
+                        <ol className="list-decimal pl-6 space-y-3 text-sm font-medium text-muted-foreground">
                           <li>Ingrese al menú <strong>"Mis Evaluaciones ISO"</strong>.</li>
                           <li>Identifique los criterios marcados en <span className="text-destructive font-black">ROJO</span>.</li>
                           <li>Haga clic en <strong>"Radicar Planes de Acción"</strong>.</li>
@@ -473,10 +476,10 @@ export default function ManualPage() {
                       <AccordionItem value="a1" className="border rounded-xl px-4 bg-muted/5">
                         <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Auditoría de Registro y Activación</AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                          <div className="space-y-4 leading-relaxed text-muted-foreground">
                             <div>Cuando un proveedor completa su registro, el estado cambia a <Badge className="bg-blue-100 text-blue-700 ml-1">En Revisión</Badge>. Procedimiento oficial:</div>
                             <ol className="list-decimal pl-6 space-y-3 text-sm font-medium">
-                              <li>Ingrese a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
+                              <li>Ingresar a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
                               <li><strong>Verificar Documentación:</strong> Valide que los PDFs cargados coincidan con la información digital.</li>
                               <li><strong>Asignar Criticidad:</strong> Determine si es <Badge variant="destructive" className="mx-1">Crítico</Badge> o <Badge variant="outline" className="mx-1 border-green-600 text-green-600">No Crítico</Badge> para ajustar la matriz de pesos.</li>
                               <li><strong>Asignar Categorías:</strong> Clasifíquelo correctamente para el comparador de ranking sectorial.</li>
@@ -491,7 +494,7 @@ export default function ManualPage() {
                       <AccordionItem value="a2" className="border rounded-xl px-4 bg-muted/5">
                         <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Ejecución de Evaluaciones de Desempeño</AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                          <div className="space-y-4 leading-relaxed text-muted-foreground">
                             <div>Al realizar una auditoría, el sistema carga automáticamente la matriz oficial (Productos o Servicios) según el sector del proveedor.</div>
                             <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-start gap-3 shadow-sm">
                               <ShieldAlert className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
@@ -508,7 +511,7 @@ export default function ManualPage() {
                       <AccordionItem value="a3" className="border rounded-xl px-4 bg-muted/5">
                         <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Comparador de Desempeño y Sustitución</AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                          <div className="space-y-4 leading-relaxed text-muted-foreground">
                             <div>Herramienta de análisis para el control de la cadena de suministro por categorías técnicas:</div>
                             <ul className="list-disc pl-6 space-y-3 text-sm font-medium">
                               <li><Badge className="bg-green-100 text-green-800 mr-2">Conforme (&gt; 85%)</Badge> Proveedor confiable bajo norma.</li>
