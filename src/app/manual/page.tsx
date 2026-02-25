@@ -303,6 +303,42 @@ export default function ManualPage() {
     );
   };
 
+  const SelectionGuide = () => (
+    <Card className="mt-6 border shadow-sm">
+        <CardHeader className="py-4 bg-muted/30 border-b">
+            <CardTitle className="text-sm flex items-center gap-2">
+                <Info className="h-4 w-4 text-primary" />
+                Guía de Decisión de Selección
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 space-y-3">
+            <div className="flex justify-between items-center border-b pb-1 font-bold text-[10px] uppercase tracking-wider text-muted-foreground">
+                <span>Puntaje (%)</span>
+                <span>Decisión</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-bold text-green-700">
+                <span>&ge; 85% (4.25)</span>
+                <span>Aprobado</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-medium text-blue-700">
+                <span>70 - 84% (3.5)</span>
+                <span>Aprobado Cond.</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-medium text-yellow-700">
+                <span>60 - 69% (3.0)</span>
+                <span>Req. Análisis</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-bold text-red-700">
+                <span>&lt; 60% (3.0)</span>
+                <span>No Aprobado</span>
+            </div>
+            <p className="text-[9px] text-muted-foreground mt-4 italic leading-tight">
+                * El sistema multiplica el puntaje (1-5) por 20 para obtener el equivalente porcentual.
+            </p>
+        </CardContent>
+    </Card>
+  );
+
   if (isRoleLoading) {
     return (
       <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
@@ -626,6 +662,9 @@ export default function ManualPage() {
                                     </TableBody>
                                 </Table>
                             </div>
+                            <div className="max-w-xs ml-auto">
+                                <SelectionGuide />
+                            </div>
                         </div>
 
                         {/* SERVICIOS SELECTION */}
@@ -676,6 +715,9 @@ export default function ManualPage() {
                                         </TableRow>
                                     </TableBody>
                                 </Table>
+                            </div>
+                            <div className="max-w-xs ml-auto">
+                                <SelectionGuide />
                             </div>
                         </div>
                       </div>
