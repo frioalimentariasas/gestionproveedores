@@ -185,10 +185,30 @@ export default function ManualPage() {
         };
 
         const addImageToPdf = async (id: string) => {
-            const url = getImageUrl(id);
-            if (!url || url.toLowerCase().includes('.pdf')) return;
+            const remoteUrl = remoteConfig?.imageUrls?.[id];
+            // Only show images that the user actually uploaded (not placeholders)
+            if (!remoteUrl) return;
             
-            const base64 = await getBase64FromUrl(url);
+            if (remoteUrl.toLowerCase().includes('.pdf')) {
+                // If it's a PDF, we can't render it visually inside another PDF easily,
+                // so we add a clear link/note for the user.
+                if (yPos > pageHeight - 30) safeAddPage();
+                doc.setDrawColor(200, 200, 255);
+                doc.setFillColor(245, 245, 255);
+                doc.rect(margin, yPos, pageWidth - margin * 2, 15, 'FD');
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 51, 153);
+                doc.text('ARCHIVO PDF ADJUNTO:', margin + 5, yPos + 6);
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(8);
+                doc.text('Este recurso es un documento PDF. Puede consultarlo en el portal.', margin + 5, yPos + 11);
+                doc.setTextColor(0);
+                yPos += 20;
+                return;
+            }
+            
+            const base64 = await getBase64FromUrl(remoteUrl);
             if (base64) {
                 if (yPos > pageHeight - 80) safeAddPage();
                 try {
@@ -655,7 +675,7 @@ export default function ManualPage() {
             Manual de Operación y Procedimientos
           </h1>
           <p className="text-muted-foreground max-w-2xl text-lg">
-            Documento FA-GFC-M01: Guía integral para la gestión de proveedores bajo el estándar ISO 9001:2015 en Frioalimentaria SAS.
+            Guía integral para la gestión de proveedores bajo el estándar ISO 9001:2015 en Frioalimentaria SAS.
           </p>
           
           {isAdmin && (
@@ -1182,7 +1202,7 @@ export default function ManualPage() {
 
         <div className="mt-12 text-center text-muted-foreground text-xs border-t pt-8">
           <p>© {new Date().getFullYear()} Frioalimentaria SAS - Sistema de Gestión de Proveedores</p>
-          <p className="mt-1 font-bold">Documento FA-GFC-M01 | Versión 1.0 | Vigencia: 12/06/2025</p>
+          <p className="mt-1 font-bold">Vigencia: 12/06/2025</p>
         </div>
       </div>
     </AuthGuard>
