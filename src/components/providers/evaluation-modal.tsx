@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -104,7 +103,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
   );
   const { data: selectedCategoryData, isLoading: isLoadingCategory } = useDoc<Category>(selectedCategoryDocRef);
 
-  // Define dynamic schema based on the criteria of the selected category
   const evaluationSchema = useMemo(() => {
     const scoreFields = criteriaForForm.reduce((acc, crit) => {
       acc[crit.id] = z.number({ required_error: 'Obligatorio' }).min(1, 'Califique este criterio.').max(5);
@@ -149,7 +147,6 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
       
       setCriteriaForForm(configuredCriteria);
 
-      // Initialize with undefined/0 so they don't have a default value of 3
       const emptyScores = configuredCriteria.reduce((acc, crit) => {
         acc[crit.id] = 0; 
         return acc;
@@ -388,13 +385,13 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                                             <div className={cn(
                                                 "w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-lg bg-background shadow-inner shrink-0",
                                                 !hasBeenSet ? "border-muted text-muted-foreground" : 
-                                                field.value < 3.5 ? "border-destructive text-destructive" : "border-primary text-primary"
+                                                field.value < 4.25 ? "border-destructive text-destructive" : "border-primary text-primary"
                                             )}>
                                                 {hasBeenSet ? field.value : '?'}
                                             </div>
                                         </div>
                                         <div className="flex justify-between text-[9px] text-muted-foreground px-1 uppercase font-bold">
-                                            <span className="text-destructive">Hallazgo Crítico (1)</span>
+                                            <span className="text-destructive">Deficiente (1)</span>
                                             <span className="text-primary">Excelente (5)</span>
                                         </div>
                                         {!hasBeenSet && <p className="text-[10px] text-destructive font-bold animate-pulse">Por favor asigne un puntaje.</p>}
@@ -409,7 +406,7 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                                         </div>
                                         <FormControl>
                                             <Textarea 
-                                                placeholder="Indique por qué asignó esta nota (Ej: Cumplimiento total de cronogramas, 0 retrasos)..." 
+                                                placeholder="Indique por qué asignó esta nota..." 
                                                 {...field} 
                                                 className="text-xs min-h-[60px] bg-muted/20 focus-visible:ring-primary" 
                                             />
@@ -468,20 +465,16 @@ export function EvaluationModal({ isOpen, onClose, provider }: EvaluationModalPr
                                     <span>Calificación Desempeño</span>
                                 </div>
                                 <div className="flex justify-between items-center text-green-700 font-bold p-1 rounded">
-                                    <span>&ge; 85% (4.25)</span>
-                                    <span className="flex items-center gap-1">Sobresaliente <CheckCircle2 className="h-2 w-2" /></span>
+                                    <span>&gt; 85% (4.25)</span>
+                                    <span className="flex items-center gap-1">Conforme (Aprobado) <CheckCircle2 className="h-2 w-2" /></span>
                                 </div>
-                                <div className="flex justify-between items-center text-blue-700 font-medium p-1 rounded">
+                                <div className="flex justify-between items-center text-blue-700 font-medium p-1 rounded bg-blue-50 border border-blue-100">
                                     <span>70 - 84% (3.5)</span>
-                                    <span>Satisfactorio</span>
-                                </div>
-                                <div className="flex justify-between items-center text-yellow-700 font-bold p-1 rounded bg-yellow-50 border border-yellow-100">
-                                    <span>60 - 69% (3.0)</span>
                                     <span>En Observación *</span>
                                 </div>
                                 <div className="flex justify-between items-center text-red-700 font-black p-1 rounded bg-red-50 border border-red-100">
-                                    <span>{'<'} 60%</span>
-                                    <span>Crítico *</span>
+                                    <span>{'<'} 70%</span>
+                                    <span>No Conforme *</span>
                                 </div>
                                 
                                 <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-primary/10 text-muted-foreground italic leading-tight">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -86,7 +85,7 @@ export function EvaluationDetailModal({
   const handleSubmitCommitment = async () => {
     if (!firestore || !providerData) return;
     
-    const lowScoreCriteria = criteria.filter(crit => (evaluation.scores[crit.id] || 0) < 3.5);
+    const lowScoreCriteria = criteria.filter(crit => (evaluation.scores[crit.id] || 0) < 4.25);
     const missingCommitments = lowScoreCriteria.some(crit => !commitments[crit.id]?.trim());
 
     if (missingCommitments) {
@@ -157,7 +156,7 @@ export function EvaluationDetailModal({
                     <Badge variant="outline" className={cn("text-xs font-black uppercase py-1", status.color)}>
                         {status.label}
                     </Badge>
-                    <p className="text-[10px] text-muted-foreground uppercase font-mono mt-1">Estatus Normativo</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-mono mt-1">Calificación Desempeño</p>
                 </div>
             </div>
           </div>
@@ -174,7 +173,7 @@ export function EvaluationDetailModal({
                             </h4>
                             {needsAction && (
                                 <Badge variant="outline" className="text-destructive border-destructive bg-destructive/5 text-[9px] uppercase font-bold">
-                                    No Conformidad Detectada (ISO 10.2)
+                                    Hallazgo Detectado (ISO 9001)
                                 </Badge>
                             )}
                         </div>
@@ -183,7 +182,7 @@ export function EvaluationDetailModal({
                             {criteria.map((crit) => {
                                 const score = evaluation.scores[crit.id] || 0;
                                 const justification = evaluation.scoreJustifications?.[crit.id];
-                                const isLow = score < 3.5;
+                                const isLow = score < 4.25;
                                 
                                 return (
                                     <div key={crit.id} className={cn(
@@ -219,7 +218,7 @@ export function EvaluationDetailModal({
                                                     <UserCog className="h-3 w-3" /> Sustento del Auditor:
                                                 </div>
                                                 <p className="text-xs italic text-foreground leading-relaxed">
-                                                    {justification || "Sin justificación detallada (Auditoría previa a la implementación de evidencias)."}
+                                                    {justification || "Sin justificación detallada."}
                                                 </p>
                                             </div>
 
@@ -270,29 +269,25 @@ export function EvaluationDetailModal({
                         <CardHeader className="p-4 bg-accent/5">
                             <CardTitle className="text-sm flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4 text-accent" />
-                                Guía de Decisión ISO 9001
+                                Guía de Decisión Técnica
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-4 text-[10px] space-y-3">
                             <div className="flex justify-between items-center border-b pb-1 font-bold">
                                 <span>Puntaje (%)</span>
-                                <span>Dictamen Calidad</span>
+                                <span>Calificación Desempeño</span>
                             </div>
                             <div className="flex justify-between items-center text-green-700 font-bold p-1 rounded">
-                                <span>&ge; 85% (4.25)</span>
-                                <span>Sobresaliente</span>
+                                <span>&gt; 85% (4.25)</span>
+                                <span>Conforme (Aprobado)</span>
                             </div>
-                            <div className="flex justify-between items-center text-blue-700 font-medium p-1 rounded">
+                            <div className="flex justify-between items-center text-blue-700 font-medium p-1 rounded bg-blue-50 border border-blue-100">
                                 <span>70 - 84% (3.5)</span>
-                                <span>Satisfactorio</span>
-                            </div>
-                            <div className="flex justify-between items-center text-yellow-700 font-bold p-1 rounded bg-yellow-50 border border-yellow-100">
-                                <span>60 - 69% (3.0)</span>
                                 <span>En Observación *</span>
                             </div>
                             <div className="flex justify-between items-center text-red-700 font-black p-1 rounded bg-red-50 border border-red-100">
-                                <span>&lt; 60%</span>
-                                <span>Crítico *</span>
+                                <span>{'<'} 70%</span>
+                                <span>No Conforme *</span>
                             </div>
                             
                             <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-primary/10 text-muted-foreground italic leading-relaxed">
@@ -301,7 +296,7 @@ export function EvaluationDetailModal({
                                     <span className="font-bold text-primary not-italic">Nota de Auditoría:</span>
                                 </div>
                                 <p>
-                                    Según <strong>ISO 9001 (8.4)</strong>, puntajes inferiores al <strong>70%</strong> requieren un plan de acción sustentado para mitigar riesgos en la cadena de suministro.
+                                    * Los estados con asterisco exigen la radicación obligatoria de un <strong>Plan de Mejora ISO 9001</strong> para asegurar la continuidad comercial.
                                 </p>
                             </div>
                         </CardContent>
