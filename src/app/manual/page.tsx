@@ -4,7 +4,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw, FileType } from 'lucide-react';
+import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw, Lock, Unlock } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function ManualPage() {
   const { isAdmin } = useRole();
@@ -99,12 +100,16 @@ export default function ManualPage() {
 
   const ManualImageSlot = ({ id, alt }: { id: string; alt: string }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isEditing, setIsEditing] = useState(false);
     const url = getImageUrl(id);
     const isUploading = uploadingId === id;
     const hasRemote = !!remoteConfig?.imageUrls?.[id];
     
-    // Check if the URL is a PDF to decide how to render
     const isPdf = url?.toLowerCase().includes('.pdf');
+
+    // If there's a file and we are not explicitly editing, it's locked.
+    // If there's NO file (default), we allow editing by default.
+    const showControls = !url || isEditing;
 
     return (
       <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20 my-6 min-h-[300px] flex flex-col items-center justify-center">
@@ -118,14 +123,16 @@ export default function ManualPage() {
                 />
             </div>
           ) : (
-            <Image 
-              src={url} 
-              alt={alt} 
-              width={800} 
-              height={400} 
-              data-ai-hint="business software interface" 
-              className="w-full h-auto object-cover min-h-[200px]" 
-            />
+            <div className="relative w-full h-auto">
+                <Image 
+                src={url} 
+                alt={alt} 
+                width={800} 
+                height={400} 
+                data-ai-hint="business software interface" 
+                className="w-full h-auto object-cover min-h-[200px]" 
+                />
+            </div>
           )
         ) : (
           <div className="w-full h-[400px] flex flex-col items-center justify-center bg-muted/50 gap-4">
@@ -135,7 +142,10 @@ export default function ManualPage() {
         )}
         
         {isAdmin && (
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4 z-10">
+          <div className={cn(
+            "absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4 z-10",
+            !showControls && "bg-black/40"
+          )}>
             <input 
               type="file" 
               className="hidden" 
@@ -143,34 +153,73 @@ export default function ManualPage() {
               accept="image/*,application/pdf"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) handleImageUpload(id, file);
+                if (file) {
+                    handleImageUpload(id, file);
+                    setIsEditing(false); // Lock after upload
+                }
               }}
             />
-            <div className="flex gap-2 flex-wrap justify-center">
-                <Button 
-                size="sm" 
-                className="font-bold gap-2" 
-                disabled={isUploading}
-                onClick={() => fileInputRef.current?.click()}
-                >
-                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                Cargar Imagen o PDF
-                </Button>
-                {hasRemote && (
+
+            {!showControls ? (
+                <div className="flex flex-col items-center gap-4">
+                    <div className="bg-green-500/20 text-green-400 border border-green-500/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest animate-pulse">
+                        <Lock className="h-3.5 w-3.5" /> Archivo Fijado en el Manual
+                    </div>
                     <Button 
-                        size="sm" 
-                        variant="destructive" 
-                        className="font-bold gap-2" 
-                        onClick={() => handleResetImage(id)}
+                        size="lg" 
+                        variant="secondary"
+                        className="font-black gap-2 uppercase tracking-tighter" 
+                        onClick={() => setIsEditing(true)}
                     >
-                        <RefreshCw className="h-4 w-4" />
-                        Restablecer
+                        <Unlock className="h-4 w-4" /> Habilitar Edición / Reemplazar
                     </Button>
-                )}
-            </div>
-            <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black max-w-[200px]">
-                Puedes subir un pantallazo (PNG/JPG) o un documento PDF de referencia
-            </p>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+                    <div className="bg-primary/20 text-white border border-primary/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                        <Settings className="h-3.5 w-3.5 animate-spin-slow" /> Configuración de Recurso Activa
+                    </div>
+                    
+                    <div className="flex gap-2 flex-wrap justify-center">
+                        <Button 
+                            className="font-bold gap-2" 
+                            disabled={isUploading}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            Cargar Imagen o PDF
+                        </Button>
+                        
+                        {hasRemote && (
+                            <Button 
+                                variant="destructive" 
+                                className="font-bold gap-2" 
+                                onClick={() => {
+                                    handleResetImage(id);
+                                    setIsEditing(false);
+                                }}
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                                Restablecer
+                            </Button>
+                        )}
+                    </div>
+
+                    {url && (
+                        <Button 
+                            variant="outline" 
+                            className="w-full font-black uppercase tracking-widest border-white text-white hover:bg-white hover:text-black"
+                            onClick={() => setIsEditing(false)}
+                        >
+                            <CheckCircle2 className="h-4 w-4 mr-2" /> Fijar y Proteger
+                        </Button>
+                    )}
+
+                    <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black">
+                        Formatos permitidos: PNG, JPG o PDF (Máx 5MB)
+                    </p>
+                </div>
+            )}
           </div>
         )}
       </div>
@@ -192,7 +241,7 @@ export default function ManualPage() {
           </p>
           {isAdmin && (
               <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase bg-accent/10 text-accent px-4 py-2 rounded-full border border-accent/20 animate-pulse">
-                  <ImageIcon className="h-3 w-3" /> Modo Edición: Puedes subir imágenes o PDFs reales
+                  <Settings className="h-3 w-3" /> Modo Edición de Administrador: Pulsa en las imágenes para habilitar cambios
               </div>
           )}
         </div>
