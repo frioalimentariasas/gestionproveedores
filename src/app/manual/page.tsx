@@ -146,56 +146,69 @@ export default function ManualPage() {
     return (
       <div className="relative group rounded-lg overflow-hidden border shadow-sm bg-muted/10 my-8 min-h-[200px] flex flex-col items-center justify-center">
         {url ? (
-          isPdf ? (
-            <div className="w-full h-[500px] bg-white">
-                <iframe 
-                    src={`${url}#toolbar=0`} 
-                    className="w-full h-full border-none"
-                    title={alt}
-                />
-            </div>
-          ) : (
-            <div className="relative w-full h-auto">
-                <Image 
-                  src={url} 
-                  alt={alt} 
-                  width={800} 
-                  height={400} 
-                  data-ai-hint="business software interface" 
-                  className="w-full h-auto object-cover min-h-[200px]" 
-                />
-                
-                {/* Fullscreen Button - Visible on Hover for EVERYONE, but hidden if edit controls are actively showing */}
-                {!isEditingInSlot && (
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="lg" 
-                          variant="secondary" 
-                          className="rounded-full shadow-2xl h-14 w-14 bg-white/95 hover:bg-white text-primary border-2 border-primary/20 scale-90 hover:scale-100 transition-transform"
-                        >
-                          <Maximize2 className="h-6 w-6" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/90 border-none flex items-center justify-center">
-                        <div className="relative w-full h-full flex items-center justify-center p-4">
-                          <div className="relative w-full h-full max-h-[85vh] aspect-video">
-                            <Image 
-                              src={url} 
-                              alt={alt} 
-                              fill
-                              className="object-contain"
-                              priority
-                            />
-                          </div>
+          <div className="relative w-full">
+            {isPdf ? (
+              <div className="w-full h-[500px] bg-white">
+                  <iframe 
+                      src={`${url}#toolbar=0`} 
+                      className="w-full h-full border-none"
+                      title={alt}
+                  />
+              </div>
+            ) : (
+              <div className="relative w-full h-auto">
+                  <Image 
+                    src={url} 
+                    alt={alt} 
+                    width={800} 
+                    height={400} 
+                    data-ai-hint="business software interface" 
+                    className="w-full h-auto object-cover min-h-[200px]" 
+                  />
+              </div>
+            )}
+
+            {/* Fullscreen Button - Visible on Hover for EVERYONE, but hidden if edit controls are actively showing */}
+            {!isEditingInSlot && (
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      size="lg" 
+                      variant="secondary" 
+                      className="rounded-full shadow-2xl h-14 w-14 bg-white/95 hover:bg-white text-primary border-2 border-primary/20 scale-90 hover:scale-100 transition-transform"
+                    >
+                      <Maximize2 className="h-6 w-6" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className={cn(
+                    "max-w-[95vw] p-0 overflow-hidden bg-black/90 border-none flex items-center justify-center",
+                    isPdf ? "h-[95vh]" : "max-h-[95vh]"
+                  )}>
+                    <div className="relative w-full h-full flex items-center justify-center p-4">
+                      {isPdf ? (
+                        <iframe 
+                          src={url} 
+                          className="w-full h-full border-none rounded-lg"
+                          title={alt}
+                        />
+                      ) : (
+                        <div className="relative w-full h-full max-h-[85vh] aspect-video">
+                          <Image 
+                            src={url} 
+                            alt={alt} 
+                            fill
+                            className="object-contain"
+                            priority
+                          />
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
-            </div>
-          )
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="w-full h-[300px] flex flex-col items-center justify-center bg-muted/50 gap-4">
             <ImageIcon className="h-12 w-12 text-muted-foreground/20" />
@@ -331,19 +344,24 @@ export default function ManualPage() {
         </div>
 
         <Tabs defaultValue="provider" className="space-y-8">
-          {isAdmin && (
-            <TabsList className="grid w-full grid-cols-3 h-14 bg-muted/50 p-1 border">
-              <TabsTrigger value="provider" className="text-base font-bold gap-2">
-                <Users className="h-5 w-5" /> Manual del Proveedor
-              </TabsTrigger>
-              <TabsTrigger value="admin" className="text-base font-bold gap-2">
-                <Settings className="h-5 w-5" /> Manual del Administrador
-              </TabsTrigger>
-              <TabsTrigger value="technical" className="text-base font-bold gap-2">
-                <ShieldCheck className="h-5 w-5" /> Anexo Técnico ISO 9001
-              </TabsTrigger>
-            </TabsList>
-          )}
+          <TabsList className={cn(
+            "grid w-full h-14 bg-muted/50 p-1 border",
+            isAdmin ? "grid-cols-3" : "grid-cols-1"
+          )}>
+            <TabsTrigger value="provider" className="text-base font-bold gap-2">
+              <Users className="h-5 w-5" /> Manual del Proveedor
+            </TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="admin" className="text-base font-bold gap-2">
+                  <Settings className="h-5 w-5" /> Manual del Administrador
+                </TabsTrigger>
+                <TabsTrigger value="technical" className="text-base font-bold gap-2">
+                  <ShieldCheck className="h-5 w-5" /> Anexo Técnico ISO 9001
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
 
           <TabsContent value="provider" className="animate-in fade-in duration-500">
             <Card className="border-t-8 border-t-accent shadow-xl">
@@ -399,7 +417,7 @@ export default function ManualPage() {
                               <li>Información Tributaria (Régimen, CIIU).</li>
                               <li>Contactos Comerciales y de Pagos.</li>
                               <li>Certificación Bancaria (Vigente).</li>
-                              <li>Certificado HSEQ 0312 (Evaluación {" > "} 60%).</li>
+                              <li>Certificado HSEQ 0312 (Evaluación &gt; 60%).</li>
                             </ul>
                           </div>
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
