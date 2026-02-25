@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc } from 'firebase/firestore';
@@ -289,7 +288,17 @@ export default function ProviderViewPage() {
             fields.forEach(field => {
                 const value = field.value;
                 if (value !== undefined && value !== null && value !== '') {
-                    const displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : String(value);
+                    let displayValue = '';
+                    let linkUrl = '';
+
+                    // Detect link object for documents
+                    if (typeof value === 'object' && value.text && value.url) {
+                        displayValue = value.text;
+                        linkUrl = value.url;
+                    } else {
+                        displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : String(value);
+                    }
+
                     const rowPadding = 4;
                     const lineHeight = 5;
 
@@ -323,8 +332,15 @@ export default function ProviderViewPage() {
                         doc.setFont(undefined, 'bold');
                         doc.text(labelLines, margin + rowPadding, yPos + lineHeight + rowPadding/2);
 
-                        doc.setFont(undefined, 'normal');
-                        doc.text(valueLines, col2X + rowPadding, yPos + lineHeight + rowPadding/2);
+                        if (linkUrl) {
+                            doc.setTextColor(0, 51, 153); // Corporate blue
+                            doc.setFont(undefined, 'bold');
+                            doc.text(valueLines, col2X + rowPadding, yPos + lineHeight + rowPadding/2, { link: { url: linkUrl } });
+                            doc.setTextColor(0, 0, 0); // Reset
+                        } else {
+                            doc.setFont(undefined, 'normal');
+                            doc.text(valueLines, col2X + rowPadding, yPos + lineHeight + rowPadding/2);
+                        }
                         
                         yPos += rowHeight;
                     }
@@ -386,16 +402,16 @@ export default function ProviderViewPage() {
                 { label: 'Banco', value: providerData.bankName },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '6' : '5'}. Documentos`, fields: [
-                { label: "RUT", value: providerData.rutFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Cámara de Comercio", value: providerData.camaraComercioFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Estados Financieros", value: providerData.estadosFinancierosFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Declaración de Renta", value: providerData.declaracionRentaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Cédula Representante Legal", value: providerData.cedulaRepresentanteLegalFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
-                { label: "Certificación Bancaria", value: providerData.certificacionBancariaFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: "RUT", value: providerData.rutFileUrl ? { text: 'VER RUT (CLIC AQUÍ)', url: providerData.rutFileUrl } : 'No Adjuntado' },
+                { label: "Cámara de Comercio", value: providerData.camaraComercioFileUrl ? { text: 'VER CÁMARA DE COMERCIO (CLIC AQUÍ)', url: providerData.camaraComercioFileUrl } : 'No Adjuntado' },
+                { label: "Estados Financieros", value: providerData.estadosFinancierosFileUrl ? { text: 'VER ESTADOS FINANCIEROS (CLIC AQUÍ)', url: providerData.estadosFinancierosFileUrl } : 'No Adjuntado' },
+                { label: "Declaración de Renta", value: providerData.declaracionRentaFileUrl ? { text: 'VER DECLARACIÓN DE RENTA (CLIC AQUÍ)', url: providerData.declaracionRentaFileUrl } : 'No Adjuntado' },
+                { label: "Cédula Representante Legal", value: providerData.cedulaRepresentanteLegalFileUrl ? { text: 'VER CÉDULA (CLIC AQUÍ)', url: providerData.cedulaRepresentanteLegalFileUrl } : 'No Adjuntado' },
+                { label: "Certificación Bancaria", value: providerData.certificacionBancariaFileUrl ? { text: 'VER CERTIFICACIÓN BANCARIA (CLIC AQUÍ)', url: providerData.certificacionBancariaFileUrl } : 'No Adjuntado' },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '7' : '6'}. INFORMACIÓN HSEQ`, fields: [
                 { label: 'Su empresa cuenta con SG-SST acorde al Decreto 1072, con resultado de evaluación de la resolución 0312/19, por encima del 60%', value: providerData.hseqSgsst },
-                { label: 'Certificado Autoevaluación 0312', value: providerData.hseqCertFileUrl ? 'Documento Adjunto' : 'No Adjuntado' },
+                { label: 'Certificado Autoevaluación 0312', value: providerData.hseqCertFileUrl ? { text: 'VER CERTIFICADO HSEQ 0312 (CLIC AQUÍ)', url: providerData.hseqCertFileUrl } : 'No Adjuntado' },
             ] },
             { title: `${providerData.personType === 'Persona Jurídica' ? '8' : '7'}. DECLARACION SARLAFT Y AUTORIZACION`, fields: [
                 { label: 'Aceptó la declaración de origen de fondos y la política de tratamiento de datos', value: providerData.sarlaftAccepted },
