@@ -169,21 +169,6 @@ export default function ManualPage() {
             }
         };
 
-        const drawHeader = () => {
-            doc.setFontSize(8);
-            doc.setDrawColor(0);
-            const boxX = pageWidth - margin - 50;
-            const boxY = 12;
-            const boxWidth = 50;
-            const boxHeight = 15;
-            doc.rect(boxX, boxY, boxWidth, boxHeight);
-            doc.text('Codigo: FA-GFC-M01', boxX + 2, boxY + 4);
-            doc.line(boxX, boxY + 5, boxX + boxWidth, boxY + 5);
-            doc.text('Version: 1', boxX + 2, boxY + 9);
-            doc.line(boxX, boxY + 10, boxX + boxWidth, boxY + 10);
-            doc.text('Vigencia: 12/06/2025', boxX + 2, boxY + 14);
-        };
-
         const drawWatermark = () => {
             const originalColor = doc.getTextColor();
             doc.setTextColor(245, 245, 245);
@@ -195,8 +180,7 @@ export default function ManualPage() {
 
         const safeAddPage = () => {
             doc.addPage();
-            yPos = margin + 25;
-            drawHeader();
+            yPos = margin;
             drawWatermark();
         };
 
@@ -217,7 +201,6 @@ export default function ManualPage() {
         };
 
         // --- PORTADA ---
-        drawHeader();
         drawWatermark();
         yPos = pageHeight / 3;
         doc.setFontSize(22);
@@ -450,7 +433,7 @@ export default function ManualPage() {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(`Página ${i} de ${totalPages} | Manual FA-GFC-M01 | Frioalimentaria SAS`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            doc.text(`Página ${i} de ${totalPages} | Frioalimentaria SAS`, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
 
         doc.save(`Manual_Operativo_FAL_${format(new Date(), 'yyyyMMdd')}.pdf`);
@@ -771,7 +754,7 @@ export default function ManualPage() {
                                 <Gavel className="h-4 w-4" /> SARLAFT Digital
                             </div>
                             <div className="text-xs text-muted-foreground leading-relaxed font-medium">
-                              Al marcar la aceptación, firma digitalmente su compromiso de transparencia bajo la Ley 1581 de 2012.
+                              Al marcar la acceptance, firma digitalmente su compromiso de transparencia bajo la Ley 1581 de 2012.
                             </div>
                           </div>
                         </div>
