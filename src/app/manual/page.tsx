@@ -118,9 +118,9 @@ export default function ManualPage() {
                   <AccordionItem value="a1" className="border rounded-xl px-4 bg-muted/10">
                     <AccordionTrigger className="text-xl font-bold hover:no-underline">1. Auditoría de Registro y Activación</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
-                      <p className="text-base">
+                      <div className="text-base">
                         Cuando un proveedor completa su registro, el estado cambia a <Badge variant="outline" className="bg-blue-100 text-blue-700">En Revisión</Badge>. El administrador debe:
-                      </p>
+                      </div>
                       <ol className="list-decimal pl-6 space-y-3 text-base">
                         <li>Ingresar a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
                         <li>Revisar los documentos adjuntos y la información tributaria.</li>
@@ -159,9 +159,9 @@ export default function ManualPage() {
                       <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
                         <Image src={images.find(i => i.id === 'manual-comparison')?.imageUrl || 'https://picsum.photos/seed/manual4/800/400'} alt="Compare" width={800} height={400} data-ai-hint="data analysis" className="w-full" />
                       </div>
-                      <p className="text-base">
+                      <div className="text-base">
                         Si un proveedor reincide en fallas o mantiene un estado de <Badge variant="destructive">No Conforme</Badge>, el administrador puede iniciar un <strong>Nuevo Proceso de Selección</strong> directamente desde allí como acción correctiva de sustitución.
-                      </p>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
