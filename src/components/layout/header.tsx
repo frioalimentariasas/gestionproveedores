@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import { doc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, ChevronDown, User as UserIcon, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch, Home, ClipboardList } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, Menu, LayoutDashboard, ClipboardCheck, Users, Tags, BarChart3, Settings, Mail, FileSearch, Home, ClipboardList, BookOpen } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,11 +47,13 @@ const adminNavLinks = [
   { href: '/parametrizacion', label: 'Configuración de Pesos', icon: Settings },
   { href: '/admin/notifications', label: 'Plantillas de Email', icon: Mail },
   { href: '/admin/form-preview', label: 'Vista Previa Formulario', icon: FileSearch },
+  { href: '/manual', label: 'Manual de Usuario', icon: BookOpen },
 ];
 
 const providerNavLinks = [
   { href: '/providers/form', label: 'Mi Perfil de Proveedor', icon: UserIcon },
-  { href: '/evaluations', label: 'Mis Evaluaciones ISO', icon: ClipboardList }
+  { href: '/evaluations', label: 'Mis Evaluaciones ISO', icon: ClipboardList },
+  { href: '/manual', label: 'Guía de Ayuda', icon: BookOpen },
 ];
 
 interface ProviderData {
@@ -248,6 +251,12 @@ export default function Header() {
                   <Link href="/account" className="flex items-center">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Mi Cuenta</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/manual" className="flex items-center">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Manual de Usuario</span>
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

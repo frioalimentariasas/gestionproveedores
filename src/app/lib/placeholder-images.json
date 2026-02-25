@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "manual-login",
+      "description": "Pantalla de inicio de sesión",
+      "imageUrl": "https://picsum.photos/seed/manual1/800/400",
+      "imageHint": "login screen"
+    },
+    {
+      "id": "manual-form",
+      "description": "Formulario de registro de proveedor",
+      "imageUrl": "https://picsum.photos/seed/manual2/800/400",
+      "imageHint": "business form"
+    },
+    {
+      "id": "manual-admin-eval",
+      "description": "Interfaz de evaluación administrativa",
+      "imageUrl": "https://picsum.photos/seed/manual3/800/400",
+      "imageHint": "audit evaluation"
+    },
+    {
+      "id": "manual-comparison",
+      "description": "Comparador de desempeño técnico",
+      "imageUrl": "https://picsum.photos/seed/manual4/800/400",
+      "imageHint": "data analysis"
+    }
+  ]
+}
