@@ -169,12 +169,7 @@ export default function ManualPage() {
             }
         };
 
-        const logoBase64 = await getBase64FromUrl('/logo.png');
-
         const drawHeader = () => {
-            if (logoBase64) {
-                doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
-            }
             doc.setFontSize(8);
             doc.setDrawColor(0);
             const boxX = pageWidth - margin - 50;
@@ -213,7 +208,6 @@ export default function ManualPage() {
             if (base64) {
                 if (yPos > pageHeight - 80) safeAddPage();
                 try {
-                    // Try to add image with fixed size to avoid huge overflows
                     doc.addImage(base64, 'JPEG', margin, yPos, pageWidth - margin * 2, 80);
                     yPos += 85;
                 } catch (e) {
@@ -226,18 +220,18 @@ export default function ManualPage() {
         drawHeader();
         drawWatermark();
         yPos = pageHeight / 3;
-        doc.setFontSize(24);
+        doc.setFontSize(22);
         doc.setFont(undefined, 'bold');
         doc.text('MANUAL DE OPERACIÓN Y PROCEDIMIENTOS', pageWidth / 2, yPos, { align: 'center' });
         yPos += 10;
-        doc.setFontSize(18);
+        doc.setFontSize(16);
         doc.text('SISTEMA DE GESTIÓN DE PROVEEDORES', pageWidth / 2, yPos, { align: 'center' });
         yPos += 20;
         doc.setFontSize(12);
         doc.setFont(undefined, 'normal');
         doc.text('FRIOALIMENTARIA SAS', pageWidth / 2, yPos, { align: 'center' });
         doc.text('Norma ISO 9001:2015', pageWidth / 2, yPos + 7, { align: 'center' });
-        doc.text(`Generado por: ${isAdmin ? 'Administrador' : 'Usuario'}`, pageWidth / 2, yPos + 20, { align: 'center' });
+        doc.text(`Generado por: Administrador`, pageWidth / 2, yPos + 20, { align: 'center' });
         doc.text(`Fecha: ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth / 2, pageHeight - 30, { align: 'center' });
 
         // --- SECCIÓN 1: GUÍA PROVEEDOR ---
@@ -259,7 +253,7 @@ export default function ManualPage() {
         yPos += splitP1.length * 5 + 5;
         await addImageToPdf('manual-login');
 
-        yPos += 10;
+        yPos += 5;
         doc.setFont(undefined, 'bold');
         doc.text('1.2 Diligenciamiento del Formulario Oficial', margin, yPos);
         yPos += 6;
@@ -296,7 +290,7 @@ export default function ManualPage() {
             doc.text(sec.title, margin, yPos);
             yPos += 6;
             doc.setFont(undefined, 'normal');
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             const splitDesc = doc.splitTextToSize(sec.desc, pageWidth - margin * 2);
             doc.text(splitDesc, margin, yPos);
             yPos += splitDesc.length * 5 + 5;
@@ -313,67 +307,141 @@ export default function ManualPage() {
         yPos += 10;
         doc.setTextColor(0);
 
-        // Render detailed technical tables in text format for the PDF
-        const renderMatrixTable = (title: string, data: any[]) => {
+        const drawMatrixTable = (title: string, headers: string[], rows: any[], colWidths: number[]) => {
             if (yPos > pageHeight - 60) safeAddPage();
             doc.setFont(undefined, 'bold');
             doc.setFontSize(10);
             doc.setFillColor(230, 230, 230);
             doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
             doc.text(title, margin + 2, yPos);
-            yPos += 8;
-            
-            doc.setFontSize(8);
-            doc.text('Dimensión / Criterio', margin + 2, yPos);
-            doc.text('Peso Crítico', margin + 120, yPos);
-            doc.text('Peso Normal', margin + 150, yPos);
-            yPos += 5;
-            doc.line(margin, yPos - 3, pageWidth - margin, yPos - 3);
+            yPos += 10;
 
-            data.forEach(item => {
+            doc.setFontSize(8);
+            let currentX = margin;
+            headers.forEach((h, i) => {
+                doc.text(h, currentX + 2, yPos);
+                currentX += colWidths[i];
+            });
+            yPos += 4;
+            doc.line(margin, yPos - 2, pageWidth - margin, yPos - 2);
+
+            rows.forEach(row => {
                 if (yPos > pageHeight - 15) safeAddPage();
                 doc.setFont(undefined, 'normal');
-                const splitLabel = doc.splitTextToSize(item.label, 110);
-                doc.text(splitLabel, margin + 2, yPos);
-                doc.text(item.crit, margin + 120, yPos);
-                doc.text(item.norm, margin + 150, yPos);
-                yPos += splitLabel.length * 4 + 2;
+                let rowX = margin;
+                let maxHeight = 0;
+                
+                const splitContents = row.map((cell: string, i: number) => {
+                    const split = doc.splitTextToSize(cell, colWidths[i] - 4);
+                    maxHeight = Math.max(maxHeight, split.length * 4);
+                    return split;
+                });
+
+                splitContents.forEach((content: string[], i: number) => {
+                    doc.text(content, rowX + 2, yPos);
+                    rowX += colWidths[i];
+                });
+                
+                yPos += maxHeight + 4;
             });
             yPos += 5;
         };
 
-        const selectionData = [
-            { label: 'Capacidad Legal (RUT, Cámara, SST)', crit: '20%', norm: '20%' },
-            { label: 'Idoneidad Técnica (Experiencia, Staff)', crit: '40%', norm: '35%' },
-            { label: 'Capacidad Operativa (Logística)', crit: '15%', norm: '20%' },
-            { label: 'Solidez Comercial (Finanzas)', crit: '10%', norm: '15%' },
-            { label: 'Riesgo y Continuidad', crit: '15%', norm: '10%' }
-        ];
-        renderMatrixTable('3.1 MATRIZ DE SELECCIÓN - DIMENSIONES', selectionData);
+        const drawSelectionGuide = () => {
+            if (yPos > pageHeight - 40) safeAddPage();
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(9);
+            doc.text('Guía de Decisión de Selección', margin, yPos);
+            yPos += 6;
+            doc.setFontSize(8);
+            const guide = [
+                ['≥ 85% (4.25)', 'Aprobado'],
+                ['70 - 84% (3.5)', 'Aprobado Condicionado'],
+                ['60 - 69% (3.0)', 'Requiere análisis gerencial'],
+                ['< 60% (3.0)', 'No Aprobado']
+            ];
+            guide.forEach(line => {
+                doc.setFont(undefined, 'bold');
+                doc.text(line[0], margin + 5, yPos);
+                doc.setFont(undefined, 'normal');
+                doc.text(line[1], margin + 40, yPos);
+                yPos += 5;
+            });
+            doc.setFontSize(7);
+            doc.text('* El sistema multiplica el puntaje (1-5) por 20 para obtener el equivalente porcentual.', margin, yPos);
+            yPos += 10;
+        };
 
-        const performanceData = [
-            { label: 'Conformidad Técnica / Eficacia', crit: 'Variable', norm: 'Variable' },
-            { label: 'OTIF / Competencia Personal', crit: 'Variable', norm: 'Variable' },
-            { label: 'Gestión Documental / Cumplimiento HSEQ', crit: 'Variable', norm: 'Variable' },
-            { label: 'Soporte / Trazabilidad', crit: 'Variable', norm: 'Variable' },
-            { label: 'Capacidad Emergencia / Disponibilidad', crit: 'Variable', norm: 'Variable' }
+        // --- 3.1 SELECCIÓN PRODUCTOS ---
+        const selProdHeaders = ['Dimensión ISO', 'Qué se evalúa (Indicador)', 'Crit (%)', 'Norm (%)'];
+        const selProdRows = [
+            ['Capacidad Legal', 'Validación de Cámara de Comercio, RUT actualizado, Planilla PILA y Certificado SG-SST vigente.', '20%', '20%'],
+            ['Capacidad Técnica', 'Experiencia comprobada, fichas técnicas de productos, certificaciones INVIMA/ONAC y visita técnica obligatoria.', '40%', '35%'],
+            ['Capacidad Operativa', 'Infraestructura logística, disponibilidad de flota, tiempos de entrega y capacidad de almacenamiento.', '15%', '20%'],
+            ['Capacidad Comercial', 'Estabilidad financiera (Estados), precios competitivos en el mercado y condiciones de pago (crédito).', '10%', '15%'],
+            ['Riesgo y Continuidad', 'Plan de contingencia ante fallas de suministro y pólizas de cumplimiento/responsabilidad civil.', '15%', '10%']
         ];
-        renderMatrixTable('3.2 MATRIZ DE EVALUACIÓN DE DESEMPEÑO', performanceData);
+        drawMatrixTable('3.1 MATRIZ DE SELECCIÓN - SECTOR PRODUCTOS', selProdHeaders, selProdRows, [40, 100, 20, 20]);
+        drawSelectionGuide();
 
-        // Guía de decisión
-        if (yPos > pageHeight - 40) safeAddPage();
+        // --- 3.2 SELECCIÓN SERVICIOS ---
+        const selServHeaders = ['Dimensión ISO', 'Qué se evalúa (Indicador)', 'Crit (%)', 'Norm (%)'];
+        const selServRows = [
+            ['Capacidad Legal', 'Representación legal, RUT, cumplimiento de para-fiscales y certificación HSEQ superior al 60%.', '20%', '20%'],
+            ['Idoneidad Técnica', 'Personal certificado (alturas, eléctrico), equipos calibrados y portafolio técnico especializado.', '40%', '35%'],
+            ['Respuesta Operativa', 'Disponibilidad de staff para emergencias 24/7 y cobertura geográfica del servicio.', '15%', '20%'],
+            ['Solidez Comercial', 'Referencias comerciales, estabilidad financiera y flexibilidad en las tarifas de servicio.', '10%', '15%'],
+            ['Gestión de Riesgos', 'Cumplimiento de protocolos de seguridad en sitio y coberturas de seguros para daños a terceros.', '15%', '10%']
+        ];
+        drawMatrixTable('3.2 MATRIZ DE SELECCIÓN - SECTOR SERVICIOS', selServHeaders, selServRows, [40, 100, 20, 20]);
+        drawSelectionGuide();
+
+        // --- 3.3 DESEMPEÑO PRODUCTOS ---
+        safeAddPage();
+        const perfProdHeaders = ['Criterio', 'Detalle del Indicador (Evidencia)', 'Crit (%)', 'Norm (%)'];
+        const perfProdRows = [
+            ['Conformidad Técnica', 'Cero devoluciones por especificaciones técnicas incorrectas o defectos de fábrica.', '20%', '20%'],
+            ['OTIF (Oportunidad)', 'Entregas 100% completas y en la fecha pactada. Cruce con órdenes de compra.', '30%', '20%'],
+            ['Gestión Documental', 'Facturación electrónica sin errores y entrega de certificados de calidad por lote.', '10%', '15%'],
+            ['Soporte y Garantía', 'Tiempos de respuesta menores a 48h ante reclamos técnicos.', '20%', '15%'],
+            ['Capacidad Emergencia', 'Respuesta ante solicitudes de repuestos críticos fuera de horario habitual.', '20%', '30%']
+        ];
+        drawMatrixTable('3.3 MATRIZ DE DESEMPEÑO - PRODUCTOS', perfProdHeaders, perfProdRows, [40, 100, 20, 20]);
+
+        // --- 3.4 DESEMPEÑO SERVICIOS ---
+        const perfServHeaders = ['Criterio', 'Detalle del Indicador (Evidencia)', 'Crit (%)', 'Norm (%)'];
+        const perfServRows = [
+            ['Eficacia Prestación', 'Ausencia de re-trabajos o fallas recurrentes en los 30 días posteriores al servicio.', '40%', '30%'],
+            ['Competencia Personal', 'Validación de carnés de alturas, perfiles técnicos y uso de herramientas calibradas.', '20%', '15%'],
+            ['Cumplimiento SST', 'Uso correcto de EPP, permisos de trabajo en caliente/alturas y planilla PILA.', '15%', '25%'],
+            ['Trazabilidad', 'Entrega de informes técnicos detallados y bitácoras de mantenimiento.', '15%', '15%'],
+            ['Disponibilidad', 'Tiempo de llegada al sitio tras reporte de falla crítica en planta.', '10%', '15%']
+        ];
+        drawMatrixTable('3.4 MATRIZ DE DESEMPEÑO - SERVICIOS', perfServHeaders, perfServRows, [40, 100, 20, 20]);
+
+        // --- 3.5 GUÍA DE DECISIÓN TÉCNICA (AUDITORÍA) ---
+        if (yPos > pageHeight - 60) safeAddPage();
         doc.setFont(undefined, 'bold');
-        doc.text('3.3 GUÍA DE DECISIÓN TÉCNICA', margin, yPos);
-        yPos += 6;
-        const guideLines = [
-            "- CONFORME (> 85%): Proveedor apto para continuar operaciones.",
-            "- EN OBSERVACIÓN (70-84%): REQUIERE PLAN DE MEJORA OBLIGATORIO.",
-            "- NO CONFORME (< 70%): REQUIERE SUSTITUCIÓN TÉCNICA INMEDIATA."
+        doc.setFontSize(11);
+        doc.text('3.5 GUÍA DE DECISIÓN TÉCNICA (AUDITORÍA DE DESEMPEÑO)', margin, yPos);
+        yPos += 10;
+
+        const auditGuide = [
+            { label: 'CONFORME (> 85%)', desc: 'El proveedor mantiene su estatus activo. Se valida el cumplimiento de estándares normativos. No requiere planes de mejora inmediatos.' },
+            { label: 'EN OBSERVACIÓN (70% - 84%)', desc: 'Requiere Plan de Acción ISO. El proveedor debe radicar compromisos obligatorios para subsanar los hallazgos.' },
+            { label: 'NO CONFORME (< 70%)', desc: 'No Conformidad Grave. El sistema alerta al administrador para iniciar el Protocolo de Sustitución técnica.' }
         ];
-        doc.setFont(undefined, 'normal');
-        guideLines.forEach(line => {
-            doc.text(line, margin + 5, yPos);
+
+        auditGuide.forEach(g => {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(9);
+            doc.text(g.label, margin + 5, yPos);
             yPos += 5;
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(8);
+            const splitG = doc.splitTextToSize(g.desc, pageWidth - margin * 2 - 10);
+            doc.text(splitG, margin + 5, yPos);
+            yPos += splitG.length * 4 + 5;
         });
 
         // Final numeration
@@ -386,10 +454,10 @@ export default function ManualPage() {
         }
 
         doc.save(`Manual_Operativo_FAL_${format(new Date(), 'yyyyMMdd')}.pdf`);
-        toast({ title: 'PDF Generado', description: 'El manual se ha exportado con éxito.' });
+        toast({ title: 'PDF Generado', description: 'El manual completo se ha exportado con éxito.' });
     } catch (e) {
         console.error(e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al generar el PDF.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al generar el PDF técnico.' });
     } finally {
         setIsGeneratingPdf(false);
     }
@@ -429,7 +497,6 @@ export default function ManualPage() {
               </div>
             )}
 
-            {/* Lupa siempre visible al hover para ambos roles */}
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
               <Dialog>
                 <DialogTrigger asChild>
@@ -478,7 +545,6 @@ export default function ManualPage() {
           </div>
         )}
         
-        {/* Controles de edición solo en Modo Edición */}
         {canShowEditControls && (
           <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 p-6 z-30 transition-all duration-300">
             <input 
@@ -670,11 +736,11 @@ export default function ManualPage() {
                         <div>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
-                                <span className="font-bold block text-primary text-xs uppercase mb-1">Usuario de Acceso</span>
+                                <span className="font-bold block text-primary text-[10px] uppercase mb-1">Usuario de Acceso</span>
                                 <span className="text-sm font-medium text-foreground">Su NIT (Ej: 900123456)</span>
                             </div>
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
-                                <span className="font-bold block text-primary text-xs uppercase mb-1">Control Normativo</span>
+                                <span className="font-bold block text-primary text-[10px] uppercase mb-1">Control Normativo</span>
                                 <span className="text-sm font-medium text-foreground">Contador visual de 8 días</span>
                             </div>
                         </div>
@@ -690,7 +756,7 @@ export default function ManualPage() {
                         <div>El formulario oficial consta de 8 secciones alineadas con ISO 9001. Es obligatorio adjuntar los documentos soporte únicamente en formato <strong>PDF (máx. 5MB)</strong>.</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
-                            <div className="font-bold flex items-center gap-2 mb-2 text-primary uppercase text-xs tracking-tight">
+                            <div className="font-bold flex items-center gap-2 mb-2 text-primary uppercase text-[10px] tracking-tight">
                                 <CheckCircle2 className="h-4 w-4" /> Datos Críticos
                             </div>
                             <ul className="text-xs space-y-1 text-muted-foreground list-disc pl-4 font-medium">
@@ -701,7 +767,7 @@ export default function ManualPage() {
                             </ul>
                           </div>
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
-                            <div className="font-bold flex items-center gap-2 mb-2 text-primary uppercase text-xs tracking-tight">
+                            <div className="font-bold flex items-center gap-2 mb-2 text-primary uppercase text-[10px] tracking-tight">
                                 <Gavel className="h-4 w-4" /> SARLAFT Digital
                             </div>
                             <div className="text-xs text-muted-foreground leading-relaxed font-medium">
@@ -772,12 +838,12 @@ export default function ManualPage() {
                             <p>Centro de control de la base de datos oficial:</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-4 bg-white border rounded-lg shadow-sm">
-                                    <h5 className="font-bold text-primary text-xs uppercase mb-2">Auditoría de Registro</h5>
-                                    <div className="text-[10px] leading-tight font-medium">Revisión de documentos PDF y aprobación formal del perfil para el estatus 'Aprobado'.</div>
+                                    <h5 className="font-bold text-primary text-[10px] uppercase mb-2">Auditoría de Registro</h5>
+                                    <div className="text-xs leading-tight font-medium">Revisión de documentos PDF y aprobación formal del perfil para el estatus 'Aprobado'.</div>
                                 </div>
                                 <div className="p-4 bg-white border rounded-lg shadow-sm">
-                                    <h5 className="font-bold text-primary text-xs uppercase mb-2">Evaluación Técnica</h5>
-                                    <div className="text-[10px] leading-tight font-medium">Ejecución de auditorías periódicas basadas en los criterios del Anexo Técnico.</div>
+                                    <h5 className="font-bold text-primary text-[10px] uppercase mb-2">Evaluación Técnica</h5>
+                                    <div className="text-xs leading-tight font-medium">Ejecución de auditorías periódicas basadas en los criterios del Anexo Técnico.</div>
                                 </div>
                             </div>
                           </div>
@@ -870,7 +936,6 @@ export default function ManualPage() {
                       </div>
 
                       <div className="space-y-12">
-                        {/* PRODUCTOS SELECTION */}
                         <div className="space-y-4">
                             <Badge className="bg-primary text-white uppercase text-[10px] px-3 py-1 flex w-fit gap-2">
                                 <Truck className="h-3 w-3" /> Sector: PRODUCTOS
@@ -887,32 +952,32 @@ export default function ManualPage() {
                                     </TableHeader>
                                     <TableBody>
                                         <TableRow>
-                                            <TableCell className="font-bold text-xs"><Gavel className="h-3.5 w-3.5 inline mr-2 text-primary" /> Capacidad Legal</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Validación de Cámara de Comercio, RUT actualizado, Planilla PILA y Certificado SG-SST vigente.</TableCell>
+                                            <TableCell className="font-bold text-xs">Capacidad Legal</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Validación de Cámara de Comercio, RUT actualizado, Planilla PILA y Certificado SG-SST vigente.</TableCell>
                                             <TableCell className="text-center font-black">20%</TableCell>
                                             <TableCell className="text-center font-bold">20%</TableCell>
                                         </TableRow>
                                         <TableRow className="bg-blue-50/20">
-                                            <TableCell className="font-bold text-xs"><Wrench className="h-3.5 w-3.5 inline mr-2 text-primary" /> Capacidad Técnica</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Experiencia comprobada, fichas técnicas de productos, certificaciones INVIMA/ONAC y visita técnica obligatoria.</TableCell>
+                                            <TableCell className="font-bold text-xs">Capacidad Técnica</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Experiencia comprobada, fichas técnicas de productos, certificaciones INVIMA/ONAC y visita técnica obligatoria.</TableCell>
                                             <TableCell className="text-center font-black text-red-700">40%</TableCell>
                                             <TableCell className="text-center font-bold">35%</TableCell>
                                         </TableRow>
                                         <TableRow>
-                                            <TableCell className="font-bold text-xs"><Truck className="h-3.5 w-3.5 inline mr-2 text-primary" /> Capacidad Operativa</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Infraestructura logística, disponibilidad de flota, tiempos de entrega y capacidad de almacenamiento.</TableCell>
+                                            <TableCell className="font-bold text-xs">Capacidad Operativa</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Infraestructura logística, disponibilidad de flota, tiempos de entrega y capacidad de almacenamiento.</TableCell>
                                             <TableCell className="text-center font-black">15%</TableCell>
                                             <TableCell className="text-center font-bold">20%</TableCell>
                                         </TableRow>
                                         <TableRow className="bg-green-50/20">
-                                            <TableCell className="font-bold text-xs"><CircleDollarSign className="h-3.5 w-3.5 inline mr-2 text-primary" /> Capacidad Comercial</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Estabilidad financiera (Estados), precios competitivos en el mercado y condiciones de pago (crédito).</TableCell>
+                                            <TableCell className="font-bold text-xs">Capacidad Comercial</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Estabilidad financiera (Estados), precios competitivos en el mercado y condiciones de pago (crédito).</TableCell>
                                             <TableCell className="text-center font-black">10%</TableCell>
                                             <TableCell className="text-center font-bold">15%</TableCell>
                                         </TableRow>
                                         <TableRow>
-                                            <TableCell className="font-bold text-xs"><ShieldAlert className="h-3.5 w-3.5 inline mr-2 text-primary" /> Riesgo y Continuidad</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Plan de contingencia ante fallas de suministro y pólizas de cumplimiento/responsabilidad civil.</TableCell>
+                                            <TableCell className="font-bold text-xs">Riesgo y Continuidad</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Plan de contingencia ante fallas de suministro y pólizas de cumplimiento/responsabilidad civil.</TableCell>
                                             <TableCell className="text-center font-black text-red-700">15%</TableCell>
                                             <TableCell className="text-center font-bold">10%</TableCell>
                                         </TableRow>
@@ -924,7 +989,6 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        {/* SERVICIOS SELECTION */}
                         <div className="space-y-4">
                             <Badge className="bg-accent text-white uppercase text-[10px] px-3 py-1 flex w-fit gap-2">
                                 <HardHat className="h-3 w-3" /> Sector: SERVICIOS
@@ -941,32 +1005,32 @@ export default function ManualPage() {
                                     </TableHeader>
                                     <TableBody>
                                         <TableRow>
-                                            <TableCell className="font-bold text-xs"><Gavel className="h-3.5 w-3.5 inline mr-2 text-primary" /> Capacidad Legal</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Representación legal, RUT, cumplimiento de para-fiscales y certificación HSEQ superior al 60%.</TableCell>
+                                            <TableCell className="font-bold text-xs">Capacidad Legal</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Representación legal, RUT, cumplimiento de para-fiscales y certificación HSEQ superior al 60%.</TableCell>
                                             <TableCell className="text-center font-black">20%</TableCell>
                                             <TableCell className="text-center font-bold">20%</TableCell>
                                         </TableRow>
                                         <TableRow className="bg-blue-50/20">
-                                            <TableCell className="font-bold text-xs"><GraduationCap className="h-3.5 w-3.5 inline mr-2 text-primary" /> Idoneidad Técnica</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Personal certificado (alturas, eléctrico), equipos calibrados y portafolio técnico especializado.</TableCell>
+                                            <TableCell className="font-bold text-xs">Idoneidad Técnica</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Personal certificado (alturas, eléctrico), equipos calibrados y portafolio técnico especializado.</TableCell>
                                             <TableCell className="text-center font-black text-red-700">40%</TableCell>
                                             <TableCell className="text-center font-bold">35%</TableCell>
                                         </TableRow>
                                         <TableRow>
-                                            <TableCell className="font-bold text-xs"><Clock className="h-3.5 w-3.5 inline mr-2 text-primary" /> Respuesta Operativa</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Disponibilidad de staff para emergencias 24/7 y cobertura geográfica del servicio.</TableCell>
+                                            <TableCell className="font-bold text-xs">Respuesta Operativa</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Disponibilidad de staff para emergencias 24/7 y cobertura geográfica del servicio.</TableCell>
                                             <TableCell className="text-center font-black">15%</TableCell>
                                             <TableCell className="text-center font-bold">20%</TableCell>
                                         </TableRow>
                                         <TableRow className="bg-green-50/20">
-                                            <TableCell className="font-bold text-xs"><CircleDollarSign className="h-3.5 w-3.5 inline mr-2 text-primary" /> Solidez Comercial</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Referencias comerciales, estabilidad financiera y flexibilidad en las tarifas de servicio.</TableCell>
+                                            <TableCell className="font-bold text-xs">Solidez Comercial</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Referencias comerciales, estabilidad financiera y flexibilidad en las tarifas de servicio.</TableCell>
                                             <TableCell className="text-center font-black">10%</TableCell>
                                             <TableCell className="text-center font-bold">15%</TableCell>
                                         </TableRow>
                                         <TableRow>
-                                            <TableCell className="font-bold text-xs"><ShieldAlert className="h-3.5 w-3.5 inline mr-2 text-primary" /> Gestión de Riesgos</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground leading-relaxed italic">Cumplimiento de protocolos de seguridad en sitio y coberturas de seguros para daños a terceros.</TableCell>
+                                            <TableCell className="font-bold text-xs">Gestión de Riesgos</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground leading-relaxed italic">Cumplimiento de protocolos de seguridad en sitio y coberturas de seguros para daños a terceros.</TableCell>
                                             <TableCell className="text-center font-black text-red-700">15%</TableCell>
                                             <TableCell className="text-center font-bold">10%</TableCell>
                                         </TableRow>
@@ -987,11 +1051,10 @@ export default function ManualPage() {
                       </div>
                       
                       <div className="grid grid-cols-1 gap-12">
-                        {/* PRODUCTOS PERFORMANCE */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
                                 <Badge className="bg-primary text-white uppercase text-[10px] px-3 py-1">PRODUCTOS</Badge>
-                                <span className="text-xs font-bold text-muted-foreground">Matriz de Calidad de Insumos</span>
+                                <span className="text-xs font-bold text-muted-foreground uppercase">Matriz de Calidad de Insumos</span>
                             </div>
                             <div className="border rounded-xl overflow-hidden shadow-sm">
                                 <Table>
@@ -1006,31 +1069,31 @@ export default function ManualPage() {
                                     <TableBody>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Conformidad Técnica</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Cero devoluciones por especificaciones técnicas incorrectas o defectos de fábrica.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Cero devoluciones por especificaciones técnicas incorrectas o defectos de fábrica.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">20%</TableCell>
                                             <TableCell className="text-center text-xs">20%</TableCell>
                                         </TableRow>
                                         <TableRow className="bg-red-50/30">
                                             <TableCell className="text-xs font-bold">OTIF (Oportunidad)</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Entregas 100% completas y en la fecha pactada. Cruce con órdenes de compra.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Entregas 100% completas y en la fecha pactada. Cruce con órdenes de compra.</TableCell>
                                             <TableCell className="text-center text-xs font-black text-red-700">30%</TableCell>
                                             <TableCell className="text-center text-xs">20%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Gestión Documental</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Facturación electrónica sin errores y entrega de certificados de calidad por lote.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Facturación electrónica sin errores y entrega de certificados de calidad por lote.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">10%</TableCell>
                                             <TableCell className="text-center text-xs">15%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Soporte y Garantía</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Tiempos de respuesta menores a 48h ante reclamos técnicos.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Tiempos de respuesta menores a 48h ante reclamos técnicos.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">20%</TableCell>
                                             <TableCell className="text-center text-xs">15%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Capacidad Emergencia</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Respuesta ante solicitudes de repuestos críticos fuera de horario habitual.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Respuesta ante solicitudes de repuestos críticos fuera de horario habitual.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">20%</TableCell>
                                             <TableCell className="text-center text-xs font-black">30%</TableCell>
                                         </TableRow>
@@ -1039,11 +1102,10 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        {/* SERVICIOS PERFORMANCE */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
                                 <Badge className="bg-accent text-white uppercase text-[10px] px-3 py-1">SERVICIOS</Badge>
-                                <span className="text-xs font-bold text-muted-foreground">Matriz de Eficacia Técnica</span>
+                                <span className="text-xs font-bold text-muted-foreground uppercase">Matriz de Eficacia Técnica</span>
                             </div>
                             <div className="border rounded-xl overflow-hidden shadow-sm">
                                 <Table>
@@ -1058,31 +1120,31 @@ export default function ManualPage() {
                                     <TableBody>
                                         <TableRow className="bg-red-50/30">
                                             <TableCell className="text-xs font-bold">Eficacia Prestación</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Ausencia de re-trabajos o fallas recurrentes en los 30 días posteriores al servicio.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Ausencia de re-trabajos o fallas recurrentes en los 30 días posteriores al servicio.</TableCell>
                                             <TableCell className="text-center text-xs font-black text-red-700">40%</TableCell>
                                             <TableCell className="text-center text-xs font-black">30%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Competencia Personal</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Validación de carnés de alturas, perfiles técnicos y uso de herramientas calibradas.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Validación de carnés de alturas, perfiles técnicos y uso de herramientas calibradas.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">20%</TableCell>
                                             <TableCell className="text-center text-xs">15%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Cumplimiento SST</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Uso correcto de EPP, permisos de trabajo en caliente/alturas y planilla PILA.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Uso correcto de EPP, permisos de trabajo en caliente/alturas y planilla PILA.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">15%</TableCell>
                                             <TableCell className="text-center text-xs font-black">25%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Trazabilidad</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Entrega de informes técnicos detallados y bitácoras de mantenimiento.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Entrega de informes técnicos detallados y bitácoras de mantenimiento.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">15%</TableCell>
                                             <TableCell className="text-center text-xs">15%</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell className="text-xs font-bold">Disponibilidad</TableCell>
-                                            <TableCell className="text-[10px] text-muted-foreground italic">Tiempo de llegada al sitio tras reporte de falla crítica en planta.</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground italic">Tiempo de llegada al sitio tras reporte de falla crítica en planta.</TableCell>
                                             <TableCell className="text-center text-xs font-bold">10%</TableCell>
                                             <TableCell className="text-center text-xs">15%</TableCell>
                                         </TableRow>
@@ -1135,7 +1197,7 @@ export default function ManualPage() {
           )}
         </Tabs>
 
-        <div className="mt-12 text-center text-muted-foreground text-sm border-t pt-8">
+        <div className="mt-12 text-center text-muted-foreground text-xs border-t pt-8">
           <p>© {new Date().getFullYear()} Frioalimentaria SAS - Sistema de Gestión de Proveedores</p>
           <p className="mt-1 font-bold">Documento FA-GFC-M01 | Versión 1.0 | Vigencia: 12/06/2025</p>
         </div>
