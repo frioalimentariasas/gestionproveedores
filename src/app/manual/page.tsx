@@ -390,7 +390,7 @@ export default function ManualPage() {
                               <li>Información Tributaria (Régimen, CIIU).</li>
                               <li>Contactos Comerciales y de Pagos.</li>
                               <li>Certificación Bancaria (Vigente).</li>
-                              <li>Certificado HSEQ 0312 (Evaluación > 60%).</li>
+                              <li>Certificado HSEQ 0312 (Evaluación &gt; 60%).</li>
                             </ul>
                           </div>
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
