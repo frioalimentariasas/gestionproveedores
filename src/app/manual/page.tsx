@@ -154,29 +154,27 @@ export default function ManualPage() {
         const pageHeight = doc.internal.pageSize.getHeight();
         let yPos = margin;
 
-        const getLogoBase64 = async () => {
-            const response = await fetch('/logo.png');
-            const blob = await response.blob();
-            return new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
+        const getBase64FromUrl = async (url: string): Promise<string | null> => {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = () => resolve(null);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                return null;
+            }
         };
-        const logoBase64 = await getLogoBase64();
 
-        const drawBackgroundWatermark = () => {
-            const originalColor = doc.getTextColor();
-            doc.setTextColor(245, 245, 245);
-            doc.setFontSize(60);
-            doc.setFont(undefined, 'bold');
-            doc.text('CONTROL INTERNO', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
-            doc.setTextColor(originalColor);
-        };
+        const logoBase64 = await getBase64FromUrl('/logo.png');
 
         const drawHeader = () => {
-            doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
+            if (logoBase64) {
+                doc.addImage(logoBase64, 'PNG', margin, 12, 40, 13);
+            }
             doc.setFontSize(8);
             doc.setDrawColor(0);
             const boxX = pageWidth - margin - 50;
@@ -191,16 +189,42 @@ export default function ManualPage() {
             doc.text('Vigencia: 12/06/2025', boxX + 2, boxY + 14);
         };
 
+        const drawWatermark = () => {
+            const originalColor = doc.getTextColor();
+            doc.setTextColor(245, 245, 245);
+            doc.setFontSize(60);
+            doc.setFont(undefined, 'bold');
+            doc.text('REPORTE ISO 9001', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
+            doc.setTextColor(originalColor);
+        };
+
         const safeAddPage = () => {
             doc.addPage();
             yPos = margin + 25;
             drawHeader();
-            drawBackgroundWatermark();
+            drawWatermark();
+        };
+
+        const addImageToPdf = async (id: string) => {
+            const url = getImageUrl(id);
+            if (!url || url.toLowerCase().includes('.pdf')) return;
+            
+            const base64 = await getBase64FromUrl(url);
+            if (base64) {
+                if (yPos > pageHeight - 80) safeAddPage();
+                try {
+                    // Try to add image with fixed size to avoid huge overflows
+                    doc.addImage(base64, 'JPEG', margin, yPos, pageWidth - margin * 2, 80);
+                    yPos += 85;
+                } catch (e) {
+                    console.warn("Failed to add image", id);
+                }
+            }
         };
 
         // --- PORTADA ---
         drawHeader();
-        drawBackgroundWatermark();
+        drawWatermark();
         yPos = pageHeight / 3;
         doc.setFontSize(24);
         doc.setFont(undefined, 'bold');
@@ -213,142 +237,159 @@ export default function ManualPage() {
         doc.setFont(undefined, 'normal');
         doc.text('FRIOALIMENTARIA SAS', pageWidth / 2, yPos, { align: 'center' });
         doc.text('Norma ISO 9001:2015', pageWidth / 2, yPos + 7, { align: 'center' });
-        
-        doc.setFontSize(10);
-        doc.text(`Fecha de Emisión: ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth / 2, pageHeight - 30, { align: 'center' });
+        doc.text(`Generado por: ${isAdmin ? 'Administrador' : 'Usuario'}`, pageWidth / 2, yPos + 20, { align: 'center' });
+        doc.text(`Fecha: ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth / 2, pageHeight - 30, { align: 'center' });
 
         // --- SECCIÓN 1: GUÍA PROVEEDOR ---
         safeAddPage();
         doc.setFontSize(16);
         doc.setFont(undefined, 'bold');
         doc.setTextColor(0, 51, 102);
-        doc.text('1. MANUAL DEL PROVEEDOR', margin, yPos);
+        doc.text('1. GUÍA PARA EL PROVEEDOR', margin, yPos);
         yPos += 10;
         doc.setTextColor(0);
         doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('1.1 Registro Inicial y Control de Plazo (8 Días)', margin, yPos);
+        yPos += 6;
         doc.setFont(undefined, 'normal');
-        
-        const providerText = [
-            "Todo proveedor nuevo o invitado debe registrarse utilizando su NIT (sin dígito de verificación).",
-            "Al crear la cuenta, el sistema inicia un contador de 8 días calendario para completar la información oficial.",
-            "El formulario oficial (FA-GFC-F04) consta de 8 secciones alineadas con ISO 9001. Es obligatorio adjuntar los documentos soporte en formato PDF.",
-            "Una vez completado, el formulario se bloquea para revisión por el equipo técnico y de calidad."
-        ];
-        
-        providerText.forEach(line => {
-            const splitLine = doc.splitTextToSize(`• ${line}`, pageWidth - margin * 2);
-            doc.text(splitLine, margin, yPos);
-            yPos += (splitLine.length * 5) + 2;
-        });
+        const p1Text = "Todo proveedor nuevo debe registrarse con su NIT. El sistema inicia un contador de 8 días calendario para completar la información oficial FA-GFC-F04. Pasado este tiempo, el acceso se bloquea automáticamente.";
+        const splitP1 = doc.splitTextToSize(p1Text, pageWidth - margin * 2);
+        doc.text(splitP1, margin, yPos);
+        yPos += splitP1.length * 5 + 5;
+        await addImageToPdf('manual-login');
+
+        yPos += 10;
+        doc.setFont(undefined, 'bold');
+        doc.text('1.2 Diligenciamiento del Formulario Oficial', margin, yPos);
+        yPos += 6;
+        doc.setFont(undefined, 'normal');
+        const p2Text = "El formulario consta de 8 secciones (Tributaria, Ambiental, Legal, Financiera, HSEQ y SARLAFT). Es obligatorio adjuntar documentos en PDF.";
+        const splitP2 = doc.splitTextToSize(p2Text, pageWidth - margin * 2);
+        doc.text(splitP2, margin, yPos);
+        yPos += splitP2.length * 5 + 5;
+        await addImageToPdf('manual-form-sections');
 
         // --- SECCIÓN 2: MANUAL ADMINISTRADOR ---
-        if (isAdmin) {
-            safeAddPage();
-            doc.setFontSize(16);
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(0, 51, 102);
-            doc.text('2. MANUAL DEL ADMINISTRADOR', margin, yPos);
-            yPos += 10;
-            doc.setTextColor(0);
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
+        safeAddPage();
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 51, 102);
+        doc.text('2. MANUAL DEL ADMINISTRADOR', margin, yPos);
+        yPos += 10;
+        doc.setTextColor(0);
 
-            const adminSections = [
-                { title: "Dashboard", desc: "Permite visualizar el resumen de proveedores activos, distribución por categoría y trazabilidad de auditorías recientes." },
-                { title: "Procesos de Selección", desc: "Gestión de licitaciones competitivas. Incluye definición de criterios, evaluación de competidores y adjudicación oficial." },
-                { title: "Gestión de Proveedores", desc: "Módulo central para auditar registros, realizar evaluaciones de desempeño y controlar el acceso de los proveedores." },
-                { title: "Comparador de Desempeño", desc: "Herramienta analítica para identificar los mejores proveedores por sector y gestionar protocolos de sustitución." }
-            ];
+        const adminSections = [
+            { id: 'manual-dashboard', title: '2.1 Dashboard de Control', desc: 'Resumen en tiempo real de proveedores activos e inactivos, distribución por categorías y trazabilidad de auditorías.' },
+            { id: 'manual-selection-list', title: '2.2 Procesos de Selección', desc: 'Gestión de licitaciones competitivas bajo ISO 9001. Incluye definición de criticidad y adjudicación oficial.' },
+            { id: 'manual-provider-list', title: '2.3 Gestión de Proveedores', desc: 'Módulo central para auditar registros, aprobar perfiles, asignar categorías y realizar evaluaciones técnicas.' },
+            { id: 'manual-categories-table', title: '2.4 Gestión de Categorías', desc: 'Organización de la base de suministros e importación masiva desde Excel.' },
+            { id: 'manual-comparison-tool', title: '2.5 Comparador de Desempeño', desc: 'Análisis de ranking sectorial para identificar los mejores proveedores y gestionar sustituciones técnicas.' },
+            { id: 'manual-criteria-weights', title: '2.6 Configuración de Pesos ISO', desc: 'Parametrización dinámica de la rigurosidad de auditoría por sector y nivel de impacto.' },
+            { id: 'manual-email-templates', title: '2.7 Plantillas de Notificación', desc: 'Control de comunicaciones transaccionales automatizadas.' }
+        ];
 
-            adminSections.forEach(sec => {
-                if (yPos > pageHeight - 30) safeAddPage();
-                doc.setFont(undefined, 'bold');
-                doc.text(sec.title, margin, yPos);
-                yPos += 5;
-                doc.setFont(undefined, 'normal');
-                const splitDesc = doc.splitTextToSize(sec.desc, pageWidth - margin * 2);
-                doc.text(splitDesc, margin, yPos);
-                yPos += (splitDesc.length * 5) + 5;
-            });
-        }
-
-        // --- SECCIÓN 3: ANEXO TÉCNICO (TABLAS) ---
-        if (isAdmin) {
-            safeAddPage();
-            doc.setFontSize(16);
+        for (const sec of adminSections) {
+            if (yPos > pageHeight - 40) safeAddPage();
             doc.setFont(undefined, 'bold');
-            doc.setTextColor(0, 102, 51);
-            doc.text('3. ANEXO TÉCNICO: MATRICES ISO 9001', margin, yPos);
-            yPos += 10;
-            doc.setTextColor(0);
-            
-            // Replicar tabla simplificada para el PDF
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'bold');
-            doc.setFillColor(230, 230, 230);
-            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
-            doc.text('MATRIZ DE SELECCIÓN - DIMENSIONES', margin + 2, yPos);
-            yPos += 8;
-            
-            const matrixHeaders = ["Dimensión ISO", "Peso Crítico (%)", "Peso No Crítico (%)"];
-            doc.setFontSize(9);
-            doc.text(matrixHeaders[0], margin + 5, yPos);
-            doc.text(matrixHeaders[1], margin + 80, yPos);
-            doc.text(matrixHeaders[2], margin + 130, yPos);
+            doc.setFontSize(11);
+            doc.text(sec.title, margin, yPos);
             yPos += 6;
-            doc.line(margin, yPos - 4, pageWidth - margin, yPos - 4);
-
-            const dimensions = [
-                { name: "Capacidad Legal", crit: "20%", ncrit: "20%" },
-                { name: "Idoneidad / Capacidad Técnica", crit: "40%", ncrit: "35%" },
-                { name: "Respuesta Operativa", crit: "15%", ncrit: "20%" },
-                { name: "Solidez Comercial / Financiera", crit: "10%", ncrit: "15%" },
-                { name: "Gestión de Riesgos", crit: "15%", ncrit: "10%" }
-            ];
-
-            dimensions.forEach(dim => {
-                doc.setFont(undefined, 'normal');
-                doc.text(dim.name, margin + 5, yPos);
-                doc.text(dim.crit, margin + 80, yPos);
-                doc.text(dim.ncrit, margin + 130, yPos);
-                yPos += 6;
-            });
-
-            yPos += 10;
-            doc.setFont(undefined, 'bold');
-            doc.setFillColor(230, 230, 230);
-            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
-            doc.text('GUÍA DE DECISIÓN TÉCNICA', margin + 2, yPos);
-            yPos += 8;
-            
-            const guide = [
-                { range: ">= 85%", status: "CONFORME (Aprobado)" },
-                { range: "70% - 84%", status: "EN OBSERVACIÓN (Requiere Plan de Mejora)" },
-                { range: "< 70%", status: "NO CONFORME (Sustitución inmediata)" }
-            ];
-
-            guide.forEach(g => {
-                doc.setFont(undefined, 'normal');
-                doc.text(g.range, margin + 5, yPos);
-                doc.text(g.status, margin + 60, yPos);
-                yPos += 6;
-            });
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(10);
+            const splitDesc = doc.splitTextToSize(sec.desc, pageWidth - margin * 2);
+            doc.text(splitDesc, margin, yPos);
+            yPos += splitDesc.length * 5 + 5;
+            await addImageToPdf(sec.id);
+            yPos += 5;
         }
 
-        // Numeración de páginas
+        // --- SECCIÓN 3: ANEXO TÉCNICO ---
+        safeAddPage();
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 102, 51);
+        doc.text('3. ANEXO TÉCNICO: MATRICES ISO 9001', margin, yPos);
+        yPos += 10;
+        doc.setTextColor(0);
+
+        // Render detailed technical tables in text format for the PDF
+        const renderMatrixTable = (title: string, data: any[]) => {
+            if (yPos > pageHeight - 60) safeAddPage();
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(10);
+            doc.setFillColor(230, 230, 230);
+            doc.rect(margin, yPos - 5, pageWidth - margin * 2, 8, 'F');
+            doc.text(title, margin + 2, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(8);
+            doc.text('Dimensión / Criterio', margin + 2, yPos);
+            doc.text('Peso Crítico', margin + 120, yPos);
+            doc.text('Peso Normal', margin + 150, yPos);
+            yPos += 5;
+            doc.line(margin, yPos - 3, pageWidth - margin, yPos - 3);
+
+            data.forEach(item => {
+                if (yPos > pageHeight - 15) safeAddPage();
+                doc.setFont(undefined, 'normal');
+                const splitLabel = doc.splitTextToSize(item.label, 110);
+                doc.text(splitLabel, margin + 2, yPos);
+                doc.text(item.crit, margin + 120, yPos);
+                doc.text(item.norm, margin + 150, yPos);
+                yPos += splitLabel.length * 4 + 2;
+            });
+            yPos += 5;
+        };
+
+        const selectionData = [
+            { label: 'Capacidad Legal (RUT, Cámara, SST)', crit: '20%', norm: '20%' },
+            { label: 'Idoneidad Técnica (Experiencia, Staff)', crit: '40%', norm: '35%' },
+            { label: 'Capacidad Operativa (Logística)', crit: '15%', norm: '20%' },
+            { label: 'Solidez Comercial (Finanzas)', crit: '10%', norm: '15%' },
+            { label: 'Riesgo y Continuidad', crit: '15%', norm: '10%' }
+        ];
+        renderMatrixTable('3.1 MATRIZ DE SELECCIÓN - DIMENSIONES', selectionData);
+
+        const performanceData = [
+            { label: 'Conformidad Técnica / Eficacia', crit: 'Variable', norm: 'Variable' },
+            { label: 'OTIF / Competencia Personal', crit: 'Variable', norm: 'Variable' },
+            { label: 'Gestión Documental / Cumplimiento HSEQ', crit: 'Variable', norm: 'Variable' },
+            { label: 'Soporte / Trazabilidad', crit: 'Variable', norm: 'Variable' },
+            { label: 'Capacidad Emergencia / Disponibilidad', crit: 'Variable', norm: 'Variable' }
+        ];
+        renderMatrixTable('3.2 MATRIZ DE EVALUACIÓN DE DESEMPEÑO', performanceData);
+
+        // Guía de decisión
+        if (yPos > pageHeight - 40) safeAddPage();
+        doc.setFont(undefined, 'bold');
+        doc.text('3.3 GUÍA DE DECISIÓN TÉCNICA', margin, yPos);
+        yPos += 6;
+        const guideLines = [
+            "- CONFORME (> 85%): Proveedor apto para continuar operaciones.",
+            "- EN OBSERVACIÓN (70-84%): REQUIERE PLAN DE MEJORA OBLIGATORIO.",
+            "- NO CONFORME (< 70%): REQUIERE SUSTITUCIÓN TÉCNICA INMEDIATA."
+        ];
+        doc.setFont(undefined, 'normal');
+        guideLines.forEach(line => {
+            doc.text(line, margin + 5, yPos);
+            yPos += 5;
+        });
+
+        // Final numeration
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(`Manual FA-GFC-M01 | Página ${i} de ${totalPages} | Frioalimentaria SAS`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            doc.text(`Página ${i} de ${totalPages} | Manual FA-GFC-M01 | Frioalimentaria SAS`, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
 
-        doc.save(`Manual_Operacion_FAL_${format(new Date(), 'yyyyMMdd')}.pdf`);
-        toast({ title: 'Manual Exportado', description: 'El documento se ha generado correctamente.' });
+        doc.save(`Manual_Operativo_FAL_${format(new Date(), 'yyyyMMdd')}.pdf`);
+        toast({ title: 'PDF Generado', description: 'El manual se ha exportado con éxito.' });
     } catch (e) {
         console.error(e);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar el manual en PDF.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al generar el PDF.' });
     } finally {
         setIsGeneratingPdf(false);
     }
@@ -365,11 +406,11 @@ export default function ManualPage() {
     const canShowEditControls = isAdmin && globalEditMode;
 
     return (
-      <div className="relative group rounded-lg overflow-hidden border shadow-sm bg-muted/10 my-8 min-h-[200px] flex flex-col items-center justify-center">
+      <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20 my-6 min-h-[200px] flex flex-col items-center justify-center">
         {url ? (
           <div className="relative w-full">
             {isPdf ? (
-              <div className="w-full h-[500px] bg-white">
+              <div className="w-full h-[400px] bg-white">
                   <iframe 
                       src={`${url}#toolbar=0`} 
                       className="w-full h-full border-none"
@@ -388,15 +429,16 @@ export default function ManualPage() {
               </div>
             )}
 
+            {/* Lupa siempre visible al hover para ambos roles */}
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
               <Dialog>
                 <DialogTrigger asChild>
                   <Button 
-                    size="lg" 
+                    size="icon" 
                     variant="secondary" 
-                    className="rounded-full shadow-2xl h-14 w-14 bg-white/95 hover:bg-white text-primary border-2 border-primary/20 scale-90 hover:scale-100 transition-transform"
+                    className="rounded-full shadow-md bg-white/90 hover:bg-white text-primary"
                   >
-                    <Maximize2 className="h-6 w-6" />
+                    <Maximize2 className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className={cn(
@@ -404,7 +446,7 @@ export default function ManualPage() {
                   isPdf ? "h-[95vh]" : "max-h-[95vh]"
                 )}>
                   <DialogHeader className="sr-only">
-                    <DialogTitle>Vista ampliada: {alt}</DialogTitle>
+                    <DialogTitle>Vista ampliada de {alt}</DialogTitle>
                   </DialogHeader>
                   <div className="relative w-full h-full flex items-center justify-center p-4">
                     {isPdf ? (
@@ -430,14 +472,15 @@ export default function ManualPage() {
             </div>
           </div>
         ) : (
-          <div className="w-full h-[300px] flex flex-col items-center justify-center bg-muted/50 gap-4">
-            <ImageIcon className="h-12 w-12 text-muted-foreground/20" />
-            <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Recurso no disponible</p>
+          <div className="w-full h-[250px] flex flex-col items-center justify-center bg-muted/50 gap-2">
+            <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+            <p className="text-xs text-muted-foreground font-medium italic">Pendiente por cargar recurso real</p>
           </div>
         )}
         
+        {/* Controles de edición solo en Modo Edición */}
         {canShowEditControls && (
-          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 p-6 z-30 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 p-6 z-30 transition-all duration-300">
             <input 
               type="file" 
               className="hidden" 
@@ -453,23 +496,18 @@ export default function ManualPage() {
             />
 
             {!isEditingInSlot && url ? (
-                <div className="flex flex-col items-center gap-4">
-                    <div className="bg-green-500/20 text-green-400 border border-green-500/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                        <Lock className="h-3.5 w-3.5" /> Recurso Protegido
-                    </div>
-                    <Button 
-                        size="lg" 
-                        variant="secondary"
-                        className="font-black gap-2 uppercase tracking-tighter shadow-xl" 
-                        onClick={() => setIsEditingInSlot(true)}
-                    >
-                        <Unlock className="h-4 w-4" /> Habilitar Edición / Reemplazar
-                    </Button>
-                </div>
+                <Button 
+                    size="lg" 
+                    variant="secondary"
+                    className="font-bold gap-2 shadow-xl" 
+                    onClick={() => setIsEditingInSlot(true)}
+                >
+                    <Unlock className="h-4 w-4" /> Habilitar Edición / Reemplazar
+                </Button>
             ) : (
-                <div className="flex flex-col items-center gap-4 w-full max-w-sm bg-white p-6 rounded-xl shadow-2xl">
-                    <h4 className="font-black text-primary uppercase text-xs tracking-widest flex items-center gap-2">
-                        <Settings2 className="h-4 w-4" /> Configuración de Imagen
+                <div className="flex flex-col items-center gap-4 w-full max-w-xs bg-white p-6 rounded-lg shadow-2xl">
+                    <h4 className="font-bold text-primary text-sm flex items-center gap-2">
+                        <Settings2 className="h-4 w-4" /> Gestor de Recurso
                     </h4>
                     
                     <div className="flex gap-2 w-full">
@@ -479,14 +517,13 @@ export default function ManualPage() {
                             onClick={() => fileInputRef.current?.click()}
                         >
                             {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                            Subir Archivo
+                            Cargar
                         </Button>
                         
                         {hasRemote && (
                             <Button 
                                 variant="destructive" 
                                 size="icon"
-                                className="shrink-0"
                                 onClick={() => {
                                     handleResetImage(id);
                                     setIsEditingInSlot(false);
@@ -500,10 +537,10 @@ export default function ManualPage() {
                     {url && (
                         <Button 
                             variant="outline" 
-                            className="w-full font-black uppercase tracking-widest border-primary text-primary hover:bg-primary hover:text-white"
+                            className="w-full font-bold border-primary text-primary hover:bg-primary hover:text-white"
                             onClick={() => setIsEditingInSlot(false)}
                         >
-                            <CheckCircle2 className="h-4 w-4 mr-2" /> Finalizar y Fijar
+                            <Lock className="h-4 w-4 mr-2" /> Fijar y Proteger
                         </Button>
                     )}
                 </div>
@@ -572,32 +609,30 @@ export default function ManualPage() {
             Documento FA-GFC-M01: Guía integral para la gestión de proveedores bajo el estándar ISO 9001:2015 en Frioalimentaria SAS.
           </p>
           
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-8 bg-muted/50 p-6 rounded-2xl border border-primary/10 shadow-inner">
-              {isAdmin && (
-                  <>
-                    <div className="flex items-center gap-4 border-r pr-6">
-                        <div className="flex flex-col items-end">
-                            <Label htmlFor="edit-mode" className="font-black uppercase text-[10px] tracking-widest text-primary">Modo Edición</Label>
-                            <span className="text-[9px] text-muted-foreground font-bold text-right leading-none">Carga de recursos reales</span>
-                        </div>
-                        <Switch 
-                            id="edit-mode" 
-                            checked={globalEditMode} 
-                            onCheckedChange={setGlobalEditMode}
-                            className="data-[state=checked]:bg-primary"
-                        />
+          {isAdmin && (
+            <div className="flex flex-wrap items-center justify-center gap-6 mt-8 bg-muted/50 p-6 rounded-2xl border border-primary/10 shadow-inner">
+                <div className="flex items-center gap-4 border-r pr-6">
+                    <div className="flex flex-col items-end">
+                        <Label htmlFor="edit-mode" className="font-black uppercase text-[10px] tracking-widest text-primary">Modo Edición de Recursos</Label>
+                        <span className="text-[9px] text-muted-foreground font-bold leading-none">Actualización de pantallazos reales</span>
                     </div>
-                    <Button 
-                        onClick={handleExportPdf} 
-                        disabled={isGeneratingPdf}
-                        className="font-bold gap-2 uppercase tracking-tighter shadow-md"
-                    >
-                        {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-                        Exportar Manual Completo PDF
-                    </Button>
-                  </>
-              )}
-          </div>
+                    <Switch 
+                        id="edit-mode" 
+                        checked={globalEditMode} 
+                        onCheckedChange={setGlobalEditMode}
+                        className="data-[state=checked]:bg-primary"
+                    />
+                </div>
+                <Button 
+                    onClick={handleExportPdf} 
+                    disabled={isGeneratingPdf}
+                    className="font-bold gap-2 uppercase tracking-tighter shadow-md"
+                >
+                    {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                    Exportar Manual Completo PDF
+                </Button>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="provider" className="space-y-8">
