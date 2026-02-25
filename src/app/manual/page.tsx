@@ -2,7 +2,7 @@
 
 import AuthGuard from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
@@ -24,7 +24,7 @@ export default function ManualPage() {
   const [uploadingId, setUploadingingId] = useState<string | null>(null);
   
   // Use state for images to allow dynamic updates
-  const [localImages, setLocalImages] = useState(PlaceHolderImages);
+  const [localImages] = useState(PlaceHolderImages);
 
   const configDocRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'settings', 'manual_images') : null),
@@ -35,7 +35,9 @@ export default function ManualPage() {
   const getImageUrl = (id: string) => {
     const remoteUrl = remoteConfig?.imageUrls?.[id];
     const localUrl = localImages.find(i => i.id === id)?.imageUrl;
-    return remoteUrl || localUrl || null;
+    const finalUrl = remoteUrl || localUrl || null;
+    // Evitar pasar cadena vacía a next/image
+    return finalUrl === "" ? null : finalUrl;
   };
 
   const handleImageUpload = async (id: string, file: File) => {
@@ -102,7 +104,7 @@ export default function ManualPage() {
     const hasRemote = !!remoteConfig?.imageUrls?.[id];
 
     return (
-      <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20">
+      <div className="relative group rounded-lg overflow-hidden border-4 border-white shadow-lg bg-muted/20 my-6">
         {url ? (
           <Image 
             src={url} 
@@ -203,15 +205,24 @@ export default function ManualPage() {
               <CardContent className="space-y-12">
                 <Accordion type="single" collapsible className="w-full space-y-4">
                   <AccordionItem value="p1" className="border rounded-xl px-4 bg-muted/10">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline">1. Registro Inicial y Control de Plazo (8 Días)</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4 text-base leading-relaxed">
-                      <div className="space-y-4">
-                        <p>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong>.</p>
-                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                          <li><strong>Usuario:</strong> Su NIT (Ej: 900123456).</li>
-                          <li><strong>Contraseña:</strong> La asignada durante el registro.</li>
-                          <li><strong>Plazo:</strong> Verá un contador en la parte superior del formulario indicando el tiempo restante.</li>
-                        </ul>
+                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Registro Inicial y Control de Plazo (8 Días)</AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4 text-base leading-relaxed">
+                        <p>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="p-4 bg-white rounded border border-primary/10">
+                                <span className="font-bold block text-primary text-xs uppercase mb-1">Usuario</span>
+                                <span className="text-sm">Su NIT (Ej: 900123456)</span>
+                            </div>
+                            <div className="p-4 bg-white rounded border border-primary/10">
+                                <span className="font-bold block text-primary text-xs uppercase mb-1">Contraseña</span>
+                                <span className="text-sm">La asignada en el registro</span>
+                            </div>
+                            <div className="p-4 bg-white rounded border border-primary/10">
+                                <span className="font-bold block text-primary text-xs uppercase mb-1">Control</span>
+                                <span className="text-sm">Contador visual de 8 días</span>
+                            </div>
+                        </div>
                       </div>
                       
                       <ManualImageSlot id="manual-login" alt="Acceso al Portal" />
@@ -226,14 +237,14 @@ export default function ManualPage() {
                   </AccordionItem>
 
                   <AccordionItem value="p2" className="border rounded-xl px-4 bg-muted/10">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline">2. Diligenciamiento del Formulario FA-GFC-F04</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4 text-base leading-relaxed">
-                      <div className="space-y-4">
-                        <p>El formulario se compone de 8 secciones críticas. Es obligatorio adjuntar los documentos en formato <strong>PDF (máx. 5MB)</strong>.</p>
+                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Diligenciamiento del Formulario FA-GFC-F04</AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4 text-base leading-relaxed">
+                        <p>El formulario se compone de 8 secciones críticas alineadas con ISO 9001. Es obligatorio adjuntar los documentos en formato <strong>PDF (máx. 5MB)</strong>.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white">
-                            <h4 className="font-bold flex items-center gap-2 mb-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Datos Requeridos</h4>
-                            <ul className="text-xs space-y-1 text-muted-foreground">
+                            <div className="font-bold flex items-center gap-2 mb-2"><CheckCircle2 className="h-4 w-4 text-primary" /> <span>Datos Requeridos</span></div>
+                            <ul className="text-xs space-y-1 text-muted-foreground list-disc pl-4">
                               <li>Información Tributaria (Régimen, CIIU).</li>
                               <li>Contactos Comerciales y de Pagos.</li>
                               <li>Certificación Bancaria (No mayor a 90 días).</li>
@@ -241,10 +252,10 @@ export default function ManualPage() {
                             </ul>
                           </div>
                           <div className="p-4 border rounded-lg bg-white">
-                            <h4 className="font-bold flex items-center gap-2 mb-2"><Gavel className="h-4 w-4 text-primary" /> SARLAFT Jurídico</h4>
-                            <p className="text-xs text-muted-foreground">
-                              El sistema genera una declaración dinámica con sus datos. Al marcar el checkbox, está firmando digitalmente su compromiso de origen de fondos.
-                            </p>
+                            <div className="font-bold flex items-center gap-2 mb-2"><Gavel className="h-4 w-4 text-primary" /> <span>SARLAFT Jurídico</span></div>
+                            <div className="text-xs text-muted-foreground leading-relaxed">
+                              El sistema genera una declaración dinámica con sus datos reales (Nombre, Cédula, Razón Social y NIT). Al marcar el checkbox, firma digitalmente su compromiso legal.
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -254,15 +265,15 @@ export default function ManualPage() {
                   </AccordionItem>
 
                   <AccordionItem value="p3" className="border rounded-xl px-4 bg-muted/10">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline">3. Radicación de Compromisos ISO 9001</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4 text-base leading-relaxed">
-                      <div className="space-y-4">
-                        <p>Si su puntaje en una evaluación es inferior al <strong>85% (4.25)</strong>, recibirá una notificación de "Hallazgos". Pasos:</p>
-                        <ol className="list-decimal pl-6 space-y-2">
-                          <li>Ingresar al menú <strong>"Mis Evaluaciones ISO"</strong>.</li>
-                          <li>Abrir el detalle de la auditoría marcada como "En Observación" o "No Conforme".</li>
-                          <li>Identificar los criterios en rojo (hallazgos).</li>
-                          <li>Redactar un <strong>Compromiso de Mejora</strong> para cada uno y hacer clic en <strong>"Radicar Compromiso"</strong>.</li>
+                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Radicación de Compromisos ISO 9001</AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4 text-base leading-relaxed">
+                        <p>Si su puntaje en una evaluación es inferior al <strong>85% (4.25)</strong>, el sistema marcará hallazgos obligatorios. Siga estos pasos:</p>
+                        <ol className="list-decimal pl-6 space-y-2 text-sm">
+                          <li>Ingrese al menú <strong>"Mis Evaluaciones ISO"</strong>.</li>
+                          <li>Abra el detalle de la auditoría marcada como "En Observación" o "No Conforme".</li>
+                          <li>Identifique los criterios en <span className="text-destructive font-bold">ROJO</span>.</li>
+                          <li>Redacte un <strong>Compromiso de Mejora</strong> específico para cada hallazgo y haga clic en <strong>"Radicar Compromiso"</strong>.</li>
                         </ol>
                       </div>
                       <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4">
@@ -288,15 +299,16 @@ export default function ManualPage() {
               <CardContent className="space-y-12">
                 <Accordion type="single" collapsible className="w-full space-y-4">
                   <AccordionItem value="a1" className="border rounded-xl px-4 bg-muted/10">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline">1. Auditoría de Registro y Aprobación</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4 text-base leading-relaxed">
-                      <div className="space-y-4">
-                        <p>Cuando un proveedor bloquea su formulario, el estado cambia a <strong>En Revisión</strong>. Usted debe:</p>
-                        <ol className="list-decimal pl-6 space-y-3">
-                          <li><strong>Verificar Documentación:</strong> Validar que los PDFs (RUT, Cámara, etc.) sean legibles y vigentes.</li>
-                          <li><strong>Asignar Criticidad:</strong> Determinar si el proveedor es <strong>Crítico</strong> (afecta la calidad del producto final) o <strong>No Crítico</strong>.</li>
+                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Auditoría de Registro y Aprobación</AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4 text-base leading-relaxed">
+                        <p>Cuando un proveedor bloquea su formulario, el estado cambia a <Badge className="bg-blue-100 text-blue-700">En Revisión</Badge>. Procedimiento oficial:</p>
+                        <ol className="list-decimal pl-6 space-y-3 text-sm">
+                          <li>Ingrese a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
+                          <li><strong>Verificar Documentación:</strong> Valide que los PDFs coincidan con los datos digitados.</li>
+                          <li><strong>Asignar Criticidad:</strong> Determine si es <Badge variant="destructive">Crítico</Badge> o <Badge variant="outline">No Crítico</Badge>.</li>
                           <li><strong>Asignar Categorías:</strong> Crucial para clasificarlo en el comparador de desempeño sectorial.</li>
-                          <li><strong>Aval de Calidad:</strong> Aprobar para activar la cuenta o solicitar correcciones indicando los motivos técnicos.</li>
+                          <li><strong>Aval de Calidad:</strong> Haga clic en "Revisar y Aprobar" para activar la cuenta o solicitar correcciones.</li>
                         </ol>
                       </div>
                       
@@ -305,14 +317,14 @@ export default function ManualPage() {
                   </AccordionItem>
 
                   <AccordionItem value="a2" className="border rounded-xl px-4 bg-muted/10">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline">2. Ejecución de Evaluaciones de Desempeño</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4 text-base">
-                      <div className="space-y-4">
-                        <p>Al realizar una auditoría, el sistema carga automáticamente la matriz de pesos basada en la criticidad asignada.</p>
+                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Ejecución de Evaluaciones de Desempeño</AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4 text-base leading-relaxed">
+                        <p>Al realizar una auditoría, el sistema carga la matriz de pesos (Productos o Servicios) basada en la criticidad asignada al proveedor.</p>
                         <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-start gap-3">
                           <ShieldAlert className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                           <div className="text-xs text-orange-800">
-                            <strong>Trazabilidad de Compromisos:</strong> Antes de calificar, el sistema mostrará qué prometió el proveedor en la evaluación anterior. Es obligatorio verificar si el hallazgo fue subsanado.
+                            <strong>Trazabilidad de Compromisos:</strong> Antes de calificar, el sistema mostrará automáticamente qué prometió el proveedor en la evaluación anterior. Es obligatorio verificar el cumplimiento de dicho plan de mejora antes de asignar la nueva nota.
                           </div>
                         </div>
                       </div>
@@ -322,14 +334,14 @@ export default function ManualPage() {
                   </AccordionItem>
 
                   <AccordionItem value="a3" className="border rounded-xl px-4 bg-muted/10">
-                    <AccordionTrigger className="text-xl font-bold hover:no-underline">3. Comparador de Desempeño y Sustitución</AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-4 text-base leading-relaxed">
-                      <div className="space-y-4">
-                        <p>Utilice esta herramienta para ver el ranking de proveedores por categoría técnica.</p>
-                        <ul className="list-disc pl-6 space-y-2">
-                          <li><strong>Verde (&gt; 85%):</strong> Proveedor confiable.</li>
-                          <li><strong>Azul (70-84%):</strong> Requiere seguimiento a planes de mejora.</li>
-                          <li><strong>Rojo (&lt; 70%):</strong> Riesgo operativo. El sistema habilita el botón <strong>"Iniciar Sustitución"</strong> para abrir un nuevo proceso de selección competitivo.</li>
+                    <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">3. Comparador de Desempeño y Sustitución</AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4 text-base leading-relaxed">
+                        <p>Herramienta analítica para el control de la cadena de suministro por categorías:</p>
+                        <ul className="list-disc pl-6 space-y-2 text-sm">
+                          <li><Badge className="bg-green-100 text-green-800">Conforme (&gt; 85%)</Badge>: Proveedor confiable.</li>
+                          <li><Badge className="bg-blue-100 text-blue-800">En Observación (70-84%)</Badge>: Seguimiento estricto a compromisos de mejora.</li>
+                          <li><Badge className="bg-red-100 text-red-800">No Conforme (&lt; 70%)</Badge>: Riesgo operativo grave. El sistema habilita la acción correctiva de <strong>Sustitución de Proveedor</strong>.</li>
                         </ul>
                       </div>
                       
@@ -346,16 +358,16 @@ export default function ManualPage() {
             <Card className="border-t-8 border-t-emerald-600 shadow-xl">
               <CardHeader>
                 <CardTitle className="text-3xl font-black uppercase text-emerald-700">Anexo Técnico: Matrices ISO 9001:2015</CardTitle>
-                <CardDescription className="text-lg">Configuración de pesos, indicadores y escala de calificación oficial.</CardDescription>
+                <CardDescription className="text-lg">Configuración de pesos, indicadores y escala de calificación oficial de Frioalimentaria.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-12">
                 
                 {/* PRODUCT MATRIX */}
                 <div className="space-y-4">
-                  <h3 className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
+                  <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                     <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-                    1. Matriz de Desempeño: PRODUCTOS
-                  </h3>
+                    <span>1. Matriz de Desempeño: PRODUCTOS</span>
+                  </div>
                   <div className="border rounded-xl overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader className="bg-muted">
@@ -413,10 +425,10 @@ export default function ManualPage() {
 
                 {/* SERVICES MATRIX */}
                 <div className="space-y-4 pt-8">
-                  <h3 className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
+                  <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                     <Wrench className="h-6 w-6 text-emerald-600" />
-                    2. Matriz de Desempeño: SERVICIOS
-                  </h3>
+                    <span>2. Matriz de Desempeño: SERVICIOS</span>
+                  </div>
                   <div className="border rounded-xl overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader className="bg-muted">
@@ -474,10 +486,10 @@ export default function ManualPage() {
 
                 {/* DECISION SCALE */}
                 <div className="space-y-4 pt-8">
-                  <h3 className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
+                  <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
                     <FileText className="h-6 w-6 text-emerald-600" />
-                    3. Escala de Decisión Normativa (1.00 - 5.00)
-                  </h3>
+                    <span>3. Escala de Decisión Normativa (1.00 - 5.00)</span>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="border-l-8 border-l-green-500 shadow-md">
                       <CardHeader className="py-4">
