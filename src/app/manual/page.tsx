@@ -33,7 +33,9 @@ import {
   Mail,
   FileSearch,
   TrendingUp,
-  History
+  Scale,
+  CircleDollarSign,
+  Truck
 } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -366,7 +368,7 @@ export default function ManualPage() {
                   <AccordionItem value="p1" className="border rounded-xl px-4 bg-muted/5">
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">1. Registro Inicial y Control de Plazo (8 Días)</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
-                      <div className="space-y-4 leading-relaxed text-muted-foreground">
+                      <div className="space-y-4 leading-relaxed text-muted-foreground text-sm">
                         <div>Todo proveedor nuevo o invitado debe registrarse utilizando su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema inicia un contador de <strong>8 días calendario</strong> para completar la información oficial.</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 bg-white rounded border border-primary/10 shadow-sm">
@@ -386,7 +388,7 @@ export default function ManualPage() {
                   <AccordionItem value="p2" className="border rounded-xl px-4 bg-muted/5">
                     <AccordionTrigger className="text-xl font-bold hover:no-underline text-left">2. Diligenciamiento del Formulario FA-GFC-F04</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
-                      <div className="space-y-4 leading-relaxed text-muted-foreground">
+                      <div className="space-y-4 leading-relaxed text-muted-foreground text-sm">
                         <div>El formulario oficial consta de 8 secciones alineadas con ISO 9001. Es obligatorio adjuntar los documentos soporte únicamente en formato <strong>PDF (máx. 5MB)</strong>.</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 border rounded-lg bg-white shadow-sm">
@@ -432,7 +434,7 @@ export default function ManualPage() {
                             <LayoutDashboard className="h-6 w-6 text-primary" /> 1. Dashboard: Control Gerencial
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>El tablero principal permite una visualización rápida de la salud de la cadena de suministro:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
                                 <li><strong>Resumen de Proveedores:</strong> Gráfico circular que muestra la relación entre cuentas activas e inactivas.</li>
@@ -449,7 +451,7 @@ export default function ManualPage() {
                             <ClipboardCheck className="h-6 w-6 text-primary" /> 2. Procesos de Selección ISO 9001
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Módulo para la selección competitiva de nuevos proveedores bajo el marco de calidad:</p>
                             <ol className="list-decimal pl-6 space-y-3 text-sm font-medium">
                                 <li><strong>Creación:</strong> Definir nombre, sector y nivel de criticidad. El sistema ajustará los pesos sugeridos automáticamente.</li>
@@ -467,16 +469,16 @@ export default function ManualPage() {
                             <Users className="h-6 w-6 text-primary" /> 3. Gestión de Proveedores
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Centro de control para la auditoría y mantenimiento de la base de datos oficial:</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-4 bg-white border rounded-lg shadow-sm">
                                     <h5 className="font-bold text-primary text-xs uppercase mb-2">Auditoría de Registro</h5>
-                                    <p className="text-xs">Usa el botón "Gestionar" para revisar documentos. Puedes aprobar el registro o solicitar correcciones desbloqueando el formulario automáticamente.</p>
+                                    <div className="text-[10px] leading-tight">Usa el botón "Gestionar" para revisar documentos. Puedes aprobar el registro o solicitar correcciones desbloqueando el formulario automáticamente.</div>
                                 </div>
                                 <div className="p-4 bg-white border rounded-lg shadow-sm">
                                     <h5 className="font-bold text-primary text-xs uppercase mb-2">Evaluación de Desempeño</h5>
-                                    <p className="text-xs">Realiza auditorías periódicas usando las matrices oficiales. El sistema notifica al proveedor si el puntaje es &lt; 85% para que radique compromisos.</p>
+                                    <div className="text-[10px] leading-tight">Realiza auditorías periódicas usando las matrices oficiales. El sistema notifica al proveedor si el puntaje es &lt; 85% para que radique compromisos.</div>
                                 </div>
                             </div>
                           </div>
@@ -489,7 +491,7 @@ export default function ManualPage() {
                             <Tags className="h-6 w-6 text-primary" /> 4. Categorías Técnicas
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Organización de la base de suministros por especialidad operativa:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
                                 <li><strong>ID Secuencial:</strong> El sistema asigna un código único de 4 dígitos para trazabilidad en ERP.</li>
@@ -506,7 +508,7 @@ export default function ManualPage() {
                             <BarChart3 className="h-6 w-6 text-primary" /> 5. Comparador de Desempeño
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Herramienta analítica para mitigar riesgos en la cadena de suministro:</p>
                             <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4 shadow-inner">
                                 <TrendingUp className="h-6 w-6 text-primary shrink-0" />
@@ -524,7 +526,7 @@ export default function ManualPage() {
                             <Settings className="h-6 w-6 text-primary" /> 6. Configuración de Pesos ISO
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Parametrización dinámica de la rigurosidad de las evaluaciones:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
                                 <li><strong>Ajuste Fino:</strong> Permite cambiar los pesos por defecto de los criterios de evaluación.</li>
@@ -540,7 +542,7 @@ export default function ManualPage() {
                             <Mail className="h-6 w-6 text-primary" /> 7. Plantillas de Notificación
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                          <div className="space-y-4 text-muted-foreground leading-relaxed">
+                          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
                             <p>Control de la comunicación institucional automatizada:</p>
                             <ul className="list-disc pl-6 space-y-2 text-sm font-medium">
                                 <li><strong>Personalización:</strong> Edición de asunto y cuerpo en formato HTML.</li>
@@ -559,76 +561,196 @@ export default function ManualPage() {
                 <Card className="border-t-8 border-t-emerald-600 shadow-xl">
                   <CardHeader>
                     <CardTitle className="text-3xl font-black uppercase text-emerald-700">Anexo Técnico: Matrices ISO 9001</CardTitle>
-                    <CardDescription className="text-lg">Configuración oficial de pesos e indicadores de Frioalimentaria.</CardDescription>
+                    <CardDescription className="text-lg">Configuración oficial de pesos e indicadores según criticidad definida por Frioalimentaria SAS.</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-12">
-                    <div className="space-y-4">
-                      <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
-                        <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-                        <span>1. Matriz de Desempeño: PRODUCTOS</span>
+                  <CardContent className="space-y-16">
+                    {/* SECTION 1: SELECTION PROCESS */}
+                    <div className="space-y-6">
+                      <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase border-b-2 border-emerald-100 pb-2">
+                        <Scale className="h-7 w-7 text-emerald-600" />
+                        <span>1. Matriz de Selección (Proceso Inicial)</span>
                       </div>
-                      <div className="border rounded-xl overflow-hidden shadow-md">
-                        <Table>
-                          <TableHeader className="bg-muted">
-                            <TableRow>
-                              <TableHead className="w-1/2 font-black uppercase">Criterio / Indicador Técnico</TableHead>
-                              <TableHead className="text-center font-black uppercase bg-red-50 text-red-700">Peso Crítico</TableHead>
-                              <TableHead className="text-center font-black uppercase">Peso No Crítico</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Conformidad Técnica</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Cumplimiento estricto de la referencia técnica solicitada.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30">20%</TableCell>
-                              <TableCell className="text-center font-bold">20%</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>
-                                <div className="font-bold">Oportunidad y Logística (OTIF)</div>
-                                <div className="text-[10px] text-muted-foreground uppercase font-medium">Entrega en fecha pactada y en las cantidades exactas.</div>
-                              </TableCell>
-                              <TableCell className="text-center font-black bg-red-50/30 text-red-700">30%</TableCell>
-                              <TableCell className="text-center font-bold">20%</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
+                      <div className="grid gap-8">
+                        <div className="space-y-4">
+                            <h4 className="font-bold text-sm uppercase text-muted-foreground">Dimensiones de Evaluación y Ponderaciones Comparativas</h4>
+                            <div className="border rounded-xl overflow-hidden shadow-md">
+                                <Table>
+                                    <TableHeader className="bg-muted">
+                                        <TableRow>
+                                            <TableHead className="font-black uppercase">Dimensión / Criterio ISO 9001</TableHead>
+                                            <TableHead className="text-center font-black uppercase bg-red-50 text-red-700">Crítico (%)</TableHead>
+                                            <TableHead className="text-center font-black uppercase">No Crítico (%)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="bg-slate-50/50">
+                                            <TableCell className="font-bold flex items-center gap-2"><Gavel className="h-3 w-3" /> Capacidad Legal</TableCell>
+                                            <TableCell className="text-center font-black">20%</TableCell>
+                                            <TableCell className="text-center font-bold">20%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="pl-8 text-xs italic">Cámara, RUT, Seg. Social, SG-SST</TableCell>
+                                            <TableCell colSpan={2}></TableCell>
+                                        </TableRow>
+                                        <TableRow className="bg-blue-50/20">
+                                            <TableCell className="font-bold flex items-center gap-2"><Wrench className="h-3 w-3" /> Capacidad Técnica</TableCell>
+                                            <TableCell className="text-center font-black text-red-700">40%</TableCell>
+                                            <TableCell className="text-center font-bold">35%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="pl-8 text-xs italic">Experiencia, Staff, Fichas, Visita Técnica</TableCell>
+                                            <TableCell colSpan={2}></TableCell>
+                                        </TableRow>
+                                        <TableRow className="bg-orange-50/20">
+                                            <TableCell className="font-bold flex items-center gap-2"><Truck className="h-3 w-3" /> Capacidad Operativa</TableCell>
+                                            <TableCell className="text-center font-black">15%</TableCell>
+                                            <TableCell className="text-center font-bold">20%</TableCell>
+                                        </TableRow>
+                                        <TableRow className="bg-green-50/20">
+                                            <TableCell className="font-bold flex items-center gap-2"><CircleDollarSign className="h-3 w-3" /> Capacidad Financiera/Comercial</TableCell>
+                                            <TableCell className="text-center font-black">10%</TableCell>
+                                            <TableCell className="text-center font-bold">15%</TableCell>
+                                        </TableRow>
+                                        <TableRow className="bg-emerald-50/20">
+                                            <TableCell className="font-bold flex items-center gap-2"><ShieldAlert className="h-3 w-3" /> Gestión de Riesgo y Continuidad</TableCell>
+                                            <TableCell className="text-center font-black text-red-700">15%</TableCell>
+                                            <TableCell className="text-center font-bold">10%</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
                       </div>
                     </div>
 
+                    {/* SECTION 2: PERFORMANCE EVALUATION */}
+                    <div className="space-y-6">
+                      <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase border-b-2 border-emerald-100 pb-2">
+                        <ClipboardCheck className="h-7 w-7 text-emerald-600" />
+                        <span>2. Matriz de Evaluación de Desempeño (Auditoría)</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* PRODUCTOS */}
+                        <div className="space-y-4">
+                            <Badge className="bg-primary text-white uppercase text-[10px] px-3 py-1">Sector: PRODUCTOS</Badge>
+                            <div className="border rounded-xl overflow-hidden shadow-sm">
+                                <Table>
+                                    <TableHeader className="bg-muted">
+                                        <TableRow>
+                                            <TableHead className="text-xs font-black uppercase">Criterio Técnico</TableHead>
+                                            <TableHead className="text-center text-[10px] font-black uppercase bg-red-50 text-red-700">Crítico</TableHead>
+                                            <TableHead className="text-center text-[10px] font-black uppercase">No Crit.</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Conformidad Técnica</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">20%</TableCell>
+                                            <TableCell className="text-center text-xs">20%</TableCell>
+                                        </TableRow>
+                                        <TableRow className="bg-red-50/30">
+                                            <TableCell className="text-xs font-bold">OTIF (Oportunidad/Logística)</TableCell>
+                                            <TableCell className="text-center text-xs font-black text-red-700">30%</TableCell>
+                                            <TableCell className="text-center text-xs">20%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Gestión Documental/Legal</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">10%</TableCell>
+                                            <TableCell className="text-center text-xs">15%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Soporte y Garantía</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">20%</TableCell>
+                                            <TableCell className="text-center text-xs">15%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Capacidad de Emergencia</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">20%</TableCell>
+                                            <TableCell className="text-center text-xs font-black">30%</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        {/* SERVICIOS */}
+                        <div className="space-y-4">
+                            <Badge className="bg-accent text-white uppercase text-[10px] px-3 py-1">Sector: SERVICIOS</Badge>
+                            <div className="border rounded-xl overflow-hidden shadow-sm">
+                                <Table>
+                                    <TableHeader className="bg-muted">
+                                        <TableRow>
+                                            <TableHead className="text-xs font-black uppercase">Criterio Técnico</TableHead>
+                                            <TableHead className="text-center text-[10px] font-black uppercase bg-red-50 text-red-700">Crítico</TableHead>
+                                            <TableHead className="text-center text-[10px] font-black uppercase">No Crit.</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="bg-red-50/30">
+                                            <TableCell className="text-xs font-bold">Eficacia de la Prestación</TableCell>
+                                            <TableCell className="text-center text-xs font-black text-red-700">40%</TableCell>
+                                            <TableCell className="text-center text-xs font-black">30%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Competencia del Personal</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">20%</TableCell>
+                                            <TableCell className="text-center text-xs">15%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Cumplimiento SST/Normativo</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">15%</TableCell>
+                                            <TableCell className="text-center text-xs font-black">25%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Trazabilidad/Información</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">15%</TableCell>
+                                            <TableCell className="text-center text-xs">15%</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="text-xs font-medium">Disponibilidad y Respuesta</TableCell>
+                                            <TableCell className="text-center text-xs font-bold">10%</TableCell>
+                                            <TableCell className="text-center text-xs">15%</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 3: DECISION SCALE */}
                     <div className="space-y-4 pt-8">
-                      <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase">
-                        <FileText className="h-6 w-6 text-emerald-600" />
-                        <span>2. Escala de Calificación Desempeño</span>
+                      <div className="text-2xl font-black flex items-center gap-2 text-primary uppercase border-b-2 border-emerald-100 pb-2">
+                        <FileText className="h-7 w-7 text-emerald-600" />
+                        <span>3. Escala de Calificación Desempeño</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="border-l-8 border-l-green-500 shadow-lg">
                           <CardHeader className="py-4">
                             <CardTitle className="text-lg uppercase font-black">Conforme (Aprobado)</CardTitle>
-                            <Badge className="bg-green-100 text-green-800 w-fit font-bold">&gt; 85% (4.25)</Badge>
+                            <Badge className="bg-green-100 text-green-800 w-fit font-bold font-mono">&gt; 85% (4.25)</Badge>
                           </CardHeader>
                           <CardContent className="text-sm leading-relaxed text-muted-foreground font-medium">
-                            El proveedor mantiene su estatus. El sistema envía automáticamente felicitación.
+                            El proveedor mantiene su estatus activo. El sistema envía automáticamente una felicitación al correo oficial.
                           </CardContent>
                         </Card>
                         <Card className="border-l-8 border-l-blue-500 shadow-lg">
                           <CardHeader className="py-4">
                             <CardTitle className="text-lg uppercase font-black">En Observación</CardTitle>
-                            <Badge className="bg-blue-100 text-blue-800 w-fit font-bold">70% - 84% (3.5)</Badge>
+                            <Badge className="bg-blue-100 text-blue-800 w-fit font-bold font-mono">70% - 84% (3.5)</Badge>
                           </CardHeader>
                           <CardContent className="text-sm leading-relaxed text-muted-foreground font-medium">
-                            Requiere Plan de Mejora. El proveedor debe radicar compromisos obligatorios.
+                            <strong>Requiere Plan de Mejora ISO.</strong> El proveedor debe radicar compromisos obligatorios en el sistema por cada hallazgo.
                           </CardContent>
                         </Card>
                         <Card className="border-l-8 border-l-red-500 shadow-lg">
                           <CardHeader className="py-4">
                             <CardTitle className="text-lg uppercase font-black">No Conforme</CardTitle>
-                            <Badge className="bg-red-100 text-red-800 w-fit font-bold">&lt; 70%</Badge>
+                            <Badge className="bg-red-100 text-red-800 w-fit font-bold font-mono">&lt; 70%</Badge>
                           </CardHeader>
                           <CardContent className="text-sm leading-relaxed text-muted-foreground font-medium">
-                            Apertura de No Conformidad Grave. El administrador evalúa la sustitución inmediata.
+                            <strong>Apertura de No Conformidad Grave.</strong> El administrador evalúa la sustitución inmediata abriendo un nuevo Proceso de Selección.
                           </CardContent>
                         </Card>
                       </div>
