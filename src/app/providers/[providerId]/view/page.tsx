@@ -335,7 +335,9 @@ export default function ProviderViewPage() {
                         if (linkUrl) {
                             doc.setTextColor(0, 51, 153); // Corporate blue
                             doc.setFont(undefined, 'bold');
-                            doc.text(valueLines, col2X + rowPadding, yPos + lineHeight + rowPadding/2, { link: { url: linkUrl } });
+                            doc.text(valueLines, col2X + rowPadding, yPos + lineHeight + rowPadding/2);
+                            // Real interactive area for the hyperlink
+                            doc.link(col2X, yPos, col2Width, rowHeight, { url: linkUrl });
                             doc.setTextColor(0, 0, 0); // Reset
                         } else {
                             doc.setFont(undefined, 'normal');

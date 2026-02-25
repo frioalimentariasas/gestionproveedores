@@ -161,7 +161,7 @@ export default function ManualPage() {
                 return new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result as string);
-                    reader.onerror = () => resolve(null);
+                    reader.onerror = resolve(null);
                     reader.readAsDataURL(blob);
                 });
             } catch (e) {
@@ -190,19 +190,21 @@ export default function ManualPage() {
             if (!remoteUrl) return;
             
             if (remoteUrl.toLowerCase().includes('.pdf')) {
-                // If it's a PDF, we can't render it visually inside another PDF easily,
-                // so we add a clear link/note for the user.
+                // Clickable box for PDF documents
                 if (yPos > pageHeight - 30) safeAddPage();
-                doc.setDrawColor(200, 200, 255);
+                doc.setDrawColor(0, 51, 153);
                 doc.setFillColor(245, 245, 255);
                 doc.rect(margin, yPos, pageWidth - margin * 2, 15, 'FD');
+                
                 doc.setFont(undefined, 'bold');
                 doc.setFontSize(10);
                 doc.setTextColor(0, 51, 153);
-                doc.text('ARCHIVO PDF ADJUNTO:', margin + 5, yPos + 6);
-                doc.setFont(undefined, 'normal');
-                doc.setFontSize(8);
-                doc.text('Este recurso es un documento PDF. Puede consultarlo en el portal.', margin + 5, yPos + 11);
+                const linkText = 'CLIC AQUÍ PARA ABRIR DOCUMENTO PDF ADJUNTO';
+                doc.text(linkText, pageWidth / 2, yPos + 9, { align: 'center' });
+                
+                // Add the actual interactive link over the box
+                doc.link(margin, yPos, pageWidth - margin * 2, 15, { url: remoteUrl });
+                
                 doc.setTextColor(0);
                 yPos += 20;
                 return;
