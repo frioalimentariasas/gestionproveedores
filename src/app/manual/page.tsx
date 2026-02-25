@@ -91,12 +91,12 @@ export default function ManualPage() {
                     <AccordionTrigger className="text-xl font-bold hover:no-underline">3. Radicación de Compromisos de Mejora</AccordionTrigger>
                     <AccordionContent className="space-y-6 pt-4">
                       <p className="text-base leading-relaxed">
-                        Cuando un proveedor obtiene una calificación inferior al <strong>85% (4.25)</strong>, el sistema le notificará por correo. El proveedor debe entrar a <strong>"Mis Evaluaciones ISO"</strong> y radicar un compromiso técnico por cada hallazgo detectado por el auditor.
+                        Cuando un proveedor obtiene una calificación inferior al <strong>85% (4.25)</strong>, el sistema le notificará por correo. El proveedor debe entrar a <strong>&quot;Mis Evaluaciones ISO&quot;</strong> y radicar un compromiso técnico por cada hallazgo detectado por el auditor.
                       </p>
                       <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 flex gap-4">
                         <Info className="h-6 w-6 text-primary shrink-0" />
                         <p className="text-sm italic text-muted-foreground">
-                          "La radicación del plan de mejora es un requisito obligatorio para asegurar la continuidad comercial con Frioalimentaria SAS."
+                          &quot;La radicación del plan de mejora es un requisito obligatorio para asegurar la continuidad comercial con Frioalimentaria SAS.&quot;
                         </p>
                       </div>
                     </AccordionContent>
@@ -215,7 +215,7 @@ export default function ManualPage() {
                           <TableCell className="text-center font-bold">15%</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">Capacidad Emergencia: Stock pedidos urgentes</TableCell>
+                          <TableCell className="font-medium">Capacidad de Emergencia: Stock pedidos urgentes</TableCell>
                           <TableCell className="text-center font-bold">20%</TableCell>
                           <TableCell className="text-center font-bold text-emerald-700">30%</TableCell>
                         </TableRow>
