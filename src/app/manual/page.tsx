@@ -4,7 +4,29 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, ShieldCheck, Users, Settings, ClipboardCheck, Info, AlertTriangle, CheckCircle2, FileText, Gavel, Wrench, ShieldAlert, Clock, Image as ImageIcon, Upload, Loader2, RefreshCw, Lock, Unlock } from 'lucide-react';
+import { 
+  BookOpen, 
+  ShieldCheck, 
+  Users, 
+  Settings, 
+  ClipboardCheck, 
+  Info, 
+  AlertTriangle, 
+  CheckCircle2, 
+  FileText, 
+  Gavel, 
+  Wrench, 
+  ShieldAlert, 
+  Clock, 
+  Image as ImageIcon, 
+  Upload, 
+  Loader2, 
+  RefreshCw, 
+  Lock, 
+  Unlock,
+  Maximize2,
+  ZoomIn
+} from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +39,13 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export default function ManualPage() {
   const { isAdmin } = useRole();
@@ -101,6 +130,7 @@ export default function ManualPage() {
   const ManualImageSlot = ({ id, alt }: { id: string; alt: string }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
     const url = getImageUrl(id);
     const isUploading = uploadingId === id;
     const hasRemote = !!remoteConfig?.imageUrls?.[id];
@@ -125,13 +155,39 @@ export default function ManualPage() {
           ) : (
             <div className="relative w-full h-auto">
                 <Image 
-                src={url} 
-                alt={alt} 
-                width={800} 
-                height={400} 
-                data-ai-hint="business software interface" 
-                className="w-full h-auto object-cover min-h-[200px]" 
+                  src={url} 
+                  alt={alt} 
+                  width={800} 
+                  height={400} 
+                  data-ai-hint="business software interface" 
+                  className="w-full h-auto object-cover min-h-[200px]" 
                 />
+                
+                {/* View Fullscreen Icon - Visible on Hover for everyone */}
+                {!isEditing && (
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="icon" variant="secondary" className="rounded-full shadow-lg h-10 w-10 bg-white/90 hover:bg-white text-primary">
+                          <Maximize2 className="h-5 w-5" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/90 border-none flex items-center justify-center">
+                        <div className="relative w-full h-full flex items-center justify-center p-4">
+                          <div className="relative w-full h-full max-h-[85vh] aspect-video">
+                            <Image 
+                              src={url} 
+                              alt={alt} 
+                              fill
+                              className="object-contain"
+                              priority
+                            />
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
             </div>
           )
         ) : (
@@ -144,82 +200,88 @@ export default function ManualPage() {
         {isAdmin && (
           <div className={cn(
             "absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4 z-10",
-            !showControls && "bg-black/40"
+            !showControls && "bg-black/40",
+            // If editing is not enabled, the background is darker but non-blocking for the Fullscreen button if we positioned it right.
+            // But we want to separate the edit overlay from the fullscreen functionality.
+            !isEditing && "pointer-events-none" // Disable the black overlay interaction when not editing
           )}>
-            <input 
-              type="file" 
-              className="hidden" 
-              ref={fileInputRef} 
-              accept="image/*,application/pdf"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                    handleImageUpload(id, file);
-                    setIsEditing(false); // Lock after upload
-                }
-              }}
-            />
+            {/* Re-enable pointer events for specific buttons even if overlay is 'transparent' to interaction */}
+            <div className="pointer-events-auto flex flex-col items-center gap-3">
+              <input 
+                type="file" 
+                className="hidden" 
+                ref={fileInputRef} 
+                accept="image/*,application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                      handleImageUpload(id, file);
+                      setIsEditing(false); // Lock after upload
+                  }
+                }}
+              />
 
-            {!showControls ? (
-                <div className="flex flex-col items-center gap-4">
-                    <div className="bg-green-500/20 text-green-400 border border-green-500/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest animate-pulse">
-                        <Lock className="h-3.5 w-3.5" /> Archivo Fijado en el Manual
-                    </div>
-                    <Button 
-                        size="lg" 
-                        variant="secondary"
-                        className="font-black gap-2 uppercase tracking-tighter" 
-                        onClick={() => setIsEditing(true)}
-                    >
-                        <Unlock className="h-4 w-4" /> Habilitar Edición / Reemplazar
-                    </Button>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center gap-4 w-full max-w-xs">
-                    <div className="bg-primary/20 text-white border border-primary/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                        <Settings className="h-3.5 w-3.5 animate-spin-slow" /> Configuración de Recurso Activa
-                    </div>
-                    
-                    <div className="flex gap-2 flex-wrap justify-center">
-                        <Button 
-                            className="font-bold gap-2" 
-                            disabled={isUploading}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                            Cargar Imagen o PDF
-                        </Button>
-                        
-                        {hasRemote && (
-                            <Button 
-                                variant="destructive" 
-                                className="font-bold gap-2" 
-                                onClick={() => {
-                                    handleResetImage(id);
-                                    setIsEditing(false);
-                                }}
-                            >
-                                <RefreshCw className="h-4 w-4" />
-                                Restablecer
-                            </Button>
-                        )}
-                    </div>
+              {!showControls ? (
+                  <div className="flex flex-col items-center gap-4">
+                      <div className="bg-green-500/20 text-green-400 border border-green-500/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest animate-pulse">
+                          <Lock className="h-3.5 w-3.5" /> Archivo Fijado en el Manual
+                      </div>
+                      <Button 
+                          size="lg" 
+                          variant="secondary"
+                          className="font-black gap-2 uppercase tracking-tighter" 
+                          onClick={() => setIsEditing(true)}
+                      >
+                          <Unlock className="h-4 w-4" /> Habilitar Edición / Reemplazar
+                      </Button>
+                  </div>
+              ) : (
+                  <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+                      <div className="bg-primary/20 text-white border border-primary/50 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                          <Settings className="h-3.5 w-3.5 animate-spin-slow" /> Configuración de Recurso Activa
+                      </div>
+                      
+                      <div className="flex gap-2 flex-wrap justify-center">
+                          <Button 
+                              className="font-bold gap-2" 
+                              disabled={isUploading}
+                              onClick={() => fileInputRef.current?.click()}
+                          >
+                              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                              Cargar Imagen o PDF
+                          </Button>
+                          
+                          {hasRemote && (
+                              <Button 
+                                  variant="destructive" 
+                                  className="font-bold gap-2" 
+                                  onClick={() => {
+                                      handleResetImage(id);
+                                      setIsEditing(false);
+                                  }}
+                              >
+                                  <RefreshCw className="h-4 w-4" />
+                                  Restablecer
+                              </Button>
+                          )}
+                      </div>
 
-                    {url && (
-                        <Button 
-                            variant="outline" 
-                            className="w-full font-black uppercase tracking-widest border-white text-white hover:bg-white hover:text-black"
-                            onClick={() => setIsEditing(false)}
-                        >
-                            <CheckCircle2 className="h-4 w-4 mr-2" /> Fijar y Proteger
-                        </Button>
-                    )}
+                      {url && (
+                          <Button 
+                              variant="outline" 
+                              className="w-full font-black uppercase tracking-widest border-white text-white hover:bg-white hover:text-black"
+                              onClick={() => setIsEditing(false)}
+                          >
+                              <CheckCircle2 className="h-4 w-4 mr-2" /> Fijar y Proteger
+                          </Button>
+                      )}
 
-                    <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black">
-                        Formatos permitidos: PNG, JPG o PDF (Máx 5MB)
-                    </p>
-                </div>
-            )}
+                      <p className="text-[10px] text-white/80 text-center uppercase tracking-widest font-black">
+                          Formatos permitidos: PNG, JPG o PDF (Máx 5MB)
+                      </p>
+                  </div>
+              )}
+            </div>
           </div>
         )}
       </div>
