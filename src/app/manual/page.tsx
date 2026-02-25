@@ -1,4 +1,3 @@
-
 'use client';
 
 import AuthGuard from '@/components/auth/auth-guard';
@@ -10,6 +9,7 @@ import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ManualPage() {
   const images = PlaceHolderImages;
@@ -58,7 +58,7 @@ export default function ManualPage() {
                         Todo proveedor nuevo debe registrarse con su <strong>NIT (sin dígito de verificación)</strong>. Al crear la cuenta, el sistema otorga automáticamente un plazo de <strong>8 días calendario</strong> para completar el perfil.
                       </p>
                       <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-login')?.imageUrl || ''} alt="Login" width={800} height={400} data-ai-hint="login screen" className="w-full" />
+                        <Image src={images.find(i => i.id === 'manual-login')?.imageUrl || 'https://picsum.photos/seed/manual1/800/400'} alt="Login" width={800} height={400} data-ai-hint="login screen" className="w-full" />
                       </div>
                       <Alert className="bg-orange-50 border-orange-200">
                         <AlertTriangle className="h-5 w-5 text-orange-600" />
@@ -82,7 +82,7 @@ export default function ManualPage() {
                         <li><strong>HSEQ:</strong> Certificado de autoevaluación 0312 expedido por ARL.</li>
                       </ul>
                       <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-form')?.imageUrl || ''} alt="Form" width={800} height={400} data-ai-hint="business form" className="w-full" />
+                        <Image src={images.find(i => i.id === 'manual-form')?.imageUrl || 'https://picsum.photos/seed/manual2/800/400'} alt="Form" width={800} height={400} data-ai-hint="business form" className="w-full" />
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -122,7 +122,7 @@ export default function ManualPage() {
                         Cuando un proveedor completa su registro, el estado cambia a <Badge variant="outline" className="bg-blue-100 text-blue-700">En Revisión</Badge>. El administrador debe:
                       </p>
                       <ol className="list-decimal pl-6 space-y-3 text-base">
-                        <li>Ingresar a <strong>Gestión de Proveedores > Gestionar</strong>.</li>
+                        <li>Ingresar a <strong>Gestión de Proveedores &gt; Gestionar</strong>.</li>
                         <li>Revisar los documentos adjuntos y la información tributaria.</li>
                         <li><strong>Asignar Categorías Operativas:</strong> Crucial para que el proveedor aparezca en el comparador de desempeño.</li>
                         <li><strong>Asignar Nivel de Criticidad:</strong> Determine si es <Badge variant="destructive">Crítico</Badge> o <Badge variant="outline">No Crítico</Badge>.</li>
@@ -138,7 +138,7 @@ export default function ManualPage() {
                         Al realizar una nueva evaluación, el sistema carga automáticamente la matriz de pesos parametrizada.
                       </p>
                       <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-admin-eval')?.imageUrl || ''} alt="Eval" width={800} height={400} data-ai-hint="audit evaluation" className="w-full" />
+                        <Image src={images.find(i => i.id === 'manual-admin-eval')?.imageUrl || 'https://picsum.photos/seed/manual3/800/400'} alt="Eval" width={800} height={400} data-ai-hint="audit evaluation" className="w-full" />
                       </div>
                       <Alert className="bg-primary/5 border-primary">
                         <ClipboardCheck className="h-5 w-5 text-primary" />
@@ -157,7 +157,7 @@ export default function ManualPage() {
                         Utilice el <strong>Comparador de Desempeño</strong> para analizar el cumplimiento ISO 9001 de todos los proveedores en una categoría específica.
                       </p>
                       <div className="rounded-lg overflow-hidden border-4 border-white shadow-lg">
-                        <Image src={images.find(i => i.id === 'manual-comparison')?.imageUrl || ''} alt="Compare" width={800} height={400} data-ai-hint="data analysis" className="w-full" />
+                        <Image src={images.find(i => i.id === 'manual-comparison')?.imageUrl || 'https://picsum.photos/seed/manual4/800/400'} alt="Compare" width={800} height={400} data-ai-hint="data analysis" className="w-full" />
                       </div>
                       <p className="text-base">
                         Si un proveedor reincide en fallas o mantiene un estado de <Badge variant="destructive">No Conforme</Badge>, el administrador puede iniciar un <strong>Nuevo Proceso de Selección</strong> directamente desde allí como acción correctiva de sustitución.
